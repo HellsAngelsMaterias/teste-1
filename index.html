@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calculadora e Registro de Vendas Hells Angels</title>
+  <style>
+    :root {
+      --cor-fundo: #fff0f6;
+      --cor-texto: #4a0033;
+      --cor-principal: #e60073;
+      --cor-card: #ffffff;
+      --cor-borda: #ffb3d9;
+      --cor-btn-primario: #e60073;
+      --cor-btn-texto: #fff;
+      --cor-btn-secundario: #ffd6eb;
+      --cor-btn-secundario-texto: #4a0033;
+    }
+
+    body.dark {
+      --cor-fundo: #1a000d; 
+      --cor-texto: #ffccf0; 
+      --cor-principal: #ff0080; 
+      --cor-card: #2c001a; 
+      --cor-borda: #e60073; 
+      --cor-btn-primario: #ff0080; 
+      --cor-btn-texto: #fff;
+      --cor-btn-secundario: #4d002a; 
+      --cor-btn-secundario-texto: #ffccf0; 
+    }
+    
+    body.dark input[type=number], body.dark input[type=text], body.dark select {
+      background: #33001f;
+      color: var(--cor-texto);
+      border: 1px solid var(--cor-borda);
+    }
+    
+    /* --- ESTILOS TOUR (SEM SETA) --- */
+    .tour-tooltip {
+      position: absolute;
+      background: var(--cor-principal);
+      color: var(--cor-btn-texto);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      max-width: 300px;
+      text-align: left;
+      opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 10002;
+    }
+
+    .tour-tooltip.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tour-tooltip h4 {
+        margin: 0 0 5px;
+        font-size: 16px;
+        color: var(--cor-btn-texto);
+    }
+    .tour-tooltip p {
+        margin: 0;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+    
+    .tour-tooltip button {
+        background: var(--cor-btn-secundario);
+        color: var(--cor-btn-secundario-texto);
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        margin-right: 8px;
+    }
+    
+    .tour-highlight {
+      box-shadow: 0 0 0 3px rgba(230,0,115,0.6), 0 0 10px rgba(230,0,115,0.5);
+      position: relative;
+      z-index: 10001;
+    }
+    /* --- FIM ESTILOS TOUR --- */
+
+    
+    /* Estilo para o logo no CANTO ESQUERDO */
+    .app-logo.fixed-corner {
+      position: fixed;
+      top: 16px; 
+      left: 16px; 
+      max-height: 80px; 
+      width: auto;
+      z-index: 9998; 
+      transition: opacity 0.3s ease;
+    }
+    
+    #welcomeScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--cor-card);
+      z-index: 10000; 
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      transition: opacity 0.5s ease;
+      padding: 20px;
+    }
+    
+    /* Estilo para o logo na TELA DE BOAS-VINDAS (maior e centralizado) */
+    #welcomeScreen .app-logo {
+        max-height: 120px; 
+        width: auto;
+        margin-bottom: 20px;
+    }
+    
+    #welcomeScreen.hidden {
+      opacity: 0;
+      pointer-events: none; 
+    }
+    
+    #welcomeScreen h2 {
+      font-size: 36px;
+      margin-bottom: 20px;
+      color: var(--cor-principal);
+    }
+    
+    #welcomeScreen button {
+      padding: 12px 24px;
+      font-size: 18px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 960px;
+      margin: 24px auto;
+      padding: 20px;
+      background: var(--cor-fundo);
+      border-radius: 12px;
+      color: var(--cor-texto);
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--cor-principal);
+      text-align: center;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--cor-principal);
+    }
+    
+    h3 {
+        color: var(--cor-principal); 
+        font-weight:600; 
+        margin-top: 16px;
+    }
+
+    .card {
+      background: var(--cor-card);
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid var(--cor-borda);
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 6px;
+      font-weight: 600;
+      color: var(--cor-principal);
+    }
+
+    input[type=number], input[type=text], select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid var(--cor-borda);
+      background: #fff;
+      color: var(--cor-texto);
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    
+    input[type=number] {
+        width: 140px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 12px;
+    }
+    
+    .grid-venda {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    /* NOVO: Estilo para a observação que deve ocupar 100% da linha do grid */
+    .full-width-item {
+        grid-column: 1 / -1; 
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 8px;
+      border-bottom: 1px solid var(--cor-borda);
+      text-align: left;
+    }
+
+    th {
+      background: var(--cor-btn-secundario);
+      color: var(--cor-btn-secundario-texto);
+      font-weight: 600;
+    }
+
+    .actions {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: opacity 0.2s ease;
+    }
+
+    button:hover { opacity: 0.85; }
+
+    .primary { background: var(--cor-btn-primario); color: var(--cor-btn-texto); }
+    .muted { background: var(--cor-btn-secundario); color: var(--cor-btn-secundario-texto); }
+    .success { background: #00b33c; color: #fff; }
+
+    /* Container para agrupar e posicionar botões (Modo Noturno e Tutorial) */
+    .top-right-controls {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        display: flex;
+        gap: 10px;
+        z-index: 9999;
+    }
+
+    /* Estilo base para botões de controle fixos */
+    .control-btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: var(--cor-btn-primario);
+        color: var(--cor-btn-texto);
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        border: none;
+        transition: opacity 0.2s ease;
+    }
+    .control-btn:hover {
+        opacity: 0.85;
+    }
+    
+    #historyCard table {
+        font-size: 12px;
+    }
+    #historyCard th, #historyCard td {
+        padding: 6px;
+        vertical-align: top;
+    }
+    
+    .history-discord-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .history-discord-cell button {
+        padding: 4px 8px;
+        font-size: 11px;
+        margin-top: 4px; 
+    }
+  </style>
+</head>
+<body class="light">
+  
+  <img id="appLogoFixed" src="logo-dark.png" alt="Hells Angels Logo" class="app-logo fixed-corner" style="display: none;">
+
+  <div id="welcomeScreen" class="card">
+      <img id="appLogoWelcome" src="logo-dark.png" alt="Hells Angels Logo" class="app-logo">
+
+      <h2 style="font-weight: 900;">Bem-vindo(a)</h2>
+      <p style="margin-bottom: 20px; font-size: 16px;">Calculadora e Registro de Vendas Hells Angels</p>
+      <button id="enterBtn" class="primary">Entrar no Site</button>
+  </div>
+  
+  <div class="top-right-controls">
+      <button class="control-btn" id="tutorialBtn">💡 Tutorial</button> 
+      <button class="control-btn" id="themeBtn">🌙 Modo Noturno</button>
+  </div>
+  <div class="card" id="mainCard">
+    <h1>Calculadora e Registro de Vendas Hells Angels</h1>
+    
+    <div class="card-venda">
+        <h2>Dados da Venda</h2>
+        <div class="grid grid-venda">
+            <div>
+                <label for="nomeCliente">Nome:</label>
+                <input id="nomeCliente" type="text" value="">
+            </div>
+            <div>
+                <label for="dataVenda">Data:</label>
+                <input id="dataVenda" type="text" readonly>
+            </div>
+            
+            <div>
+                <label for="organizacao">Organização:</label>
+                <input id="organizacao" type="text" value="">
+            </div>
+            <div>
+                <label for="organizacaoTipo">Opção (CNPJ/CPF):</label>
+                <select id="organizacaoTipo">
+                    <option value="CNPJ">CNPJ</option>
+                    <option value="CPF">CPF</option>
+                    <option value="OUTROS">Outros</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="telefone">Telefone:</label>
+                <input id="telefone" type="text" value="" maxlength="13"> 
+            </div>
+            
+            <div>
+                <label for="negociadoras">Negociadoras:</label>
+                <input id="negociadoras" type="text" value="">
+            </div>
+            <div class="full-width-item">
+                <label for="vendaValorObs">Valor - Observação (Como foi o pagamento):</label>
+                <input id="vendaValorObs" type="text" value="">
+            </div>
+        </div>
+    </div>
+    
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--cor-borda);">
+
+    <h2>Cálculo de Produtos</h2>
+    <p class="small">Informe quantos produtos deseja fabricar/vender e escolha o tipo de valor.</p>
+
+    <div class="grid">
+      <div>
+        <label for="qtyTickets">Quantidade de Tickets</label>
+        <input id="qtyTickets" type="number" min="0" value="">
+      </div>
+      <div>
+        <label for="qtyTablets">Quantidade de Tablets</label>
+        <input id="qtyTablets" type="number" min="0" value="">
+      </div>
+      <div>
+        <label for="qtyNitro">Quantidade de Nitro</label>
+        <input id="qtyNitro" type="number" min="0" value="">
+      </div>
+      <div>
+        <label for="tipoValor">Tipo de Valor</label>
+        <select id="tipoValor">
+          <option value="limpo">Dinheiro Limpo</option>
+          <option value="sujo">Dinheiro Sujo</option>
+          <option value="limpo_alianca">Limpo (Aliança)</option>
+          <option value="sujo_alianca">Sujo (Aliança)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="calcBtn" class="primary">Calcular</button>
+      <button id="resetBtn" class="muted">Limpar Campos</button>
+      <button id="registerBtn" class="success">Registrar Venda</button>
+      <button id="toggleHistoryBtn" class="muted">Ver Histórico</button>
+      <button id="csvBtn" class="muted">Exportar CSV</button>
+      <button id="discordBtn" class="muted">Copiar para Discord</button>
+    </div>
+
+    <div id="resultsContainer">
+      <div id="results" style="margin-top:16px;display:none">
+        <h3>Totais necessários</h3>
+        <table>
+          <thead><tr><th>Material</th><th>Quantidade total</th></tr></thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+
+        <h3>Valores Estimados</h3>
+        <table>
+          <thead><tr><th>Produto</th><th>Valor Total</th></tr></thead>
+          <tbody id="valuesBody"></tbody>
+          <tfoot>
+            <tr><th>Total Geral</th><th id="valorTotalGeral">R$ 0</th></tr>
+          </tfoot>
+        </table>
+        <p class="result-note" style="font-size: 12px; margin-top: 8px;">Os valores variam conforme o tipo selecionado (limpo, sujo, aliança).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="historyCard" style="display:none">
+    <h2>Histórico de Vendas Registradas</h2>
+    <p style="font-size: 12px; color: var(--cor-texto);">O histórico de vendas é **salvo automaticamente** no seu navegador.</p>
+    <div class="actions">
+      <button id="clearHistoryBtn" class="muted">Limpar Histórico</button>
+      <button id="toggleCalcBtn" class="muted">Voltar à Calculadora</button>
+    </div>
+    <table>
+      <thead>
+          <tr>
+              <th>Data/Hora</th>
+              <th>Cliente</th>
+              <th>Organização/Tipo</th>
+              <th>Telefone</th>
+              <th>Produtos (Unidade)</th>
+              <th>Valor Total</th>
+              <th>Negociadoras</th>
+          </tr>
+      </thead>
+      <tbody id="salesHistory"></tbody>
+    </table>
+  </div>
+  
+  <script>
+    // CHAVE PARA O LOCAL STORAGE
+    const LOCAL_STORAGE_KEY = 'hellsAngelsSalesHistory';
+    
+    const perUnit = {
+      tickets: { moneyBruto: 525 },
+      tablets: { cobre: 20, plastico: 40, fita_adesiva: 2, lixo_eletronico: 2 },
+      nitro: { aluminio: 20, cobre: 20, vidro: 45, fita_adesiva: 1, porca: 1, parafuso: 1 }
+    };
+
+    const valores = {
+      tablets: { limpo: 17000, sujo: 20000, limpo_alianca: 15000, sujo_alianca: 18000 },
+      tickets: { limpo: 9800, sujo: 11700, limpo_alianca: 8000, sujo_alianca: 10000 },
+      nitro: { limpo: 42500, sujo: 50000, limpo_alianca: 38000, sujo_alianca: 45000 }
+    };
+    
+    const valorDescricao = {
+        'limpo': 'Dinheiro Limpo',
+        'sujo': 'Dinheiro Sujo',
+        'limpo_alianca': 'Limpo (Aliança)',
+        'sujo_alianca': 'Sujo (Aliança)'
+    };
+
+
+    const els = {
+      // Campos do Cálculo
+      qtyTickets: document.getElementById('qtyTickets'),
+      qtyTablets: document.getElementById('qtyTablets'),
+      qtyNitro: document.getElementById('qtyNitro'),
+      tipoValor: document.getElementById('tipoValor'),
+      
+      // Campos do Cliente/Venda
+      nomeCliente: document.getElementById('nomeCliente'),
+      dataVenda: document.getElementById('dataVenda'),
+      organizacaoTipo: document.getElementById('organizacaoTipo'),
+      organizacao: document.getElementById('organizacao'),
+      telefone: document.getElementById('telefone'),
+      negociadoras: document.getElementById('negociadoras'),
+      vendaValorObs: document.getElementById('vendaValorObs'),
+      
+      // Botões
+      calcBtn: document.getElementById('calcBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      csvBtn: document.getElementById('csvBtn'),
+      registerBtn: document.getElementById('registerBtn'),
+      discordBtn: document.getElementById('discordBtn'), 
+      
+      // Resultados e Histórico
+      results: document.getElementById('results'),
+      resultsBody: document.getElementById('resultsBody'),
+      valuesBody: document.getElementById('valuesBody'),
+      valorTotalGeral: document.getElementById('valorTotalGeral'),
+      salesHistory: document.getElementById('salesHistory'),
+      clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+      
+      // Botões de controle fixos
+      themeBtn: document.getElementById('themeBtn'),
+      tutorialBtn: document.getElementById('tutorialBtn'),
+      
+      mainCard: document.getElementById('mainCard'), 
+      historyCard: document.getElementById('historyCard'), 
+      toggleHistoryBtn: document.getElementById('toggleHistoryBtn'), 
+      toggleCalcBtn: document.getElementById('toggleCalcBtn'),
+      
+      // Elementos da tela de boas-vindas e logo fixo
+      welcomeScreen: document.getElementById('welcomeScreen'),
+      enterBtn: document.getElementById('enterBtn'),
+      
+      appLogoWelcome: document.getElementById('appLogoWelcome'), 
+      appLogoFixed: document.getElementById('appLogoFixed'), 
+    };
+
+    // --- VARIÁVEIS DO TOUR ---
+    let currentTourStep = 0;
+    const tourSteps = [
+        { target: els.nomeCliente, title: 'Passo 1: Nome do Cliente (1/17)', text: 'Comece digitando o nome do comprador. Pressione **Enter** para avançar.' },
+        { target: els.organizacao, title: 'Passo 2: Organização (2/17)', text: 'Informe a Organização/Empresa do cliente. Pressione **Enter** para avançar.' },
+        { target: els.organizacaoTipo, title: 'Passo 3: Tipo de Documento (3/17)', text: 'Selecione o tipo de identificação do cliente (CNPJ/CPF).' },
+        { target: els.telefone, title: 'Passo 4: Telefone (4/17)', text: 'Digite o telefone do cliente. Será formatado automaticamente.' },
+        { target: els.negociadoras, title: 'Passo 5: Negociadoras (5/17)', text: 'Se houver mais de uma, separe por vírgula. Ex: Ana, Bruna, Carla.' },
+        { target: els.vendaValorObs, title: 'Passo 6: Observação (6/17)', text: 'Detalhe como foi o pagamento (Pix, Transferência, etc.).' },
+        { target: els.qtyTickets, title: 'Passo 7: Quantidade (7/17)', text: 'Informe a quantidade de **Tickets** que deseja vender/fabricar.' },
+        { target: els.qtyTablets, title: 'Passo 8: Quantidade (8/17)', text: 'Informe a quantidade de **Tablets**.' },
+        { target: els.qtyNitro, title: 'Passo 9: Quantidade (9/17)', text: 'Informe a quantidade de **Nitros**.' },
+        { target: els.tipoValor, title: 'Passo 10: Tipo de Valor (10/17)', text: 'Escolha se o valor da venda é Limpo, Sujo ou se é uma venda para Aliança.' },
+        { target: els.calcBtn, title: 'Passo 11: Calcular (11/17)', text: 'Clique em **Calcular** para ver os materiais necessários e o valor total estimado. Isso não registra a venda.' },
+        { target: els.registerBtn, title: 'Passo 12: Registrar Venda (12/17)', text: 'Este botão salva a venda no histórico e deve ser usado após o cálculo.' },
+        { target: els.toggleHistoryBtn, title: 'Passo 13: Ver Histórico (13/17)', text: 'Veja todas as vendas registradas. Ao clicar, o site muda para a tela de histórico.' },
+        { target: els.discordBtn, title: 'Passo 14: Copiar para Discord (14/17)', text: 'Copia os dados da venda atual para a área de transferência no formato ideal para postar no Discord.' },
+        { target: els.csvBtn, title: 'Passo 15: Exportar CSV (15/17)', text: 'Exporta os materiais e valores calculados para um arquivo CSV (planilha).' },
+        { target: els.resetBtn, title: 'Passo 16: Limpar Campos (16/17)', text: 'Apaga todos os dados inseridos e os resultados. Útil para começar uma nova venda.' },
+        { target: document.getElementById('themeBtn'), title: 'Passo 17: Modo Noturno (17/17)', text: 'Finalizamos! Este botão permite alternar entre os temas Claro e Noturno.' }
+    ];
+    // --- FIM VARIÁVEIS DO TOUR ---
+    
+    
+    // ALTERADO: AMBOS OS MODOS USAM AGORA O ARQUIVO 'logo-dark.png'
+    const logoLightModeSrc = "logo-dark.png"; 
+    const logoDarkModeSrc = "logo-dark.png"; 
+    
+    // --- FUNÇÕES DE FORMATO ---
+    function formatNome(key){return key.replace(/_/g,' ').replace(/(^|\s)\S/g,s=>s.toUpperCase());}
+    function numberWithCommas(x){return (Number(x)||0).toLocaleString('pt-BR');}
+
+    function capitalizeWords(event) {
+        let input = event.target;
+        let value = input.value;
+        if (!value) return;
+
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        
+        let formattedValue = value.toLowerCase().replace(/(^|\s)\S/g, (match) => {
+            return match.toUpperCase();
+        });
+
+        input.value = formattedValue;
+        input.setSelectionRange(start, end);
+    }
+    
+    function formatarTelefone(event) {
+        let input = event.target;
+        let value = input.value.replace(/\D/g, ""); 
+        
+        let formattedValue = '';
+
+        if (value.length > 0) {
+            formattedValue += '(' + value.substring(0, 3);
+        }
+        if (value.length > 3) {
+            formattedValue += ') ' + value.substring(3, 6);
+        }
+        if (value.length > 6) {
+            formattedValue += '-' + value.substring(6, 9);
+        }
+
+        input.value = formattedValue;
+    }
+
+    function initDate() {
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        els.dataVenda.value = `${day}/${month}`;
+    }
+
+    function toggleView(showHistory) {
+        if (showHistory) {
+            els.mainCard.style.display = 'none';
+            els.historyCard.style.display = 'block';
+            els.appLogoFixed.style.display = 'none'; // Esconde o logo fixo na tela de histórico
+        } else {
+            els.mainCard.style.display = 'block';
+            els.historyCard.style.display = 'none';
+            // Garante que o logo fixo apareça na tela da calculadora
+            if (!els.welcomeScreen.classList.contains('hidden')) {
+                els.appLogoFixed.style.display = 'none';
+            } else {
+                els.appLogoFixed.style.display = 'block'; 
+            }
+        }
+        
+        clearTour();
+    }
+    
+    // --- FUNÇÕES DE PERSISTÊNCIA (LOCAL STORAGE) ---
+    
+    function getHistoryData() {
+        const historyJson = localStorage.getItem(LOCAL_STORAGE_KEY);
+        // Retorna um array vazio se não houver dados
+        return historyJson ? JSON.parse(historyJson) : [];
+    }
+
+    function saveHistory() {
+        // Pega todos os dados de venda atualmente renderizados no histórico
+        const salesData = [];
+        els.salesHistory.querySelectorAll('tr').forEach(tr => {
+            // Acessa o objeto saleData que foi anexado à linha (tr.saleData)
+            if (tr.saleData) {
+                salesData.push(tr.saleData);
+            }
+        });
+        
+        // Salva o array de objetos no Local Storage
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(salesData));
+    }
+
+    function renderHistoryRow(saleData, prepend = false) {
+        const valorBase = `R$ ${numberWithCommas(saleData.valor)}`;
+        const valorComObs = saleData.valorObs ? 
+            `${valorBase}<br><small>(${saleData.valorObs})</small>` :
+            valorBase;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="history-discord-cell">
+                ${saleData.dataHora}
+                <button class="muted discord-btn">Discord</button>
+            </td>
+            <td>${saleData.cliente}</td>
+            <td>${saleData.organizacao}</td> 
+            <td>${saleData.telefone}</td>
+            <td>${saleData.produtos}</td>
+            <td>${valorComObs}</td>
+            <td>${saleData.negociadoras}</td>
+        `;
+        
+        // Anexa os dados completos à linha <tr> para facilitar a cópia para o Discord no futuro
+        tr.saleData = saleData; 
+
+        tr.querySelector('.discord-btn').addEventListener('click', (e) => {
+            // Impede que o clique no botão ative algo na linha inteira (se houver)
+            e.stopPropagation(); 
+            copyDiscordFromHistory(tr);
+        });
+
+        if (prepend) {
+            els.salesHistory.prepend(tr); // Adiciona no início (venda mais recente)
+        } else {
+            els.salesHistory.appendChild(tr); // Adiciona no fim (ao carregar o histórico)
+        }
+    }
+    
+    function loadHistory() {
+        els.salesHistory.innerHTML = ''; // Limpa o conteúdo existente
+        const sales = getHistoryData();
+        
+        // Renderiza cada venda do Local Storage
+        // Nota: O Local Storage salva na ordem em que foi salvo, então iteramos normalmente
+        sales.reverse().forEach(saleData => renderHistoryRow(saleData, false)); 
+    }
+
+    // --- FIM FUNÇÕES DE PERSISTÊNCIA ---
+
+    // --- FUNÇÕES DO TUTORIAL/TOUR (MANTIDAS) ---
+    function clearTour() {
+        currentTourStep = 0; 
+        const existingTooltip = document.querySelector('.tour-tooltip');
+        if (existingTooltip) {
+            existingTooltip.remove();
+        }
+        document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+    }
+
+    function updateTooltip(target, title, text, stepIndex) {
+        clearTour(); 
+
+        const rect = target.getBoundingClientRect();
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tour-tooltip active';
+        
+        const totalSteps = tourSteps.length;
+        const buttonText = stepIndex < totalSteps - 1 ? 'Próximo (Enter)' : 'Finalizar';
+
+        tooltip.innerHTML = `
+            <h4>${title}</h4>
+            <p>${text}</p>
+            <button id="tourCloseBtn">Fechar</button>
+            <button id="tourNextBtn" class="primary" style="float:right;">${buttonText}</button>
+        `;
+        
+        document.body.appendChild(tooltip); 
+        
+        tooltip.querySelector('#tourCloseBtn').addEventListener('click', clearTour);
+        tooltip.querySelector('#tourNextBtn').addEventListener('click', () => {
+            if (stepIndex < totalSteps - 1) {
+                nextStep();
+            } else {
+                clearTour();
+            }
+        });
+
+        const tooltipWidth = tooltip.offsetWidth;
+        const tooltipHeight = tooltip.offsetHeight;
+        const targetCenterX = rect.left + rect.width / 2;
+        let tooltipLeft = targetCenterX - tooltipWidth / 2;
+        
+        if (tooltipLeft < 10) tooltipLeft = 10;
+        if (tooltipLeft + tooltipWidth > window.innerWidth - 10) {
+            tooltipLeft = window.innerWidth - tooltipWidth - 10;
+        }
+
+        let tooltipTop = rect.top - tooltipHeight - 15;
+        
+        if (tooltipTop < 10) {
+            tooltipTop = rect.bottom + 15;
+        }
+
+        tooltip.style.left = `${tooltipLeft}px`;
+        tooltip.style.top = `${tooltipTop + window.scrollY}px`;
+
+        target.classList.add('tour-highlight');
+        currentTourStep = stepIndex + 1;
+        
+        if (target.tagName === 'INPUT' || target.tagName === 'SELECT') {
+            target.focus();
+        } else {
+            tooltip.querySelector('#tourNextBtn').focus();
+        }
+        
+    }
+    
+    function startTour(stepIndex) {
+        clearAllFields(); 
+        els.welcomeScreen.classList.add('hidden');
+        
+        setTimeout(() => {
+            els.welcomeScreen.style.display = 'none';
+            els.mainCard.style.display = 'block';
+            els.appLogoFixed.style.display = 'block'; 
+            
+            if (stepIndex < tourSteps.length) {
+                const step = tourSteps[stepIndex];
+                updateTooltip(step.target, step.title, step.text, stepIndex);
+            }
+        }, 500); 
+    }
+    
+    function nextStep() {
+        if (currentTourStep > 0 && currentTourStep < tourSteps.length) {
+            const nextIndex = currentTourStep;
+            const step = tourSteps[nextIndex];
+            updateTooltip(step.target, step.title, step.text, nextIndex);
+        } else if (currentTourStep === tourSteps.length) {
+            clearTour(); 
+        }
+    }
+    
+    // --- FIM FUNÇÕES DO TUTORIAL/TOUR ---
+
+    function calculateTotals() {
+      const qTickets = Math.max(0, Math.floor(Number(els.qtyTickets.value) || 0));
+      const qTablets = Math.max(0, Math.floor(Number(els.qtyTablets.value) || 0));
+      const qNitro = Math.max(0, Math.floor(Number(els.qtyNitro.value) || 0));
+      const tipo = els.tipoValor.value;
+
+      const totals = {};
+      totals['Dinheiro Sujo (R$)'] = qTickets * perUnit.tickets.moneyBruto; 
+
+      for (const [mat, qtd] of Object.entries(perUnit.tablets)) {
+        totals[formatNome(mat)] = (totals[formatNome(mat)] || 0) + qtd * qTablets;
+      }
+      for (const [mat, qtd] of Object.entries(perUnit.nitro)) {
+        totals[formatNome(mat)] = (totals[formatNome(mat)] || 0) + qtd * qNitro;
+      }
+
+      const valoresTotais = {};
+      valoresTotais['Tickets'] = (valores.tickets?.[tipo] || 0) * qTickets;
+      valoresTotais['Tablets'] = (valores.tablets?.[tipo] || 0) * qTablets;
+      valoresTotais['Nitro'] = (valores.nitro?.[tipo] || 0) * qNitro;
+
+      const valorTotalGeral = Object.values(valoresTotais).reduce((a,b)=>a+b,0);
+
+      return { totals, valoresTotais, valorTotalGeral, qTickets, qTablets, qNitro, tipo };
+    }
+
+    function renderResults(data) {
+      const { totals, valoresTotais, valorTotalGeral } = data;
+      els.resultsBody.innerHTML = '';
+      els.valuesBody.innerHTML = '';
+
+      const keys = Object.keys(totals);
+      keys.sort((a,b)=> (a.startsWith('D') ? -1 : a.localeCompare(b))); 
+
+      for (const k of keys) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${k}</td><td>${numberWithCommas(totals[k])}</td>`;
+        els.resultsBody.appendChild(tr);
+      }
+
+      for (const [produto, valor] of Object.entries(valoresTotais)) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${produto}</td><td>R$ ${numberWithCommas(valor)}</td>`;
+        els.valuesBody.appendChild(tr);
+      }
+
+      els.valorTotalGeral.textContent = `R$ ${numberWithCommas(valorTotalGeral)}`;
+      els.results.style.display = 'block';
+    }
+    
+    /**
+     * NOVO: Função para formatar os dados de venda em um objeto padronizado.
+     */
+    function formatSaleData(data) {
+        const { valorTotalGeral, qTickets, qTablets, qNitro, tipo } = data;
+        
+        const nome = els.nomeCliente.value.trim() || 'N/A';
+        const tipoOrg = els.organizacaoTipo.value; 
+        const org = els.organizacao.value.trim() || 'N/A';
+        const tel = els.telefone.value.trim() || 'N/A'; 
+        const negociadoras = els.negociadoras.value.trim() || 'N/A';
+        let valorObs = els.vendaValorObs.value.trim();
+        
+        let descTipo = '';
+        if (tipo === 'sujo' || tipo === 'sujo_alianca') {
+            descTipo = valorDescricao[tipo] || '';
+        }
+        
+        // Adiciona a descrição do tipo de valor à observação se for Sujo
+        if (descTipo && !valorObs.toLowerCase().includes(descTipo.toLowerCase())) {
+            valorObs = valorObs ? `${descTipo} | ${valorObs}` : descTipo;
+        }
+        
+        const now = new Date();
+        const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const dataVenda = els.dataVenda.value; 
+
+        const produtos = [];
+        if(qTablets>0) produtos.push(`Tablet (${qTablets})`);
+        if(qNitro>0) produtos.push(`Nitros (${qNitro})`);
+        if(qTickets>0) produtos.push(`Tickets (${qTickets})`);
+        
+        const produtosStr = produtos.length > 0 ? produtos.join(', ') : 'Nenhum Produto';
+        
+        return {
+            dataHora: `${dataVenda} ${hora}`,
+            cliente: nome,
+            organizacao: `${tipoOrg} - ${org}`,
+            telefone: tel,
+            produtos: produtosStr,
+            valor: valorTotalGeral,
+            valorObs: valorObs,
+            negociadoras: negociadoras
+        };
+    }
+
+    // ALTERADO: Função de registro agora usa o formatSaleData e salva no localStorage
+    function registerSale() {
+        const totals = calculateTotals();
+        
+        if (totals.valorTotalGeral <= 0 && totals.qTickets === 0 && totals.qTablets === 0 && totals.qNitro === 0) {
+            alert("O valor total da venda deve ser maior que R$ 0 ou ter produtos para registrar.");
+            return;
+        }
+        
+        const saleData = formatSaleData(totals);
+        
+        // 1. Renderiza a linha no topo do histórico
+        renderHistoryRow(saleData, true); 
+        
+        // 2. Salva o novo histórico (incluindo a nova venda)
+        saveHistory(); 
+        
+        alert(`Venda registrada com sucesso para ${saleData.cliente} no valor de R$ ${numberWithCommas(saleData.valor)}.`);
+    }
+
+    function copyDiscordFromHistory(tr) {
+        // Pega os dados diretamente da propriedade anexada à linha <tr>
+        const data = tr.saleData; 
+        
+        const valorBase = `R$ ${numberWithCommas(data.valor)}`;
+        const valorTotalFormatado = data.valorObs ? `${valorBase} (${data.valorObs})` : valorBase;
+
+        const discordOutput = `
+\`\`\`
+Nome: ${data.cliente}
+Data: ${data.dataHora}
+Organização: ${data.organizacao}
+Telefone: ${data.telefone}
+Produto (Unidade): ${data.produtos}
+Venda Valor: ${valorTotalFormatado}
+Negociadoras: ${data.negociadoras}
+\`\`\`
+`.trim();
+
+        navigator.clipboard.writeText(discordOutput).then(() => {
+            alert("Informações da venda copiadas para a área de transferência no formato Discord!");
+        }).catch(err => {
+            console.error('Erro ao copiar: ', err);
+            alert("Erro ao copiar. Seu navegador pode não suportar a cópia automática.");
+        });
+    }
+    
+    function generateDiscordFormat() {
+        const totals = calculateTotals();
+        
+        if (totals.valorTotalGeral <= 0 && totals.qTickets === 0 && totals.qTablets === 0 && totals.qNitro === 0) {
+             alert("Por favor, informe a quantidade de produtos ou o tipo de valor antes de copiar.");
+             return;
+        }
+
+        const data = formatSaleData(totals);
+        
+        const valorBase = `R$ ${numberWithCommas(data.valor)}`;
+        const valorTotalFormatado = data.valorObs ? `${valorBase} (${data.valorObs})` : valorBase;
+        
+        const discordOutput = `
+\`\`\`
+Nome: ${data.cliente}
+Data: ${data.dataHora}
+Organização: ${data.organizacao}
+Telefone: ${data.telefone}
+Produto (Unidade): ${data.produtos}
+Venda Valor: ${valorTotalFormatado}
+Negociadoras: ${data.negociadoras}
+\`\`\`
+`.trim(); 
+
+        navigator.clipboard.writeText(discordOutput).then(() => {
+            alert("Informações da venda copiadas para a área de transferência no formato Discord!");
+        }).catch(err => {
+            console.error('Erro ao copiar: ', err);
+            alert("Erro ao copiar. Seu navegador pode não suportar a cópia automática.");
+        });
+    }
+
+    // Limpar TODOS os campos E o tour
+    function clearAllFields() {
+        els.qtyTickets.value = '';
+        els.qtyTablets.value = '';
+        els.qtyNitro.value = '';
+        els.tipoValor.value = 'limpo';
+        
+        els.nomeCliente.value = '';
+        els.organizacaoTipo.value = 'CNPJ';
+        els.organizacao.value = '';
+        els.telefone.value = '';
+        els.negociadoras.value = '';
+        els.vendaValorObs.value = '';
+        
+        els.results.style.display='none';
+        initDate();
+        
+        clearTour();
+    }
+    
+    // --- Lógica de Enter para Avançar ---
+    const allInputs = [
+        els.nomeCliente, els.organizacao, els.organizacaoTipo, 
+        els.telefone, els.negociadoras, els.vendaValorObs,
+        els.qtyTickets, els.qtyTablets, els.qtyNitro, els.tipoValor
+    ].filter(el => el);
+
+    const inputMap = new Map(allInputs.map((input, index) => [input.id, index]));
+
+    function handleEnterKey(e, input) {
+        if (e.key !== 'Enter') return;
+        
+        e.preventDefault();
+        
+        if (currentTourStep > 0 && currentTourStep <= tourSteps.length) {
+            const targetStepIndex = currentTourStep - 1; 
+            
+            if (tourSteps[targetStepIndex] && tourSteps[targetStepIndex].target === input) {
+                nextStep();
+            } else {
+                advanceInputFocus(input);
+            }
+            return;
+        }
+        
+        advanceInputFocus(input);
+    }
+    
+    function advanceInputFocus(input) {
+        const currentIndex = inputMap.get(input.id);
+        if (currentIndex !== undefined) {
+            let nextIndex = currentIndex + 1;
+            let next = allInputs[nextIndex];
+            
+            while (next && next.readOnly) {
+                nextIndex++;
+                next = allInputs[nextIndex];
+            }
+
+            if (next) {
+                next.focus();
+            } else {
+                els.calcBtn.focus();
+            }
+        }
+    }
+
+
+    allInputs.forEach(input => {
+        input.addEventListener('keydown', e => handleEnterKey(e, input));
+    });
+    // --- FIM Lógica de Enter para Avançar ---
+
+
+    // Event Listeners
+
+    els.calcBtn.addEventListener('click',()=>renderResults(calculateTotals()));
+    // ALTERADO: Chama a nova função refatorada
+    els.registerBtn.addEventListener('click', registerSale); 
+    
+    els.resetBtn.addEventListener('click', clearAllFields);
+    els.discordBtn.addEventListener('click', generateDiscordFormat);
+    
+    els.telefone.addEventListener('input', formatarTelefone);
+    
+    els.nomeCliente.addEventListener('input', capitalizeWords);
+    els.organizacao.addEventListener('input', capitalizeWords);
+    els.negociadoras.addEventListener('input', capitalizeWords);
+    els.vendaValorObs.addEventListener('input', capitalizeWords);
+    
+    els.tutorialBtn.addEventListener('click', () => {
+        startTour(0); 
+    });
+
+    els.csvBtn.addEventListener('click',()=>{
+      const out=calculateTotals();
+      const rows=[['Material/Produto','Quantidade ou Valor']];
+      for(const[k,v]of Object.entries(out.totals))rows.push([k,v]);
+      for(const[k,v]of Object.entries(out.valoresTotais))rows.push([k,`R$ ${v}`]);
+      rows.push(['Valor Total Geral',`R$ ${out.valorTotalGeral}`]);
+      const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='materiais_valores.csv';a.click();URL.revokeObjectURL(url);
+    });
+
+    // ALTERADO: Agora, limpa a exibição e salva um histórico vazio no localStorage
+    els.clearHistoryBtn.addEventListener('click',()=>{
+      if(confirm('Tem certeza que deseja limpar todo o Histórico de Vendas? Esta ação não pode ser desfeita e os dados serão removidos do seu navegador.')) {
+        els.salesHistory.innerHTML = '';
+        saveHistory(); // Salva o array vazio
+      }
+    });
+
+    els.themeBtn.addEventListener('click',()=>{
+      document.body.classList.toggle('dark');
+      document.body.classList.toggle('light');
+      els.themeBtn.textContent=document.body.classList.contains('dark')?'☀️ Modo Claro':'🌙 Modo Noturno';
+      
+      const newSrc = document.body.classList.contains('dark') ? logoDarkModeSrc : logoLightModeSrc;
+
+      if (els.appLogoWelcome) {
+        els.appLogoWelcome.src = newSrc;
+      }
+      if (els.appLogoFixed) {
+        els.appLogoFixed.src = newSrc;
+      }
+    });
+    
+    els.enterBtn.addEventListener('click', () => {
+        els.welcomeScreen.classList.add('hidden');
+        
+        setTimeout(() => {
+            els.welcomeScreen.style.display = 'none';
+            els.mainCard.style.display = 'block';
+            els.appLogoFixed.style.display = 'block'; 
+        }, 500); 
+    });
+    
+    // --- Lógica de Inicialização ---
+    document.addEventListener('DOMContentLoaded', () => {
+        initDate(); // Define a data inicial
+        loadHistory(); // NOVO: Carrega o histórico do Local Storage
+        
+        const initialSrc = document.body.classList.contains('dark') ? logoDarkModeSrc : logoLightModeSrc;
+
+        if (els.appLogoWelcome) {
+            els.appLogoWelcome.src = initialSrc;
+        }
+        if (els.appLogoFixed) {
+            els.appLogoFixed.src = initialSrc;
+        }
+        
+        // Garante que o mainCard comece escondido e a welcomeScreen visível
+        els.mainCard.style.display = 'none';
+        els.historyCard.style.display = 'none';
+        els.welcomeScreen.style.display = 'flex';
+        els.appLogoFixed.style.display = 'none'; 
+    });
+    
+    els.toggleHistoryBtn.addEventListener('click', () => toggleView(true));
+    els.toggleCalcBtn.addEventListener('click', () => toggleView(false));
+  </script>
+</body>
+</html>
