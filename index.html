@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <link rel="icon" type="image/png" href="logo-dark.png">
+  
   <title>Hells Angels</title>
   <style>
     :root {
@@ -16,6 +19,8 @@
       --cor-btn-secundario: #ffd6eb;
       --cor-btn-secundario-texto: #4a0033;
       --cor-erro: #cc0000;
+      /* NOVO: Cor para o brilho pulsante */
+      --cor-glow-pulsante: rgba(230, 0, 115, 0.8); /* Cor Principal com opacidade */
     }
 
     body.dark {
@@ -28,6 +33,8 @@
       --cor-btn-texto: #fff;
       --cor-btn-secundario: #4d002a; 
       --cor-btn-secundario-texto: #ffccf0; 
+      /* NOVO: Cor para o brilho pulsante no modo escuro */
+      --cor-glow-pulsante: rgba(255, 0, 128, 0.6); /* Cor Principal Escura com opacidade */
     }
     
     body.dark input[type=number], body.dark input[type=text], body.dark select {
@@ -38,24 +45,31 @@
     
     /* --- ESTILO PARA INPUT DATALIST (Foco Rosa/Roxo) --- */
     input[list]:focus, input[list]:hover {
-        border-color: var(--cor-principal) !important; /* Rosa/Roxo do tema */
-        box-shadow: 0 0 5px rgba(230, 0, 115, 0.4); /* Sombra rosa suave */
+        border-color: var(--cor-principal) !important; 
+        box-shadow: 0 0 5px rgba(230, 0, 115, 0.4); 
     }
-    /* --- FIM ESTILO DATALIST --- */
     
     /* --- NOVO ESTILO PARA DATALIST (Sugestões de Organização) --- */
-    /* Tenta controlar o posicionamento e o z-index em alguns navegadores */
     input[list] {
         position: relative;
-        z-index: 1; /* Garante que o input fique por cima de elementos próximos */
+        z-index: 1; 
     }
     
-    /* Nota: Este estilo pode não funcionar em todos os navegadores, mas é a melhor tentativa via CSS */
     input[list]::-webkit-calendar-picker-indicator {
-        /* Esconde a seta padrão que abre a lista, para que ela abra apenas ao digitar */
         display: none;
     }
     /* --- FIM NOVO ESTILO PARA DATALIST --- */
+    
+    /* --- NOVO: Estilo para a dica de sugestão da Organização --- */
+    .suggestion-tip {
+        font-size: 11px;
+        color: var(--cor-principal); /* Usa a cor principal para destaque */
+        margin-top: 4px;
+        margin-bottom: 0;
+        font-weight: 500;
+        opacity: 0.8;
+    }
+    /* --- FIM NOVO: Estilo para a dica de sugestão da Organização --- */
     
     /* --- ESTILOS TOUR --- */
     .tour-tooltip {
@@ -114,23 +128,40 @@
     /* --- FIM ESTILO PARA CAMPO INVÁLIDO --- */
 
     
-    /* Ajuste na logo superior para z-index */
+    /* Container para a logo */
+    #logoLink {
+        position: fixed;
+        top: 16px; 
+        left: 16px; 
+        width: auto; 
+        max-height: 80px; 
+        cursor: pointer;
+        z-index: 9998; 
+    }
+    
+    /* Ajuste na logo superior */
     .app-logo {
-      position: fixed;
-      top: 16px; 
-      left: 16px; 
       max-height: 80px; 
       width: auto;
-      z-index: 9998; 
-      transition: opacity 0.3s ease; 
+      transition: opacity 0.3s ease, filter 0.3s ease; /* Adicionado filter para a transição do hover */
+      display: block; 
     }
+    
+    /* NOVO: Efeito de iluminação ao passar o mouse na Logo (na calculadora) */
+    #appLogo:hover {
+        /* Brilho da logo ao passar o mouse */
+        filter: drop-shadow(0 0 8px var(--cor-principal)) drop-shadow(0 0 15px var(--cor-glow-pulsante));
+        opacity: 0.9;
+    }
+
     
     /* --- Estilo para a imagem na tela de boas-vindas --- */
     #welcomeLogo {
       max-width: 80%;
-      max-height: 150px; /* Ajuste conforme necessário */
+      max-height: 120px; 
       margin-bottom: 25px;
       display: block;
+      /* NÃO ADICIONAR EFEITO DE HOVER AQUI */
     }
     
     #welcomeScreen {
@@ -141,15 +172,20 @@
       height: 100%;
       background-color: var(--cor-card);
       z-index: 10000; 
-      display: flex;
+      display: none; 
       flex-direction: column;
-      justify-content: center;
+      justify-content: center; 
       align-items: center;
       text-align: center;
       transition: opacity 0.5s ease;
-      padding: 20px;
+      padding: 20px; 
+      box-sizing: border-box; 
     }
     
+    #welcomeScreen.show {
+        display: flex; 
+    }
+
     #welcomeScreen.hidden {
       opacity: 0;
       pointer-events: none; 
@@ -157,6 +193,7 @@
     
     #welcomeScreen h2 {
       font-size: 36px;
+      margin-top: 10px; 
       margin-bottom: 20px;
       color: var(--cor-principal);
     }
@@ -175,9 +212,13 @@
       margin: 24px auto;
       padding: 20px;
       background: var(--cor-fundo);
-      border-radius: 12px;
       color: var(--cor-texto);
       transition: background 0.25s ease, color 0.25s ease;
+    }
+    
+    /* Garante que o conteúdo principal comece escondido e só apareça se JS/Welcome Screen não funcionar */
+    #mainCard {
+        display: block; 
     }
 
     h1 {
@@ -252,7 +293,7 @@
     }
 
     th, td {
-      padding: 8px;
+      padding: 6px; /* Reduzido o padding para caber mais na tela do celular */
       border-bottom: 1px solid var(--cor-borda);
       text-align: left;
     }
@@ -263,31 +304,55 @@
       font-weight: 600;
     }
     
-    /* --- NOVO ESTILO PARA RESPONSIVIDADE DA TABELA --- */
-    /* Força a rolagem horizontal em telas pequenas para ver todas as colunas */
-    #historyCard table {
-        width: 100%; /* Garante que a tabela use 100% do espaço */
-        display: block; /* Permite que o overflow-x funcione na tabela */
-        overflow-x: auto; /* Adiciona a barra de rolagem horizontal se o conteúdo for maior que a tela */
-        -webkit-overflow-scrolling: touch; /* Melhor rolagem em dispositivos iOS */
-        white-space: nowrap; /* Evita que o texto quebre dentro das células */
-    }
+    
+/* --- NOVO ESTILO PARA RESPONSIVIDADE DA TABELA --- */
+.history-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin-top: 8px;
+}
 
-    /* Garante que o container interno não atrapalhe a rolagem */
-    #historyBackground {
-        overflow: hidden; /* Mantém a rolagem apenas dentro da tabela */
-    }
+/* Garante que o container interno não atrapalhe a rolagem */
+#historyBackground {
+    overflow: hidden;
+}
 
-    /* Ajuste na largura mínima das células para rolagem eficiente */
+/* Mantém a tabela com comportamento de tabela e largura controlada */
+#historyCard table {
+    width: 100%;
+    display: table;
+    border-collapse: collapse;
+    table-layout: fixed; /* ajuda a manter colunas alinhadas */
+    min-width: 900px; /* força scroll em telas pequenas mantendo alinhamento */
+}
+
+/* Estilo base para células */
+#historyCard th, #historyCard td {
+    padding: 8px 10px;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+}
+
+/* Ajuste para a linha de data/hora (duas linhas dentro da mesma célula) */
+.history-datetime-line {
+    display: block;
+    line-height: 1.1;
+    font-size: 12px;
+}
+
+/* Faz com que valores longos quebrem visualmente melhor em células menores quando necessário */
+@media (max-width: 700px) {
     #historyCard th, #historyCard td {
-        min-width: 100px; /* Garante que as células não fiquem muito apertadas */
+        font-size: 12px;
     }
+    #historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 320px; }
+}
+/* --- FIM NOVO ESTILO PARA RESPONSIVIDADE DA TABELA --- */
 
-    /* Ajuste específico para as células de ação */
-    .history-actions-cell {
-        min-width: 160px; /* Garante espaço para os 3 botões */
-    }
-    /* --- FIM NOVO ESTILO PARA RESPONSIVIDADE DA TABELA --- */
 
 
     .actions {
@@ -305,14 +370,33 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 14px;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.2s ease, box-shadow 0.3s ease; /* Adicionado box-shadow para transição do glow */
     }
 
     button:hover { opacity: 0.85; }
+    
+    /* NOVO: Efeito de brilho pulsante para o botão principal (Calcular/Registrar) */
+    .primary, .success {
+        animation: pulse-glow 2s infinite ease-in-out;
+    }
+    
+    /* NOVO: Keyframes para o brilho pulsante */
+    @keyframes pulse-glow {
+        0% {
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0); 
+        }
+        50% {
+            box-shadow: 0 0 10px var(--cor-glow-pulsante), 0 0 20px var(--cor-glow-pulsante); 
+        }
+        100% {
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0); 
+        }
+    }
 
     .primary { background: var(--cor-btn-primario); color: var(--cor-btn-texto); }
     .muted { background: var(--cor-btn-secundario); color: var(--cor-btn-secundario-texto); }
     .success { background: #00b33c; color: #fff; }
+    .danger { background: var(--cor-erro); color: #fff; } /* Novo: Botão de Perigo */
 
     /* Container para agrupar e posicionar botões (Modo Noturno e Tutorial) */
     .top-right-controls {
@@ -335,6 +419,7 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         border: none;
         transition: opacity 0.2s ease;
+        /* ANIMAÇÃO pulse-glow REMOVIDA DAQUI */
     }
     .control-btn:hover {
         opacity: 0.85;
@@ -342,13 +427,15 @@
     
     /* --- Estilo para o Fundo do Histórico --- */
     #historyBackground {
-      position: relative; /* Para que o conteúdo (tabela) fique por cima */
+      /* ALTERAÇÃO: Fundo semi-transparente (70%) */
+      background: rgba(255, 255, 255, 0.7); 
+      position: relative; 
       padding: 18px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       border: 1px solid var(--cor-borda);
       margin-bottom: 20px;
-      min-height: 400px; /* Garante que a imagem tenha espaço */
+      min-height: 400px; 
       overflow: hidden;
     }
     
@@ -359,43 +446,95 @@
       transform: translate(-50%, -50%);
       width: 100%;
       height: auto;
-      opacity: 0.1; /* Transparência para não atrapalhar a leitura */
-      z-index: 1; /* Fica atrás do conteúdo */
-      object-fit: contain; /* Garante que a imagem se ajuste */
+      opacity: 0.3; /* ALTERAÇÃO: Aumentado para maior visibilidade */ 
+      z-index: 1; 
+      object-fit: contain; 
     }
     
     #historyBackground > * {
-      position: relative; /* Garante que todo o conteúdo da div fique por cima da imagem */
+      position: relative; 
       z-index: 2;
     }
     
     #historyCard table {
         font-size: 12px;
     }
-    #historyCard th, #historyCard td {
-        padding: 6px;
-        vertical-align: top;
+    
+    /* --- CORREÇÃO DE ALINHAMENTO DAS CÉLULAS (Principal Alteração) --- */
+    /* Garante que o conteúdo fique no topo para alinhar a borda inferior */
+    
+#historyCard th, #historyCard td {
+    padding: 8px 6px;
+    text-align: center;
+    vertical-align: middle; /* Centraliza verticalmente */
+    white-space: nowrap;    /* Evita quebras desnecessárias */
+}
+
+/* Corrige o bloco de data/hora */
+#historyCard tr td:first-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+    padding: 4px 0;
+}
+
+.history-datetime-line {
+    display: block;
+    font-size: 12px;
+}
+
+    
+    /* Estilo para cada linha do texto dentro da célula de Data/Hora */
+    .history-datetime-line {
+        display: block;
+        line-height: 1.2; 
+        padding: 6px 0 0 6px; /* Adiciona o padding de volta (topo e esquerda) */
     }
     
-    .history-discord-cell {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
+    /* Reduz o espaçamento vertical para compactar o texto na célula de Valor Total (que tem quebra de linha) */
     
-    /* Estilo para colocar os botões do histórico na mesma linha */
+.valor-total-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;      /* Centraliza horizontalmente */
+    justify-content: center;  /* Centraliza verticalmente */
+    padding: 4px 0;
+    line-height: 1.3;
+    text-align: center;
+}
+
+.valor-total-cell span {
+    display: block;
+}
+
+.valor-obs-text {
+    font-size: 11px;
+    color: var(--cor-principal);
+    margin-top: 2px; /* Pequeno espaçamento entre o valor e a observação */
+}
+
+    
+    /* --- FIM CORREÇÃO DE ALINHAMENTO --- */
+    
+    
+    /* Estilo para colocar os botões do histórico na mesma linha (Responsivo) */
     .history-actions-cell {
         display: flex;
         gap: 5px; /* Espaçamento entre os botões */
         flex-wrap: nowrap; /* Garante que fiquem na mesma linha */
-    }
-
-    .history-discord-cell button {
-        padding: 4px 8px;
-        font-size: 11px;
-        margin-top: 4px; 
+        padding-top: 4px; /* Ajuste para o padding das outras células */
     }
     
+    .history-actions-cell button {
+        padding: 4px 8px;
+        font-size: 11px;
+        margin-top: 2px; /* Pequeno ajuste de margem */
+        border-radius: 4px;
+        white-space: nowrap; /* Impede a quebra de linha dos botões */
+    }
+
     /* --- Estilos para Notificação Toast --- */
     #toast-container {
         position: fixed;
@@ -441,14 +580,136 @@
         margin-right: 0px; 
         border-radius: 4px;
     }
+    
+    /* Otimização para telas muito pequenas */
+    @media (max-width: 500px) {
+        body {
+            padding: 10px;
+            margin: 10px auto;
+        }
+        .top-right-controls {
+            top: 10px;
+            right: 10px;
+        }
+        .control-btn {
+            padding: 8px 10px;
+            font-size: 12px;
+        }
+        .grid {
+            grid-template-columns: 1fr;
+        }
+        .grid-venda {
+            grid-template-columns: 1fr;
+        }
+    }
     /* --- FIM Estilos para Notificação Toast --- */
-  </style>
+  
+/* --- ESTILO FINAL DA TABELA DE HISTÓRICO --- */
+.history-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin-top: 8px;
+}
+
+#historyCard table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    min-width: 900px;
+    background: transparent; 
+}
+
+#historyCard th, #historyCard td {
+    padding: 6px 8px; /* Aumentado de 4px 6px */
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    font-size: 14px; /* Aumentado de 13px */
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+/* NOVO: Fundo para as células de dados para garantir a legibilidade */
+#historyCard td {
+    background: var(--cor-card); 
+    opacity: 0.95; /* Leve transparência para manter o efeito do fundo */
+}
+
+body.dark #historyCard td {
+    background: var(--cor-card); /* Cor do card escuro */
+    opacity: 0.95;
+}
+
+
+/* Alinhamento individual por coluna - larguras ajustadas */
+#historyCard th:nth-child(1), #historyCard td:nth-child(1) { width: 100px; }   /* Data/Hora - Aumentado */
+#historyCard th:nth-child(2), #historyCard td:nth-child(2) { width: 140px; }  /* Cliente - Aumentado */
+#historyCard th:nth-child(3), #historyCard td:nth-child(3) { width: 160px; }  /* Organização */
+#historyCard th:nth-child(4), #historyCard td:nth-child(4) { width: 110px; }  /* Telefone */
+#historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 280px; }  /* Produtos - Aumentado */
+#historyCard th:nth-child(6), #historyCard td:nth-child(6) { width: 150px; }  /* Valor - Aumentado */
+#historyCard th:nth-child(7), #historyCard td:nth-child(7) { width: 130px; }  /* Negociadoras */
+#historyCard th:nth-child(8), #historyCard td:nth-child(8) { width: 150px; }  /* Ações */
+
+/* Data e hora */
+.history-datetime-line {
+    display: block;
+    line-height: 1.2; /* Aumentado */
+    font-size: 13px; /* Aumentado */
+}
+
+/* Valor Total - tornando o valor em negrito */
+.valor-total-cell span:first-child {
+    font-weight: 700; /* Negrito */
+}
+
+.valor-obs-text {
+    font-size: 12px; /* Aumentado */
+    color: var(--cor-principal);
+}
+
+/* Botões de ações */
+.history-actions-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.history-actions-cell button {
+    padding: 3px 6px;
+    font-size: 11px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+/* Aumenta altura total da linha */
+#historyCard tr {
+    height: 40px;
+}
+
+/* NOVO: Estilo para o cabeçalho TH */
+#historyCard th {
+    background: var(--cor-principal); /* Usa a cor principal para o cabeçalho */
+    color: var(--cor-btn-texto);     /* Texto branco */
+}
+
+/* NOVO: Fundo semi-transparente para modo escuro */
+body.dark #historyBackground {
+  /* Cor escura do card #2c001a (que é 44, 0, 26 em RGB) com 70% de opacidade */
+  background: rgba(44, 0, 26, 0.7); 
+}
+/* --- FIM DO ESTILO FINAL DA TABELA DE HISTÓRICO --- */
+
+</style>
 </head>
 <body class="light">
   
-  <img id="appLogo" src="logo-dark.png" alt="Hells Angels Logo" class="app-logo">
+  <a href="#" id="logoLink">
+    <img id="appLogo" src="logo-dark.png" alt="Hells Angels Logo" class="app-logo">
+  </a>
 
-  <div id="welcomeScreen" class="card">
+  <div id="welcomeScreen"> 
       <img id="welcomeLogo" src="logo-dark.png" alt="Welcome Logo"> 
       <h2 style="font-weight: 900;">Bem-vindo(a)</h2>
       <p style="margin-bottom: 20px; font-size: 16px;">Calculadora e Registro de Vendas Hells Angels</p>
@@ -459,8 +720,27 @@
       <button class="control-btn" id="tutorialBtn">💡 Tutorial</button> 
       <button class="control-btn" id="themeBtn">🌙 Modo Noturno</button>
   </div>
-  <div class="card" id="mainCard">
-    <h1>Calculadora e Registro de Vendas Hells Angels</h1>
+
+  <div id="authScreen" class="card" style="max-width: 400px; margin: 100px auto 20px auto; display: none;">
+      <h2>Autenticação de Usuário</h2>
+      
+      <label for="username">Nome de Usuário:</label>
+      <input id="username" type="text" placeholder="Seu nome de usuário">
+      
+      <label for="password">Senha:</label>
+      <input id="password" type="password" placeholder="Sua senha">
+      
+      <div class="actions">
+          <button id="loginBtn" class="primary">Entrar</button>
+          <button id="registerUserBtn" class="muted">Cadastrar</button>
+      </div>
+      <p id="authMessage" style="color: var(--cor-erro); margin-top: 10px;"></p>
+  </div>
+  <div class="card" id="mainCard" style="display:none">
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <h1>Calculadora e Registro de Vendas Hells Angels</h1>
+        <button id="logoutBtn" class="danger" style="animation: none;">Sair</button>
+    </div>
     
     <div class="card-venda">
         <h2>Dados da Venda</h2>
@@ -471,12 +751,14 @@
             </div>
             <div>
                 <label for="dataVenda">Data:</label>
-                <input id="dataVenda" type="text"> 
+                <input id="dataVenda" type="text" readonly> 
             </div>
             
             <div>
                 <label for="organizacao">Organização:</label>
                 <input id="organizacao" type="text" value="" list="sugestoesOrganizacao">
+                
+                <p class="suggestion-tip">Digite para ver sugestões de organizações.</p>
                 
                 <datalist id="sugestoesOrganizacao">
                     <option value="Serpents"></option>
@@ -599,7 +881,7 @@
           <button id="clearHistoryBtn" class="muted">Limpar Histórico</button>
           <button id="toggleCalcBtn" class="muted">Voltar à Calculadora</button>
         </div>
-        <table id="historicoVendas">
+        <div class="history-table-wrapper"><table id="historicoVendas">
           <thead>
               <tr>
                   <th>Data/Hora</th>
@@ -609,17 +891,51 @@
                   <th>Produtos (Unidade)</th>
                   <th>Valor Total</th>
                   <th>Negociadoras</th>
-                  <th>Ações</th> 
+                  <th>Registrado Por</th> <th>Ações</th> 
               </tr>
           </thead>
           <tbody id="salesHistory"></tbody>
-        </table>
+        </table></div>
       </div>
   </div>
   
   <div id="toast-container"></div>
   
-  <script>
+  <script type="module">
+    // ------------------------------------
+    // 1. IMPORTAÇÕES E CONFIGURAÇÃO FIREBASE
+    // ------------------------------------
+    // URLs de importação do Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc",
+      authDomain: "hells-angels-438c2.firebaseapp.com",
+      databaseURL: "https://hells-angels-438c2-default-rtdb.firebaseio.com/",
+      projectId: "hells-angels-438c2",
+      storageBucket: "hells-angels-438c2.firebasestorage.app",
+      messagingSenderId: "429406215315",
+      appId: "1:429406215315:web:96b68b172247824b308166",
+      measurementId: "G-CR415MEY32"
+    };
+
+    // Inicialização
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    
+    // VARIÁVEIS GLOBAIS
+    let vendas = []; // O histórico será preenchido pelo Firebase
+    let vendaEmEdicaoId = null; 
+    let currentUser = null; // Para guardar o usuário logado
+    
+    // Funções de formatação e valores (código original)
+    // ... (restante do código original)
+    
+    
     const perUnit = {
       tickets: { moneyBruto: 525 },
       tablets: { cobre: 20, plastico: 40, fita_adesiva: 2, lixo_eletronico: 2 },
@@ -669,21 +985,8 @@
             }, 300); 
         }, duration);
     }
-
-    let vendas = []; 
-    let vendaEmEdicaoId = null; 
-
-    function loadVendas() {
-        const json = localStorage.getItem('ha_vendas');
-        if (json) {
-            vendas = JSON.parse(json);
-        }
-    }
-
-    function saveVendas() {
-        localStorage.setItem('ha_vendas', JSON.stringify(vendas));
-    }
-
+    
+    // REMOVIDO: loadVendas() e saveVendas() - Agora usamos Firebase
 
     const els = {
       // Campos do Cálculo
@@ -732,6 +1035,16 @@
       
       // Elemento da Logo
       appLogo: document.getElementById('appLogo'), 
+      logoLink: document.getElementById('logoLink'), 
+      
+      // NOVO: Elementos de Autenticação
+      authScreen: document.getElementById('authScreen'),
+      username: document.getElementById('username'),
+      password: document.getElementById('password'),
+      loginBtn: document.getElementById('loginBtn'),
+      registerUserBtn: document.getElementById('registerUserBtn'),
+      authMessage: document.getElementById('authMessage'),
+      logoutBtn: document.getElementById('logoutBtn'),
     };
 
     // --- VARIÁVEIS DO TOUR ---
@@ -758,7 +1071,7 @@
     // --- FIM VARIÁVEIS DO TOUR ---
     
     
-    // --- FUNÇÕES DE FORMATO ---
+    // --- FUNÇÕES DE FORMATO (código original) ---
     function formatNome(key){return key.replace(/_/g,' ').replace(/(^|\s)\S/g,s=>s.toUpperCase());}
     function numberWithCommas(x){return (Number(x)||0).toLocaleString('pt-BR');}
 
@@ -778,65 +1091,58 @@
         input.setSelectionRange(start, end);
     }
     
-    // Função para formatar o telefone com (055) e 6 dígitos subsequentes (XXX-XXX)
     function formatarTelefone(event) {
         let input = event.target;
-        // Remove tudo que não for dígito
         let value = input.value.replace(/\D/g, ""); 
         
         const prefixo = "055"; 
         
-        // Remove o prefixo se ele estiver no início, para contar apenas o telefone útil
         if (value.startsWith(prefixo)) {
             value = value.substring(3);
         }
         
-        // Limita o número de dígitos úteis a 6
         value = value.substring(0, 6); 
         
         let formattedValue = '';
 
-        // Insere o prefixo (055)
         formattedValue += `(${prefixo}) `;
 
-        // Formata o restante do número (6 dígitos, divididos em 3 e 3)
         if (value.length > 0) {
-            // Pega os primeiros 3 dígitos
             formattedValue += value.substring(0, 3);
         }
         if (value.length > 3) {
-            // Pega os 3 dígitos seguintes
             formattedValue += '-' + value.substring(3, 6);
         }
 
-        // O formato final será: (055) XXX-XXX (13 caracteres)
         input.value = formattedValue;
         input.maxLength = 13; 
     }
 
-    // ATUALIZADA: Função que atualiza o campo de Data com Data e Hora (sem segundos)
     function updateDateTime() {
         const now = new Date();
         const day = String(now.getDate()).padStart(2, '0');
         const month = String(now.getMonth() + 1).padStart(2, '0');
         
-        // FORMATO NOVO: Sem segundos (HH:MM)
         const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); 
         
-        // Formato final: DD/MM HH:MM
         els.dataVenda.value = `${day}/${month} ${hora}`; 
     }
     
-    // NOVO: Agenda a função para rodar a cada 60.000 milissegundos (1 minuto)
     setInterval(updateDateTime, 60000); 
 
-    updateDateTime(); // Chamada inicial para preencher ao carregar
+    updateDateTime(); 
     
     function toggleView(showHistory) {
+        // Checa se o usuário está logado antes de mudar a view
+        if (!currentUser) {
+            showToast("Você precisa estar logado para acessar o Histórico ou a Calculadora.", "error");
+            return;
+        }
+
         if (showHistory) {
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'block';
-            renderHistorico(els.filtroHistorico.value); 
+            // renderHistorico é chamado automaticamente pelo listener do Firebase
         } else {
             els.mainCard.style.display = 'block';
             els.historyCard.style.display = 'none';
@@ -955,11 +1261,17 @@
     function startTour(stepIndex) {
         clearAllFields(); 
         
+        // Garante que o usuário esteja na tela principal se o login foi feito
+        if(currentUser) {
+            els.mainCard.style.display = 'block';
+            els.historyCard.style.display = 'none';
+        }
+        
         els.welcomeScreen.classList.add('hidden');
         
         setTimeout(() => {
+            els.welcomeScreen.classList.remove('show');
             els.welcomeScreen.style.display = 'none';
-            els.mainCard.style.display = 'block';
             if (stepIndex < tourSteps.length) {
                 const step = tourSteps[stepIndex];
                 updateTooltip(step.target, step.title, step.text, stepIndex);
@@ -980,7 +1292,6 @@
     // --- FIM FUNÇÕES DO TUTORIAL/TOUR ---
 
     function calculateTotals() {
-      // updateDateTime() REMOVIDO: A hora se atualiza sozinha
       const qTickets = Math.max(0, Math.floor(Number(els.qtyTickets.value) || 0));
       const qTablets = Math.max(0, Math.floor(Number(els.qtyTablets.value) || 0));
       const qNitro = Math.max(0, Math.floor(Number(els.qtyNitro.value) || 0));
@@ -1030,17 +1341,253 @@
       els.results.style.display = 'block';
     }
     
-    // --- Funções de Edição e Exclusão ---
-    function deleteVenda(id) {
-        if (confirm("Tem certeza que deseja apagar este registro de venda?")) {
-            vendas = vendas.filter(v => v.id !== id);
-            saveVendas();
-            renderHistorico(els.filtroHistorico.value);
-            showToast("Registro apagado com sucesso!", "error");
+    // ------------------------------------
+    // 2. FUNÇÕES FIREBASE E LÓGICA DE NEGÓCIO
+    // ------------------------------------
+
+    // Função auxiliar para criar um "e-mail de fachada" para o Firebase Auth
+    function createFacadeEmail(username) {
+        return `${username.toLowerCase().trim()}@hells.local`;
+    }
+
+    // --- AUTENTICAÇÃO ---
+
+    async function handleCadastro() {
+        const username = els.username.value.trim();
+        const password = els.password.value;
+        if (!username || !password) {
+            els.authMessage.textContent = "Preencha Nome de Usuário e Senha.";
+            return;
+        }
+        
+        const email = createFacadeEmail(username);
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            
+            // Armazena o nome de usuário real no perfil do Firebase
+            await updateProfile(userCredential.user, {
+                displayName: username
+            });
+
+            els.authMessage.textContent = "";
+            showToast("Cadastro realizado com sucesso! Fazendo login...", "success");
+            // handleLoginSucess será chamado automaticamente pelo onAuthStateChanged
+        } catch (error) {
+            console.error("Erro no cadastro:", error);
+            if (error.code === 'auth/email-already-in-use') {
+                els.authMessage.textContent = `Usuário "${username}" já cadastrado. Tente Entrar.`;
+            } else if (error.code === 'auth/weak-password') {
+                els.authMessage.textContent = "Senha fraca (mínimo de 6 caracteres).";
+            } else {
+                // TRATAMENTO DE ERROS GENÉRICOS DE CONEXÃO
+                els.authMessage.textContent = "Erro ao cadastrar. Verifique a conexão e as configurações do Firebase.";
+            }
         }
     }
 
+    async function handleLogin() {
+        const username = els.username.value.trim();
+        const password = els.password.value;
+        if (!username || !password) {
+            els.authMessage.textContent = "Preencha Nome de Usuário e Senha.";
+            return;
+        }
+        
+        const email = createFacadeEmail(username);
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            els.authMessage.textContent = "";
+            // handleLoginSucess será chamado automaticamente pelo onAuthStateChanged
+            
+        } catch (error) {
+            console.error("Erro no login:", error);
+            els.authMessage.textContent = "Nome de usuário ou senha incorretos.";
+        }
+    }
+
+    function handleLoginSucess(user) {
+        currentUser = user;
+        showToast(`Bem-vindo, ${user.displayName || 'Usuário'}!`, "success");
+        
+        // Esconde telas e mostra o mainCard (calculadora)
+        els.authScreen.style.display = 'none';
+        els.welcomeScreen.style.display = 'none';
+        els.mainCard.style.display = 'block';
+        
+        // Inicia a sincronização do histórico global
+        setupGlobalHistoryListener();
+    }
+
+    function handleLogout() {
+        auth.signOut();
+        currentUser = null;
+        vendas = [];
+        
+        // Esconde tudo e mostra a tela de autenticação
+        els.mainCard.style.display = 'none';
+        els.historyCard.style.display = 'none';
+        els.authScreen.style.display = 'block';
+        
+        // Limpa campos de login
+        els.username.value = '';
+        els.password.value = '';
+        els.authMessage.textContent = '';
+        
+        showToast("Sessão encerrada.", "info");
+    }
+
+    // --- HISTÓRICO GLOBAL (FIREBASE REALTIME DB) ---
+
+    // Listener que sincroniza 'vendas' e re-renderiza o histórico para todos
+    function setupGlobalHistoryListener() {
+        const vendasRef = ref(db, 'vendas');
+        
+        onValue(vendasRef, (snapshot) => {
+            const data = snapshot.val();
+            
+            if (data) {
+                // Converte o objeto Firebase para array, mantendo o ID único
+                vendas = Object.keys(data).map(key => ({
+                    id: key, 
+                    ...data[key]
+                })).reverse(); // Mais novos primeiro
+            } else {
+                vendas = [];
+            }
+            
+            // Renderiza se a tela de histórico estiver visível
+            if (els.historyCard.style.display !== 'none') {
+                 renderHistorico(els.filtroHistorico.value); 
+            }
+            
+        }, (error) => {
+            console.error("Erro ao sincronizar histórico: ", error);
+            showToast("Erro ao carregar histórico global. Verifique as regras do DB.", "error");
+        });
+    }
+
+    // Função de exclusão modificada para usar Firebase
+    async function deleteVenda(firebaseId) {
+        if (!currentUser) {
+            showToast("Você deve estar logado para apagar vendas.", "error");
+            return;
+        }
+        if (confirm("Tem certeza que deseja apagar este registro de venda?")) {
+            try {
+                const saleRef = ref(db, `vendas/${firebaseId}`);
+                await remove(saleRef);
+                showToast("Venda apagada do histórico global!", "error");
+                // renderHistorico é chamado automaticamente pelo listener
+            } catch (error) {
+                console.error("Erro ao apagar venda no Firebase:", error);
+                showToast("Erro ao apagar venda.", "error");
+            }
+        }
+    }
+    // EXPOE AO ESCOPO GLOBAL PARA O ONCLICK FUNCIONAR
+    window.deleteVenda = deleteVenda;
+
+    // Função de registro/edição modificada para usar Firebase
+    async function registerSale() {
+        if (!currentUser) {
+            showToast("Você deve estar logado para registrar ou editar vendas.", "error");
+            return;
+        }
+        
+        if (!validateFields()) {
+            return; 
+        }
+        
+        const data = calculateTotals();
+        const { valorTotalGeral, qTickets, qTablets, qNitro, tipo } = data;
+        
+        if (valorTotalGeral <= 0 && qTickets === 0 && qTablets === 0 && qNitro === 0) {
+            showToast("O valor total da venda deve ser maior que R$ 0 ou ter produtos para registrar.", "error");
+            return;
+        }
+
+        const nome = els.nomeCliente.value.trim() || 'N/A';
+        const tipoOrg = els.organizacaoTipo.value; 
+        const org = els.organizacao.value.trim() || 'N/A';
+        const tel = els.telefone.value.trim() || 'N/A';
+        const negociadoras = els.negociadoras.value.trim() || 'N/A';
+        let valorObs = els.vendaValorObs.value.trim() || 'N/A';
+        
+        let descTipo = '';
+        if (tipo !== 'limpo' && tipo !== 'limpo_alianca') {
+            descTipo = valorDescricao[tipo] || '';
+        }
+        
+        if (descTipo && valorObs.toLowerCase() !== 'n/a') {
+            valorObs = `${descTipo} | ${valorObs}`;
+        } else if (descTipo) {
+            valorObs = descTipo;
+        } else if (valorObs.toLowerCase() === 'n/a') {
+            valorObs = 'N/A';
+        }
+
+        
+        const dataHoraVenda = els.dataVenda.value; 
+
+        const produtos = [];
+        if(qTablets>0) produtos.push(`Tablet (${qTablets})`);
+        if(qNitro>0) produtos.push(`Nitros (${qNitro})`);
+        if(qTickets>0) produtos.push(`Tickets (${qTickets})`);
+        
+        const produtosStr = produtos.length > 0 ? produtos.join(', ') : 'Nenhum Produto';
+        
+        const newSaleData = {
+            dataHora: dataHoraVenda, 
+            cliente: nome,
+            organizacao: `${tipoOrg} - ${org}`,
+            telefone: tel,
+            produtos: produtosStr,
+            valor: valorTotalGeral,
+            valorObs: valorObs,
+            negociadoras: negociadoras,
+            qTickets: qTickets, 
+            qTablets: qTablets,
+            qNitro: qNitro,
+            tipo: tipo,
+            // NOVO: Informação de quem registrou
+            registradoPor: currentUser.displayName || 'Usuário Desconhecido'
+        };
+        
+        try {
+            if (vendaEmEdicaoId) {
+                // Edição: Atualiza o nó existente
+                const saleRef = ref(db, `vendas/${vendaEmEdicaoId}`);
+                await set(saleRef, newSaleData);
+                showToast("Edição salva no histórico global!", "success");
+                
+                vendaEmEdicaoId = null;
+                els.registerBtn.textContent = 'Registrar Venda';
+            } else {
+                // Nova venda: Usa 'push' para criar um ID único
+                const vendasRef = ref(db, 'vendas');
+                await push(vendasRef, newSaleData);
+                showToast(`Venda registrada para ${nome} no histórico global!`, "success");
+            }
+            
+            clearAllFields();
+            // A renderização é automática via setupGlobalHistoryListener
+            
+        } catch (error) {
+            console.error("Erro ao registrar/atualizar venda:", error);
+            showToast("Erro ao comunicar com o banco de dados.", "error");
+        }
+    }
+    
+    // Funções de edição e validação (código original)
+
     function editVenda(id) {
+        if (!currentUser) {
+            showToast("Você deve estar logado para editar vendas.", "error");
+            return;
+        }
+        
         const venda = vendas.find(v => v.id === id);
         if (!venda) return;
         
@@ -1049,8 +1596,6 @@
         els.organizacao.value = (nomeOrg && nomeOrg !== 'N/A') ? nomeOrg : ''; 
         els.organizacaoTipo.value = (tipoOrg && tipoOrg !== 'N/A') ? tipoOrg : 'CNPJ'; 
         
-        // Coloca o prefixo (055) e o telefone (XXX-XXX) de volta no campo
-        // Limpa o valor para aplicar a formatação
         let telParaEdicao = venda.telefone.replace(/\D/g, "");
         if (telParaEdicao.startsWith('055')) {
             telParaEdicao = telParaEdicao.substring(3);
@@ -1082,7 +1627,6 @@
         els.qtyNitro.value = venda.qNitro || '';
         
         
-        // Adiciona a data/hora do registro no campo de data/hora
         els.dataVenda.value = venda.dataHora;
         
         vendaEmEdicaoId = id;
@@ -1094,6 +1638,9 @@
         
         renderResults(calculateTotals()); 
     }
+    // EXPOE AO ESCOPO GLOBAL PARA O ONCLICK FUNCIONAR
+    window.editVenda = editVenda;
+
 
     function clearValidationErrors() {
         const requiredFields = [els.nomeCliente, els.organizacao, els.telefone, els.negociadoras];
@@ -1105,10 +1652,17 @@
     function validateFields() {
         clearValidationErrors(); 
         let isValid = true;
-        const requiredFields = [els.nomeCliente, els.organizacao, els.telefone, els.negociadoras];
+        
+        // Campos sempre obrigatórios: Nome, Telefone, Negociadoras
+        let requiredFields = [els.nomeCliente, els.telefone, els.negociadoras];
+        
+        // NOVO: Adiciona 'organizacao' se o tipo selecionado for CNPJ
+        if (els.organizacaoTipo.value === 'CNPJ') {
+            requiredFields.push(els.organizacao);
+        }
 
         requiredFields.forEach(field => {
-            // Verifica se o campo está vazio ou contém apenas 'N/A' ou só o prefixo (055) 
+            // Verifica se o campo está vazio, ou 'N/A', ou apenas o prefixo do telefone
             if (field.value.trim() === '' || field.value.trim().toLowerCase() === 'n/a' || field.value.trim() === '(055)') {
                 field.classList.add('input-invalido');
                 isValid = false;
@@ -1122,86 +1676,7 @@
         return isValid;
     }
     
-    function registerSale() {
-        if (!validateFields()) {
-            return; 
-        }
-        
-        // updateDateTime() REMOVIDO daqui
-
-        const data = calculateTotals();
-        const { valorTotalGeral, qTickets, qTablets, qNitro, tipo } = data;
-        
-        if (valorTotalGeral <= 0 && qTickets === 0 && qTablets === 0 && qNitro === 0) {
-            showToast("O valor total da venda deve ser maior que R$ 0 ou ter produtos para registrar.", "error");
-            return;
-        }
-
-        const nome = els.nomeCliente.value.trim() || 'N/A';
-        const tipoOrg = els.organizacaoTipo.value; 
-        const org = els.organizacao.value.trim() || 'N/A';
-        const tel = els.telefone.value.trim() || 'N/A';
-        const negociadoras = els.negociadoras.value.trim() || 'N/A';
-        let valorObs = els.vendaValorObs.value.trim() || 'N/A';
-        
-        let descTipo = '';
-        if (tipo !== 'limpo' && tipo !== 'limpo_alianca') {
-            descTipo = valorDescricao[tipo] || '';
-        }
-        
-        if (descTipo && valorObs.toLowerCase() !== 'n/a') {
-            valorObs = `${descTipo} | ${valorObs}`;
-        } else if (descTipo) {
-            valorObs = descTipo;
-        } else if (valorObs.toLowerCase() === 'n/a') {
-            valorObs = 'N/A';
-        }
-
-        
-        const dataHoraVenda = els.dataVenda.value; // Pega o valor atualizado automaticamente 
-
-        const produtos = [];
-        if(qTablets>0) produtos.push(`Tablet (${qTablets})`);
-        if(qNitro>0) produtos.push(`Nitros (${qNitro})`);
-        if(qTickets>0) produtos.push(`Tickets (${qTickets})`);
-        
-        const produtosStr = produtos.length > 0 ? produtos.join(', ') : 'Nenhum Produto';
-        
-        const newSaleData = {
-            id: vendaEmEdicaoId || Date.now().toString(), 
-            dataHora: dataHoraVenda, 
-            cliente: nome,
-            organizacao: `${tipoOrg} - ${org}`,
-            telefone: tel,
-            produtos: produtosStr,
-            valor: valorTotalGeral,
-            valorObs: valorObs,
-            negociadoras: negociadoras,
-            qTickets: qTickets, 
-            qTablets: qTablets,
-            qNitro: qNitro,
-            tipo: tipo
-        };
-        
-        if (vendaEmEdicaoId) {
-            const index = vendas.findIndex(v => v.id === vendaEmEdicaoId);
-            if (index !== -1) {
-                vendas[index] = newSaleData; 
-                showToast("Edição salva com sucesso!", "success");
-            }
-            
-            vendaEmEdicaoId = null;
-            els.registerBtn.textContent = 'Registrar Venda';
-        } else {
-            vendas.unshift(newSaleData); 
-            showToast(`Venda registrada para ${nome}!`, "success");
-        }
-        
-        saveVendas();
-        clearAllFields();
-        renderHistorico(els.filtroHistorico.value); 
-    }
-    
+    // Função de renderização modificada para usar dados do Firebase
     function renderHistorico(searchTerm = '') {
         const tbody = els.salesHistory;
         tbody.innerHTML = '';
@@ -1211,38 +1686,40 @@
         const vendasFiltradas = vendas.filter(venda => {
             if (!termo) return true; 
             
-            const content = `${venda.cliente} ${venda.organizacao} ${venda.telefone} ${venda.produtos} ${venda.valor} ${venda.valorObs} ${venda.negociadoras}`.toLowerCase();
+            const content = `${venda.cliente} ${venda.organizacao} ${venda.telefone} ${venda.produtos} ${venda.valor} ${venda.valorObs} ${venda.negociadoras} ${venda.registradoPor || ''}`.toLowerCase();
             
             return content.includes(termo);
         });
 
         if (vendasFiltradas.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
             return;
         }
 
         vendasFiltradas.forEach(data => {
+            const [dataStr, horaStr] = data.dataHora.split(' ');
             const valorBase = `R$ ${numberWithCommas(data.valor)}`;
+            
             const valorComObs = (data.valorObs && data.valorObs.toLowerCase() !== 'n/a') ? 
-                `${valorBase}<br><small>(${data.valorObs})</small>` :
-                valorBase;
+                `<span>${valorBase}</span><span class="valor-obs-text" style="color: var(--cor-principal);">(${data.valorObs})</span>` :
+                `<span>${valorBase}</span>`;
                 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="history-discord-cell">
-                    ${data.dataHora}
+                <td style="padding: 0;">
+                    <span class="history-datetime-line">${dataStr}</span>
+                    <span class="history-datetime-line">${horaStr}</span>
                 </td>
                 <td>${data.cliente}</td>
                 <td>${data.organizacao}</td> 
                 <td>${data.telefone}</td>
                 <td>${data.produtos}</td>
-                <td>${valorComObs}</td>
+                <td class="valor-total-cell">${valorComObs}</td>
                 <td>${data.negociadoras}</td>
-                
-                <td class="history-actions-cell"> 
+                <td>${data.registradoPor || 'N/A'}</td> <td class="history-actions-cell"> 
                     <button class="muted action-btn" onclick="copyDiscordFromHistory(this)">Discord</button>
                     <button class="muted action-btn" onclick="editVenda('${data.id}')" style="background-color: ${document.body.classList.contains('dark') ? '#996600' : '#ff9900'};">Editar</button>
-                    <button class="error action-btn" onclick="deleteVenda('${data.id}')" style="background-color: ${document.body.classList.contains('dark') ? '#4d002a' : '#cc0000'}; color: ${document.body.classList.contains('dark') ? 'var(--cor-texto)' : '#fff'};">Excluir</button>
+                    <button class="danger action-btn" onclick="deleteVenda('${data.id}')">Excluir</button>
                 </td>
             `;
             
@@ -1251,9 +1728,9 @@
             tbody.appendChild(tr);
         });
     }
-
+    
     // Função para copiar do histórico 
-    function copyDiscordFromHistory(buttonElement) {
+    window.copyDiscordFromHistory = function(buttonElement) { // Tornada global para o onclick
         const tr = buttonElement.closest('tr');
         const data = tr.saleData;
         
@@ -1263,6 +1740,7 @@
         const org = (data.organizacao && data.organizacao.toLowerCase() !== 'n/a') ? data.organizacao : '';
         const tel = (data.telefone && data.telefone.toLowerCase() !== 'n/a') ? data.telefone : '';
         const negociadoras = (data.negociadoras && data.negociadoras.toLowerCase() !== 'n/a') ? data.negociadoras : '';
+        const registradoPor = data.registradoPor || 'N/A'; // NOVO: Campo
         let valorObs = (data.valorObs && data.valorObs.toLowerCase() !== 'n/a') ? data.valorObs : '';
         
         const valorBase = `R$ ${numberWithCommas(data.valor)}`;
@@ -1275,7 +1753,8 @@
             tel ? `Telefone: ${tel}` : null,
             `Produto (Unidade): ${data.produtos}`,
             `Venda Valor: ${valorTotalFormatado}`,
-            negociadoras ? `Negociadoras: ${negociadoras}` : null
+            negociadoras ? `Negociadoras: ${negociadoras}` : null,
+            `Registrado por: ${registradoPor}`
         ].filter(line => line !== null); 
 
         const discordOutput = `\`\`\`\n${lines.join('\n')}\n\`\`\``.trim();
@@ -1290,6 +1769,11 @@
     
     // Função para copiar da calculadora
     function copyDiscordFromCalc() {
+        if (!currentUser) {
+            showToast("Você precisa estar logado para copiar para o Discord.", "error");
+            return;
+        }
+
         const data = calculateTotals();
         
         if (data.valorTotalGeral <= 0 && data.qTickets === 0 && data.qTablets === 0 && data.qNitro === 0) {
@@ -1310,7 +1794,6 @@
         if(data.qTickets>0) produtos.push(`Tickets (${data.qTickets})`);
         const produtosStr = produtos.length > 0 ? produtos.join(', ') : 'Nenhum Produto';
         
-        // Ajuste para observação:
         let descTipo = '';
         if (data.tipo !== 'limpo' && data.tipo !== 'limpo_alianca') {
             descTipo = valorDescricao[data.tipo] || '';
@@ -1330,7 +1813,6 @@
 
         const dataHoraFormatada = els.dataVenda.value; 
 
-        // Filtragem de campos N/A
         const orgStr = (org.toLowerCase() !== 'n/a') ? `${tipoOrg} - ${org}` : '';
         const telStr = (tel.toLowerCase() !== 'n/a') ? tel : '';
         const negociadorasStr = (negociadoras.toLowerCase() !== 'n/a') ? negociadoras : '';
@@ -1342,7 +1824,8 @@
             telStr ? `Telefone: ${telStr}` : null,
             `Produto (Unidade): ${produtosStr}`,
             `Venda Valor: ${valorTotalFormatado}`,
-            negociadorasStr ? `Negociadoras: ${negociadorasStr}` : null
+            negociadorasStr ? `Negociadoras: ${negociadorasStr}` : null,
+            `Calculado por: ${currentUser ? currentUser.displayName : 'Anônimo'}` // NOVO: Usuário logado
         ].filter(line => line !== null); 
 
         const discordOutput = `\`\`\`\n${lines.join('\n')}\n\`\`\``.trim();
@@ -1365,12 +1848,12 @@
         els.nomeCliente.value = '';
         els.organizacaoTipo.value = 'CNPJ';
         els.organizacao.value = '';
-        els.telefone.value = '(055) '; // Define o valor inicial como (055)
+        els.telefone.value = ''; 
         els.negociadoras.value = '';
         els.vendaValorObs.value = '';
         
         els.results.style.display='none';
-        updateDateTime(); // Atualiza a hora no momento da limpeza
+        updateDateTime(); 
         
         clearValidationErrors(); 
         clearTour();
@@ -1448,16 +1931,42 @@
         }
     }
 
+    // --- LÓGICA DA TELA DE BOAS-VINDAS E AUTENTICAÇÃO ---
+    function checkWelcomeScreen() {
+        els.welcomeScreen.classList.add('show');
+        els.mainCard.style.display = 'none';
+        els.authScreen.style.display = 'none';
+    }
+    
+    // Event listener para o botão de entrada
+    els.enterBtn.addEventListener('click', () => {
+        els.welcomeScreen.classList.add('hidden');
+        
+        setTimeout(() => {
+            els.welcomeScreen.classList.remove('show');
+            els.welcomeScreen.style.display = 'none';
+            // Se o usuário não estiver logado, mostra a tela de autenticação
+            if (!currentUser) {
+                 els.authScreen.style.display = 'block';
+            }
+        }, 500); 
+    });
+    // --- FIM LÓGICA DA TELA DE BOAS-VINDAS ---
+
 
     // Event Listeners
 
     els.calcBtn.addEventListener('click',()=>renderResults(calculateTotals()));
     els.registerBtn.addEventListener('click',registerSale); 
     
+    // NOVO: Listeners de Autenticação
+    els.loginBtn.addEventListener('click', handleLogin);
+    els.registerUserBtn.addEventListener('click', handleCadastro);
+    els.logoutBtn.addEventListener('click', handleLogout);
+    
     els.resetBtn.addEventListener('click', clearAllFields);
     clearAllFields(); 
     
-    // Listener para remover o erro visual ao digitar
     const validationFields = [els.nomeCliente, els.organizacao, els.telefone, els.negociadoras];
     validationFields.forEach(field => {
         field.addEventListener('input', () => {
@@ -1474,11 +1983,9 @@
     els.negociadoras.addEventListener('input', capitalizeWords);
     els.vendaValorObs.addEventListener('input', capitalizeWords);
     
-    // Adiciona lógica para preenchimento com TAB na Organização
     els.organizacao.addEventListener('input', checkSingleSuggestion);
     els.organizacao.addEventListener('keydown', handleTabForSuggestion);
 
-    // Listener para o botão Discord da Calculadora
     els.discordBtnCalc.addEventListener('click', copyDiscordFromCalc);
 
     if (els.filtroHistorico) {
@@ -1497,18 +2004,40 @@
       for(const[k,v]of Object.entries(out.totals))rows.push([k,v]);
       for(const[k,v]of Object.entries(out.valoresTotais))rows.push([k,`R$ ${v}`]);
       rows.push(['Valor Total Geral',`R$ ${out.valorTotalGeral}`]);
+      
+      // Adicionando dados da venda ao CSV
+      rows.push(['','']);
+      rows.push(['**DADOS DA VENDA**','']);
+      rows.push(['Nome do Cliente', els.nomeCliente.value.trim() || 'N/A']);
+      rows.push(['Organização', `${els.organizacaoTipo.value} - ${els.organizacao.value.trim() || 'N/A'}`]);
+      rows.push(['Telefone', els.telefone.value.trim() || 'N/A']);
+      rows.push(['Negociadoras', els.negociadoras.value.trim() || 'N/A']);
+      rows.push(['Obs. Venda', els.vendaValorObs.value.trim() || 'N/A']);
+      rows.push(['Registrado Por', currentUser ? currentUser.displayName : 'Anônimo']);
+
+
       const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
       const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a');a.href=url;a.download='materiais_valores.csv';a.click();URL.revokeObjectURL(url);
     });
 
-    els.clearHistoryBtn.addEventListener('click',()=>{
-      if(confirm('Tem certeza que deseja limpar todo o Histórico de Vendas? Esta ação não pode ser desfeita.')) {
-        vendas = []; 
-        saveVendas(); 
-        renderHistorico(); 
-        showToast("Histórico de vendas completamente apagado!", "error");
+    // MODIFICADO: Limpar Histórico usa o 'remove' do Firebase
+    els.clearHistoryBtn.addEventListener('click', async () => {
+      if (!currentUser) {
+            showToast("Você deve estar logado para limpar o histórico.", "error");
+            return;
+      }
+      if(confirm('ATENÇÃO: Isso apagará TODO o histórico para TODOS os usuários. Tem certeza?')) {
+        try {
+            const vendasRef = ref(db, 'vendas');
+            await remove(vendasRef);
+            showToast("Histórico de vendas completamente apagado para todos!", "error");
+            // A renderização é automática via setupGlobalHistoryListener (vendas = [])
+        } catch (error) {
+            console.error("Erro ao apagar todo o histórico:", error);
+            showToast("Erro ao apagar todo o histórico.", "error");
+        }
       }
     });
 
@@ -1520,19 +2049,11 @@
       updateThemeLogo(); 
     });
     
-    els.enterBtn.addEventListener('click', () => {
-        els.welcomeScreen.classList.add('hidden');
-        
-        setTimeout(() => {
-            els.welcomeScreen.style.display = 'none';
-            els.mainCard.style.display = 'block';
-        }, 500); 
-    });
     
     els.toggleHistoryBtn.addEventListener('click', () => toggleView(true));
     
     els.toggleCalcBtn.addEventListener('click', () => {
-        if (vendaEmEdicaoId) {
+        if (vendaEmEdicaoId) { 
             vendaEmEdicaoId = null;
             els.registerBtn.textContent = 'Registrar Venda';
             clearAllFields();
@@ -1540,6 +2061,46 @@
         }
         toggleView(false);
     });
+    
+    els.logoLink.addEventListener('click', (e) => {
+        e.preventDefault(); 
+
+        if (vendaEmEdicaoId) {
+            vendaEmEdicaoId = null;
+            els.registerBtn.textContent = 'Registrar Venda';
+            clearAllFields();
+            showToast("Edição pendente cancelada.", "error", 2000);
+        }
+        
+        toggleView(false); 
+        clearTour(); 
+    });
+    
+    // --- Chamadas Iniciais e Lógica de Estado do Firebase ---
+    
+    // Escuta o estado de autenticação (logado/deslogado)
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // Usuário logado: garante que o estado é 'logado'
+             currentUser = user; 
+             // Se o mainCard não estiver visível (i.e., vindo do login/cadastro), exibe.
+             if (els.mainCard.style.display === 'none') {
+                handleLoginSucess(user);
+             }
+        } else {
+            // Usuário deslogado: garante que o estado é 'deslogado'
+            currentUser = null;
+            if (els.welcomeScreen.classList.contains('hidden') && els.welcomeScreen.style.display === 'none') {
+                els.authScreen.style.display = 'block';
+                els.mainCard.style.display = 'none';
+                els.historyCard.style.display = 'none';
+            }
+        }
+    });
+    
+    updateThemeLogo();
+    checkWelcomeScreen(); // Chamada inicial que mostra a tela de boas-vindas
   </script>
 </body>
+
 </html>
