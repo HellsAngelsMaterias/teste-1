@@ -9,760 +9,224 @@
   <title>Hells Angels</title>
   <style>
     :root {
-      --cor-fundo: #fff0f6;
-      --cor-texto: #4a0033;
-      --cor-principal: #e60073;
-      --cor-card: #ffffff;
-      --cor-borda: #ffb3d9;
-      --cor-btn-primario: #e60073;
-      --cor-btn-texto: #fff;
-      --cor-btn-secundario: #ffd6eb;
-      --cor-btn-secundario-texto: #4a0033;
-      --cor-erro: #cc0000;
-      /* NOVO: Cor para o brilho pulsante */
-      --cor-glow-pulsante: rgba(230, 0, 115, 0.8); /* Cor Principal com opacidade */
+      --cor-fundo: #fff0f6; --cor-texto: #4a0033; --cor-principal: #e60073;
+      --cor-card: #ffffff; --cor-borda: #ffb3d9; --cor-btn-primario: #e60073;
+      --cor-btn-texto: #fff; --cor-btn-secundario: #ffd6eb;
+      --cor-btn-secundario-texto: #4a0033; --cor-erro: #cc0000;
+      --cor-glow-pulsante: rgba(230, 0, 115, 0.8);
     }
-
     body.dark {
-      --cor-fundo: #1a000d; 
-      --cor-texto: #ffccf0; 
-      --cor-principal: #ff0080; 
-      --cor-card: #2c001a; 
-      --cor-borda: #e60073; 
-      --cor-btn-primario: #ff0080; 
-      --cor-btn-texto: #fff;
-      --cor-btn-secundario: #4d002a; 
-      --cor-btn-secundario-texto: #ffccf0; 
-      /* NOVO: Cor para o brilho pulsante no modo escuro */
-      --cor-glow-pulsante: rgba(255, 0, 128, 0.6); /* Cor Principal Escura com opacidade */
+      --cor-fundo: #1a000d; --cor-texto: #ffccf0; --cor-principal: #ff0080; 
+      --cor-card: #2c001a; --cor-borda: #e60073; --cor-btn-primario: #ff0080; 
+      --cor-btn-texto: #fff; --cor-btn-secundario: #4d002a; 
+      --cor-btn-secundario-texto: #ffccf0; --cor-glow-pulsante: rgba(255, 0, 128, 0.6);
     }
-    
     body.dark input[type=number], body.dark input[type=text], body.dark select {
-      background: #33001f;
-      color: var(--cor-texto);
-      border: 1px solid var(--cor-borda);
+      background: #33001f; color: var(--cor-texto); border: 1px solid var(--cor-borda);
     }
+    input[list]:focus, input[list]:hover { border-color: var(--cor-principal) !important; box-shadow: 0 0 5px rgba(230, 0, 115, 0.4); }
+    input[list] { position: relative; z-index: 1; }
+    input[list]::-webkit-calendar-picker-indicator { display: none; }
+    .suggestion-tip { font-size: 11px; color: var(--cor-principal); margin-top: 4px; margin-bottom: 0; font-weight: 500; opacity: 0.8; }
     
-    /* --- ESTILO PARA INPUT DATALIST (Foco Rosa/Roxo) --- */
-    input[list]:focus, input[list]:hover {
-        border-color: var(--cor-principal) !important; 
-        box-shadow: 0 0 5px rgba(230, 0, 115, 0.4); 
+    #tour-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.6); z-index: 10000; opacity: 0;
+        transition: opacity 0.3s ease-in-out;
     }
-    
-    /* --- NOVO ESTILO PARA DATALIST (Sugestões de Organização) --- */
-    input[list] {
-        position: relative;
-        z-index: 1; 
-    }
-    
-    input[list]::-webkit-calendar-picker-indicator {
-        display: none;
-    }
-    /* --- FIM NOVO ESTILO PARA DATALIST --- */
-    
-    /* --- NOVO: Estilo para a dica de sugestão da Organização --- */
-    .suggestion-tip {
-        font-size: 11px;
-        color: var(--cor-principal); /* Usa a cor principal para destaque */
-        margin-top: 4px;
-        margin-bottom: 0;
-        font-weight: 500;
-        opacity: 0.8;
-    }
-    /* --- FIM NOVO: Estilo para a dica de sugestão da Organização --- */
-    
-    /* --- ESTILOS TOUR --- */
+    #tour-overlay.active { opacity: 1; }
     .tour-tooltip {
-      position: absolute;
-      background: var(--cor-principal);
-      color: var(--cor-btn-texto);
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-      max-width: 300px;
-      text-align: left;
-      opacity: 0;
-      transition: opacity 0.3s ease, transform 0.3s ease;
-      z-index: 10002;
+      position: absolute; background: var(--cor-principal); color: var(--cor-btn-texto);
+      padding: 15px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      max-width: 300px; text-align: left; opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s ease; z-index: 10002;
     }
-
-    .tour-tooltip.active {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .tour-tooltip h4 {
-        margin: 0 0 5px;
-        font-size: 16px;
-        color: var(--cor-btn-texto);
-    }
-    .tour-tooltip p {
-        margin: 0;
-        font-size: 14px;
-        margin-bottom: 10px;
-    }
-    
+    .tour-tooltip.active { opacity: 1; transform: translateY(0); }
+    .tour-tooltip h4 { margin: 0 0 5px; font-size: 16px; color: var(--cor-btn-texto); }
+    .tour-tooltip p { margin: 0; font-size: 14px; margin-bottom: 10px; }
     .tour-tooltip button {
-        background: var(--cor-btn-secundario);
-        color: var(--cor-btn-secundario-texto);
-        padding: 6px 10px;
-        border-radius: 6px;
-        border: none;
-        cursor: pointer;
-        font-weight: 600;
-        margin-right: 8px;
+        background: var(--cor-btn-secundario); color: var(--cor-btn-secundario-texto);
+        padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; margin-right: 8px;
     }
-    
     .tour-highlight {
-      box-shadow: 0 0 0 3px rgba(230,0,115,0.6), 0 0 10px rgba(230,0,115,0.5);
-      position: relative;
-      z-index: 10001;
-    }
-    /* --- FIM ESTILOS TOUR --- */
-    
-    /* --- ESTILO PARA CAMPO INVÁLIDO --- */
-    input.input-invalido, select.input-invalido {
-        border: 2px solid var(--cor-erro) !important;
-        box-shadow: 0 0 4px var(--cor-erro);
-    }
-    /* --- FIM ESTILO PARA CAMPO INVÁLIDO --- */
-
-    
-    /* Container para a logo */
-    #logoLink {
-        position: fixed;
-        top: 16px; 
-        left: 16px; 
-        width: auto; 
-        max-height: 80px; 
-        cursor: pointer;
-        z-index: 9998; 
+      position: relative; z-index: 10001; 
+      box-shadow: 0 0 0 3px var(--cor-principal), 0 0 15px var(--cor-principal);
+      border-radius: 6px;
     }
     
-    /* Ajuste na logo superior */
-    .app-logo {
-      max-height: 80px; 
-      width: auto;
-      transition: opacity 0.3s ease, filter 0.3s ease; /* Adicionado filter para a transição do hover */
-      display: block; 
-    }
+    input.input-invalido, select.input-invalido { border: 2px solid var(--cor-erro) !important; box-shadow: 0 0 4px var(--cor-erro); }
+    #logoLink { position: fixed; top: 16px; left: 16px; width: auto; max-height: 80px; cursor: pointer; z-index: 9998; }
+    .app-logo { max-height: 80px; width: auto; transition: opacity 0.3s ease, filter 0.3s ease; display: block; }
+    #appLogo:hover { filter: drop-shadow(0 0 8px var(--cor-principal)) drop-shadow(0 0 15px var(--cor-glow-pulsante)); opacity: 0.9; }
     
-    /* NOVO: Efeito de iluminação ao passar o mouse na Logo (na calculadora) */
-    #appLogo:hover {
-        /* Brilho da logo ao passar o mouse */
-        filter: drop-shadow(0 0 8px var(--cor-principal)) drop-shadow(0 0 15px var(--cor-glow-pulsante));
-        opacity: 0.9;
-    }
-
-    
-    /* --- Estilo para a imagem na tela de boas-vindas --- */
-    #welcomeLogo {
-      max-width: 80%;
-      max-height: 120px; 
-      margin-bottom: 25px;
-      display: block;
-      /* NÃO ADICIONAR EFEITO DE HOVER AQUI */
-    }
-    
+    #welcomeLogo { max-width: 80%; max-height: 120px; margin-bottom: 25px; display: block; }
     #welcomeScreen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: var(--cor-card);
-      z-index: 10000; 
-      display: none; 
-      flex-direction: column;
-      justify-content: center; 
-      align-items: center;
-      text-align: center;
-      transition: opacity 0.5s ease;
-      padding: 20px; 
-      box-sizing: border-box; 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: var(--cor-card); z-index: 10000; display: none; 
+      flex-direction: column; justify-content: center; align-items: center;
+      text-align: center; transition: opacity 0.5s ease;
+      padding: 20px; box-sizing: border-box; 
     }
-    
-    #welcomeScreen.show {
-        display: flex; 
-    }
-
-    #welcomeScreen.hidden {
-      opacity: 0;
-      pointer-events: none; 
-    }
-    
-    #welcomeScreen h2 {
-      font-size: 36px;
-      margin-top: 10px; 
-      margin-bottom: 20px;
-      color: var(--cor-principal);
-    }
-    
-    #welcomeScreen button {
-      padding: 12px 24px;
-      font-size: 18px;
-      border-radius: 10px;
-      margin-top: 10px;
-    }
-
+    #welcomeScreen.show { display: flex; }
+    #welcomeScreen.hidden { opacity: 0; pointer-events: none; }
+    #welcomeScreen h2 { font-size: 36px; margin-top: 10px; margin-bottom: 20px; color: var(--cor-principal); }
+    #welcomeScreen button { padding: 12px 24px; font-size: 18px; border-radius: 10px; margin-top: 10px; }
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      max-width: 960px;
-      margin: 24px auto;
-      padding: 20px;
-      background: var(--cor-fundo);
-      color: var(--cor-texto);
-      transition: background 0.25s ease, color 0.25s ease;
+      max-width: 960px; margin: 24px auto; padding: 20px;
+      background: var(--cor-fundo); color: var(--cor-texto);
+      transition: background 0.25s ease, color 0.25s ease, max-width 0.4s ease-in-out;
     }
-    
-    /* Garante que o conteúdo principal comece escondido e só apareça se JS/Welcome Screen não funcionar */
-    #mainCard {
-        display: block; 
-    }
+    body.history-view-active { max-width: 1200px; }
 
-    h1 {
-      margin: 0 0 12px;
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--cor-principal);
-      text-align: center;
-    }
-
-    h2 {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 10px;
-      color: var(--cor-principal);
-    }
-    
-    h3 {
-        color: var(--cor-principal); 
-        font-weight:600; 
-        margin-top: 16px;
-    }
+    #mainCard { display: block; }
+    h1 { margin: 0 0 12px; font-size: 24px; font-weight: 700; color: var(--cor-principal); text-align: center; flex-grow: 1; }
+    h2 { font-size: 20px; font-weight: 600; margin-bottom: 10px; color: var(--cor-principal); }
+    h3 { color: var(--cor-principal); font-weight:600; margin-top: 16px; }
 
     .card {
-      background: var(--cor-card);
-      padding: 18px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      border: 1px solid var(--cor-borda);
+      background: var(--cor-card); padding: 18px; border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid var(--cor-borda);
       margin-bottom: 20px;
     }
-
-    label {
-      display: block;
-      margin: 10px 0 6px;
-      font-weight: 600;
-      color: var(--cor-principal);
+    
+    #user-counter {
+        font-size: 16px; font-weight: 600; color: var(--cor-principal);
+        padding: 5px 10px; background-color: var(--cor-btn-secundario);
+        border-radius: 8px; min-width: 60px; text-align: center;
     }
+    .header-container { display:flex; justify-content: space-between; align-items: center; gap: 15px; }
 
+    label { display: block; margin: 10px 0 6px; font-weight: 600; color: var(--cor-principal); }
     input[type=number], input[type=text], select {
-      width: 100%;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid var(--cor-borda);
-      background: #fff;
-      color: var(--cor-texto);
-      font-size: 14px;
-      box-sizing: border-box;
+      width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--cor-borda);
+      background: #fff; color: var(--cor-texto); font-size: 14px; box-sizing: border-box;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
+    input[type=number] { width: 140px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 12px; }
+    .grid-venda { grid-template-columns: 1fr 1fr; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    th, td { padding: 6px; border-bottom: 1px solid var(--cor-borda); text-align: left; }
+    th { background: var(--cor-btn-secundario); color: var(--cor-btn-secundario-texto); font-weight: 600; }
     
-    input[type=number] {
-        width: 140px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 14px;
-      margin-top: 12px;
-    }
-    
-    .grid-venda {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
-      font-size: 14px;
-    }
-
-    th, td {
-      padding: 6px; /* Reduzido o padding para caber mais na tela do celular */
-      border-bottom: 1px solid var(--cor-borda);
-      text-align: left;
-    }
-
-    th {
-      background: var(--cor-btn-secundario);
-      color: var(--cor-btn-secundario-texto);
-      font-weight: 600;
-    }
-    
-    
-/* --- NOVO ESTILO PARA RESPONSIVIDADE DA TABELA --- */
-.history-table-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
-    margin-top: 8px;
-}
-
-/* Garante que o container interno não atrapalhe a rolagem */
-#historyBackground {
-    overflow: hidden;
-}
-
-/* Mantém a tabela com comportamento de tabela e largura controlada */
-#historyCard table {
-    width: 100%;
-    display: table;
-    border-collapse: collapse;
-    table-layout: fixed; /* ajuda a manter colunas alinhadas */
-    min-width: 900px; /* força scroll em telas pequenas mantendo alinhamento */
-}
-
-/* Estilo base para células */
-#historyCard th, #historyCard td {
-    padding: 8px 10px;
-    vertical-align: middle;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 13px;
-}
-
-/* Ajuste para a linha de data/hora (duas linhas dentro da mesma célula) */
-.history-datetime-line {
-    display: block;
-    line-height: 1.1;
-    font-size: 12px;
-}
-
-/* Faz com que valores longos quebrem visualmente melhor em células menores quando necessário */
-@media (max-width: 700px) {
-    #historyCard th, #historyCard td {
-        font-size: 12px;
-    }
-    #historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 320px; }
-}
-/* --- FIM NOVO ESTILO PARA RESPONSIVIDADE DA TABELA --- */
-
-
-
-    .actions {
-      margin-top: 14px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-    }
-
+    .actions { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
     button {
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-      transition: opacity 0.2s ease, box-shadow 0.3s ease; /* Adicionado box-shadow para transição do glow */
+      padding: 8px 14px; border-radius: 8px; border: none; cursor: pointer;
+      font-weight: 600; font-size: 14px; transition: opacity 0.2s ease, box-shadow 0.3s ease;
     }
-    
-    button:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        animation: none !important;
-    }
-
     button:hover { opacity: 0.85; }
     
-    /* NOVO: Efeito de brilho pulsante para o botão principal (Calcular/Registrar) */
-    .primary, .success {
-        animation: pulse-glow 2s infinite ease-in-out;
-    }
-    
-    /* NOVO: Keyframes para o brilho pulsante */
+    .primary, .success { animation: pulse-glow 2s infinite ease-in-out; }
     @keyframes pulse-glow {
-        0% {
-            box-shadow: 0 0 0 rgba(0, 0, 0, 0); 
-        }
-        50% {
-            box-shadow: 0 0 10px var(--cor-glow-pulsante), 0 0 20px var(--cor-glow-pulsante); 
-        }
-        100% {
-            box-shadow: 0 0 0 rgba(0, 0, 0, 0); 
-        }
+        0% { box-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+        50% { box-shadow: 0 0 10px var(--cor-glow-pulsante), 0 0 20px var(--cor-glow-pulsante); }
+        100% { box-shadow: 0 0 0 rgba(0, 0, 0, 0); }
     }
 
     .primary { background: var(--cor-btn-primario); color: var(--cor-btn-texto); }
     .muted { background: var(--cor-btn-secundario); color: var(--cor-btn-secundario-texto); }
     .success { background: #00b33c; color: #fff; }
-    .danger { background: var(--cor-erro); color: #fff; } /* Novo: Botão de Perigo */
+    .danger { background: var(--cor-erro); color: #fff; }
 
-    /* Container para agrupar e posicionar botões (Modo Noturno e Tutorial) */
-    .top-right-controls {
-        position: fixed;
-        top: 16px;
-        right: 16px;
-        display: flex;
-        gap: 10px;
-        z-index: 9999;
-    }
-
-    /* Estilo base para botões de controle fixos */
+    .top-right-controls { position: fixed; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 9999; }
     .control-btn {
-        padding: 10px 14px;
-        border-radius: 10px;
-        background: var(--cor-btn-primario);
-        color: var(--cor-btn-texto);
-        font-weight: 700;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        border: none;
+        padding: 10px 14px; border-radius: 10px; background: var(--cor-btn-primario);
+        color: var(--cor-btn-texto); font-weight: 700; cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: none;
         transition: opacity 0.2s ease;
-        /* ANIMAÇÃO pulse-glow REMOVIDA DAQUI */
     }
-    .control-btn:hover {
-        opacity: 0.85;
-    }
+    .control-btn:hover { opacity: 0.85; }
     
-    /* --- Estilo para o Fundo do Histórico --- */
     #historyBackground {
-      /* ALTERAÇÃO: Fundo semi-transparente (70%) */
       background: rgba(255, 255, 255, 0.7); 
-      position: relative; 
-      padding: 18px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      border: 1px solid var(--cor-borda);
-      margin-bottom: 20px;
-      min-height: 400px; 
-      overflow: hidden;
+      position: relative; padding: 18px; border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid var(--cor-borda);
+      margin-bottom: 20px; max-height: 75vh; overflow-y: auto;
     }
-    
+    body.dark #historyBackground { background: rgba(44, 0, 26, 0.7); }
     #historyBackground img {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 100%;
-      height: auto;
-      opacity: 0.3; /* ALTERAÇÃO: Aumentado para maior visibilidade */ 
-      z-index: 1; 
-      object-fit: contain; 
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); width: 100%; height: auto;
+      opacity: 0.3; z-index: 1; object-fit: contain; 
     }
-    
-    #historyBackground > * {
-      position: relative; 
-      z-index: 2;
-    }
-    
-    #historyCard table {
-        font-size: 12px;
-    }
-    
-    /* --- CORREÇÃO DE ALINHAMENTO DAS CÉLULAS (Principal Alteração) --- */
-    /* Garante que o conteúdo fique no topo para alinhar a borda inferior */
-    
-#historyCard th, #historyCard td {
-    padding: 8px 6px;
-    text-align: center;
-    vertical-align: middle; /* Centraliza verticalmente */
-    white-space: nowrap;    /* Evita quebras desnecessárias */
-}
+    #historyBackground > * { position: relative; z-index: 2; }
 
-/* Corrige o bloco de data/hora */
-#historyCard tr td:first-child {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    line-height: 1.2;
-    padding: 4px 0;
-}
-
-.history-datetime-line {
-    display: block;
-    font-size: 12px;
-}
-
-    
-    /* Estilo para cada linha do texto dentro da célula de Data/Hora */
-    .history-datetime-line {
-        display: block;
-        line-height: 1.2; 
-        padding: 6px 0 0 6px; /* Adiciona o padding de volta (topo e esquerda) */
-    }
-    
-    /* Reduz o espaçamento vertical para compactar o texto na célula de Valor Total (que tem quebra de linha) */
-    
-.valor-total-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;      /* Centraliza horizontalmente */
-    justify-content: center;  /* Centraliza verticalmente */
-    padding: 4px 0;
-    line-height: 1.3;
-    text-align: center;
-}
-
-.valor-total-cell span {
-    display: block;
-}
-
-.valor-obs-text {
-    font-size: 11px;
-    color: var(--cor-principal);
-    margin-top: 2px; /* Pequeno espaçamento entre o valor e a observação */
-}
-
-    
-    /* --- FIM CORREÇÃO DE ALINHAMENTO --- */
-    
-    
-    /* Estilo para colocar os botões do histórico na mesma linha (Responsivo) */
-    .history-actions-cell {
-        display: flex;
-        gap: 5px; /* Espaçamento entre os botões */
-        flex-wrap: nowrap; /* Garante que fiquem na mesma linha */
-        padding-top: 4px; /* Ajuste para o padding das outras células */
-    }
-    
-    .history-actions-cell button {
-        padding: 4px 8px;
-        font-size: 11px;
-        margin-top: 2px; /* Pequeno ajuste de margem */
-        border-radius: 4px;
-        white-space: nowrap; /* Impede a quebra de linha dos botões */
-    }
-
-    /* --- Estilos para Notificação Toast --- */
     #toast-container {
-        position: fixed;
-        bottom: 20px; 
-        right: 20px; 
-        z-index: 10005; 
-        display: flex;
-        flex-direction: column-reverse; 
-        gap: 10px; 
-        align-items: flex-end; 
+        position: fixed; bottom: 20px; right: 20px; z-index: 10005; 
+        display: flex; flex-direction: column-reverse; gap: 10px; align-items: flex-end; 
     }
-
     .toast {
-        background-color: var(--cor-principal); 
-        color: var(--cor-btn-texto);
-        padding: 12px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        opacity: 0;
-        transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-        transform: translateY(20px); 
-        max-width: 300px;
-        min-width: 150px;
-        text-align: center;
+        background-color: var(--cor-principal); color: var(--cor-btn-texto);
+        padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        opacity: 0; transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        transform: translateY(20px); max-width: 300px; min-width: 150px; text-align: center;
     }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { background-color: #00b33c; }
+    .toast.error { background-color: var(--cor-erro); }
+    
+    .action-btn { padding: 4px 8px; font-size: 12px; margin-right: 0px; border-radius: 4px; }
+    
+    .history-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; margin-top: 8px; }
+    #historyCard table {
+        width: 100%; border-collapse: collapse; table-layout: fixed;
+        min-width: 1150px; background: transparent; 
+    }
+    #historyCard th, #historyCard td {
+        padding: 6px 8px; text-align: center; vertical-align: middle;
+        white-space: nowrap; font-size: 14px; border-bottom: 1px solid var(--cor-borda);
+    }
+    #historyCard td { background: var(--cor-card); opacity: 0.95; }
+    body.dark #historyCard td { background: var(--cor-card); opacity: 0.95; }
+    
+    #historyCard th:nth-child(1), #historyCard td:nth-child(1) { width: 100px; }
+    #historyCard th:nth-child(2), #historyCard td:nth-child(2) { width: 140px; }
+    #historyCard th:nth-child(3), #historyCard td:nth-child(3) { width: 160px; }
+    #historyCard th:nth-child(4), #historyCard td:nth-child(4) { width: 120px; }
+    #historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 220px; }
+    #historyCard th:nth-child(6), #historyCard td:nth-child(6) { width: 150px; }
+    #historyCard th:nth-child(7), #historyCard td:nth-child(7) { width: 130px; }
+    #historyCard th:nth-child(8), #historyCard td:nth-child(8) { width: 120px; }
+    #historyCard th:nth-child(9), #historyCard td:nth-child(9) { width: 150px; }
 
-    .toast.show {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    
-    .toast.success {
-        background-color: #00b33c; 
-    }
+    .history-datetime-line { display: block; line-height: 1.2; font-size: 13px; }
+    .valor-total-cell span:first-child { font-weight: 700; }
+    .valor-obs-text { font-size: 12px; color: var(--cor-principal); }
 
-    .toast.error {
-        background-color: var(--cor-erro); 
+    .history-actions-cell { display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .history-actions-cell button { padding: 4px 8px; font-size: 11px; border-radius: 4px; white-space: nowrap; }
+
+    #historyCard tr { height: 40px; }
+    #historyCard th { background: var(--cor-principal); color: var(--cor-btn-texto); }
+
+    #authScreen { padding: 25px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); }
+    #authScreen h2 {
+        text-align: center; margin-bottom: 20px; padding-bottom: 10px;
+        border-bottom: 2px solid var(--cor-borda); font-size: 26px;
     }
-    
-    .action-btn {
-        padding: 4px 8px;
-        font-size: 12px;
-        margin-right: 0px; 
-        border-radius: 4px;
+    #authScreen input[type=text], #authScreen input[type=password] {
+        padding: 12px; font-size: 16px; border-radius: 8px;
+        border: 1px solid var(--cor-borda); transition: all 0.3s ease;
     }
-    
-    /* Otimização para telas muito pequenas */
+    #authScreen input[type=text]:focus, #authScreen input[type=password]:focus {
+        border-color: var(--cor-principal) !important;
+        box-shadow: 0 0 10px rgba(230, 0, 115, 0.5);
+    }
+    #authScreen .actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+    #authScreen .actions button { width: 100%; padding: 12px; font-size: 16px; }
+    #authMessage { text-align: center; font-weight: 600; }
+
     @media (max-width: 500px) {
-        body {
-            padding: 10px;
-            margin: 10px auto;
-        }
-        .top-right-controls {
-            top: 10px;
-            right: 10px;
-        }
-        .control-btn {
-            padding: 8px 10px;
-            font-size: 12px;
-        }
-        .grid {
-            grid-template-columns: 1fr;
-        }
-        .grid-venda {
-            grid-template-columns: 1fr;
-        }
+        body { padding: 10px; margin: 10px auto; }
+        .top-right-controls { top: 10px; right: 10px; }
+        .control-btn { padding: 8px 10px; font-size: 12px; }
+        .grid, .grid-venda { grid-template-columns: 1fr; }
     }
-    /* --- FIM Estilos para Notificação Toast --- */
-  
-/* --- ESTILO FINAL DA TABELA DE HISTÓRICO --- */
-.history-table-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
-    margin-top: 8px;
-}
-
-#historyCard table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    min-width: 900px;
-    background: transparent; 
-}
-
-#historyCard th, #historyCard td {
-    padding: 6px 8px; /* Aumentado de 4px 6px */
-    text-align: center;
-    vertical-align: middle;
-    white-space: nowrap;
-    font-size: 14px; /* Aumentado de 13px */
-    border-bottom: 1px solid var(--cor-borda);
-}
-
-/* NOVO: Fundo para as células de dados para garantir a legibilidade */
-#historyCard td {
-    background: var(--cor-card); 
-    opacity: 0.95; /* Leve transparência para manter o efeito do fundo */
-}
-
-body.dark #historyCard td {
-    background: var(--cor-card); /* Cor do card escuro */
-    opacity: 0.95;
-}
-
-
-/* Alinhamento individual por coluna - larguras ajustadas */
-#historyCard th:nth-child(1), #historyCard td:nth-child(1) { width: 100px; }   /* Data/Hora - Aumentado */
-#historyCard th:nth-child(2), #historyCard td:nth-child(2) { width: 140px; }  /* Cliente - Aumentado */
-#historyCard th:nth-child(3), #historyCard td:nth-child(3) { width: 160px; }  /* Organização */
-#historyCard th:nth-child(4), #historyCard td:nth-child(4) { width: 110px; }  /* Telefone */
-#historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 280px; }  /* Produtos - Aumentado */
-#historyCard th:nth-child(6), #historyCard td:nth-child(6) { width: 150px; }  /* Valor - Aumentado */
-#historyCard th:nth-child(7), #historyCard td:nth-child(7) { width: 130px; }  /* Negociadoras */
-#historyCard th:nth-child(8), #historyCard td:nth-child(8) { width: 150px; }  /* Ações */
-
-/* Data e hora */
-.history-datetime-line {
-    display: block;
-    line-height: 1.2; /* Aumentado */
-    font-size: 13px; /* Aumentado */
-}
-
-/* Valor Total - tornando o valor em negrito */
-.valor-total-cell span:first-child {
-    font-weight: 700; /* Negrito */
-}
-
-.valor-obs-text {
-    font-size: 12px; /* Aumentado */
-    color: var(--cor-principal);
-}
-
-/* Botões de ações */
-.history-actions-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-}
-
-.history-actions-cell button {
-    padding: 3px 6px;
-    font-size: 11px;
-    border-radius: 4px;
-    white-space: nowrap;
-}
-
-/* Aumenta altura total da linha */
-#historyCard tr {
-    height: 40px;
-}
-
-/* NOVO: Estilo para o cabeçalho TH */
-#historyCard th {
-    background: var(--cor-principal); /* Usa a cor principal para o cabeçalho */
-    color: var(--cor-btn-texto);     /* Texto branco */
-}
-
-/* NOVO: Fundo semi-transparente para modo escuro */
-body.dark #historyBackground {
-  /* Cor escura do card #2c001a (que é 44, 0, 26 em RGB) com 70% de opacidade */
-  background: rgba(44, 0, 26, 0.7); 
-}
-/* --- FIM DO ESTILO FINAL DA TABELA DE HISTÓRICO --- */
-
-/* --- NOVO ESTILO PARA TELA DE LOGIN (#authScreen) --- */
-#authScreen {
-    /* Melhorar o visual do card de login */
-    padding: 25px; /* Mais padding */
-    border-radius: 16px; /* Mais arredondado */
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); /* Sombra mais profunda */
-}
-
-/* Título com divisor */
-#authScreen h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--cor-borda); /* Linha divisória */
-    font-size: 26px; /* Maior */
-}
-
-/* Melhorar inputs do login */
-#authScreen input[type=text], 
-#authScreen input[type=password] {
-    padding: 12px;
-    font-size: 16px;
-    border-radius: 8px;
-    border: 1px solid var(--cor-borda);
-    /* Transição de foco mais suave */
-    transition: all 0.3s ease;
-}
-
-#authScreen input[type=text]:focus, 
-#authScreen input[type=password]:focus {
-    border-color: var(--cor-principal) !important;
-    box-shadow: 0 0 10px rgba(230, 0, 115, 0.5); /* Brilho mais intenso */
-}
-
-/* Fazer botões ocuparem a largura total na tela de login */
-#authScreen .actions {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column; /* Pilha de botões */
-    gap: 10px;
-}
-
-#authScreen .actions button {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-}
-
-/* Ajuste fino para a mensagem de erro */
-#authMessage {
-    text-align: center;
-    font-weight: 600;
-}
-/* --- FIM NOVO ESTILO PARA TELA DE LOGIN (#authScreen) --- */
-
-</style>
+  </style>
 </head>
 <body class="light">
   
@@ -784,25 +248,22 @@ body.dark #historyBackground {
 
   <div id="authScreen" class="card" style="max-width: 400px; margin: 100px auto 20px auto; display: none;">
       <img src="logo-dark.png" alt="Hells Angels Logo" style="display: block; max-height: 100px; margin: 0 auto 20px auto;">
-      
-      <h2 id="authTitle">Autenticação de Usuário</h2>
-      
+      <h2>Autenticação de Usuário</h2>
       <label for="username">Nome de Usuário:</label>
-      <input id="username" type="text" placeholder="Seu nome de usuário" autocomplete="username">
-      
+      <input id="username" type="text" placeholder="Seu nome de usuário">
       <label for="password">Senha:</label>
-      <input id="password" type="password" placeholder="Sua senha" autocomplete="current-password">
-      
+      <input id="password" type="password" placeholder="Sua senha">
       <div class="actions">
-          <button id="authActionBtn" class="primary">Entrar</button>
-          <button id="authToggleBtn" class="muted">Cadastrar</button>
+          <button id="loginBtn" class="primary">Entrar</button>
+          <button id="registerUserBtn" class="muted">Cadastrar</button>
       </div>
       <p id="authMessage" style="color: var(--cor-erro); margin-top: 10px;"></p>
   </div>
 
   <div class="card" id="mainCard" style="display:none">
-    <div style="display:flex; justify-content: space-between; align-items: center;">
-        <h1>Calculadora e Registro de Vendas Hells Angels</h1>
+    <div class="header-container">
+        <div id="user-counter">👤 0</div>
+        <h1>Calculadora e Registro de Vendas</h1>
         <button id="logoutBtn" class="danger" style="animation: none;">Sair</button>
     </div>
     
@@ -817,37 +278,12 @@ body.dark #historyBackground {
                 <label for="dataVenda">Data:</label>
                 <input id="dataVenda" type="text" readonly> 
             </div>
-            
             <div>
                 <label for="organizacao">Organização:</label>
                 <input id="organizacao" type="text" value="" list="sugestoesOrganizacao">
-                
                 <p class="suggestion-tip">Digite para ver sugestões de organizações.</p>
-                
                 <datalist id="sugestoesOrganizacao">
-                    <option value="Serpents"></option>
-                    <option value="Nox"></option>
-                    <option value="NKT"></option>
-                    <option value="Ruptura"></option>
-                    <option value="Midnight"></option>
-                    <option value="Meraki"></option>
-                    <option value="Lotus"></option>
-                    <option value="Hydra"></option>
-                    <option value="Hooligans"></option>
-                    <option value="Families"></option>
-                    <option value="Cartel"></option>
-                    <option value="Blood Street"></option>
-                    <option value="Blood Reapers"></option>
-                    <option value="Blue Diamond"></option>
-                    <option value="Black Heart"></option>
-                    <option value="Ballas"></option>
-                    <option value="Aura"></option>
-                    <option value="Anarquia"></option>
-                    <option value="8 Anjo"></option>
-                    <option value="Vagos"></option>
-                    <option value="Vertice"></option>
-                    <option value="Void"></option>
-                    <option value="Solo"></option>
+                    <option value="Serpents"></option> <option value="Nox"></option> <option value="NKT"></option> <option value="Ruptura"></option> <option value="Midnight"></option> <option value="Meraki"></option> <option value="Lotus"></option> <option value="Hydra"></option> <option value="Hooligans"></option> <option value="Families"></option> <option value="Cartel"></option> <option value="Blood Street"></option> <option value="Blood Reapers"></option> <option value="Blue Diamond"></option> <option value="Black Heart"></option> <option value="Ballas"></option> <option value="Aura"></option> <option value="Anarquia"></option> <option value="8 Anjo"></option> <option value="Vagos"></option> <option value="Vertice"></option> <option value="Void"></option> <option value="Solo"></option>
                 </datalist>
             </div>
             <div>
@@ -858,12 +294,10 @@ body.dark #historyBackground {
                     <option value="OUTROS">Outros</option>
                 </select>
             </div>
-            
             <div>
                 <label for="telefone">Telefone:</label>
                 <input id="telefone" type="text" value="" maxlength="13"> 
             </div>
-            
             <div>
                 <label for="negociadoras">Negociadoras:</label>
                 <input id="negociadoras" type="text" value="">
@@ -908,7 +342,6 @@ body.dark #historyBackground {
       <button id="calcBtn" class="primary">Calcular</button>
       <button id="resetBtn" class="muted">Limpar Campos</button>
       <button id="registerBtn" class="success">Registrar Venda</button>
-      <button id="cancelEditBtn" class="danger" style="display: none;">Cancelar Edição</button>
       <button id="toggleHistoryBtn" class="muted">Ver Histórico</button>
       <button id="csvBtn" class="muted">Exportar CSV</button>
       <button id="discordBtnCalc" class="muted">Discord</button> 
@@ -939,776 +372,576 @@ body.dark #historyBackground {
       <div id="historyBackground" class="card">
         <h2>Histórico de Vendas Registradas</h2>
         <img id="historyImg" src="logo-dark.png" alt="Fundo Histórico"> 
-        
         <input type="text" id="filtroHistorico" placeholder="🔍 Pesquisar no histórico (Nome, Data, Item, etc.)" style="margin-bottom: 10px; width: 100%;">
         <div class="actions">
-            <button id="clearHistoryBtn" class="muted">Limpar Histórico</button>
-            <button id="toggleCalcBtn" class="muted">Voltar à Calculadora</button>
+          <button id="clearHistoryBtn" class="muted">Limpar Histórico</button>
+          <button id="toggleCalcBtn" class="muted">Voltar à Calculadora</button>
         </div>
         <div class="history-table-wrapper"><table id="historicoVendas">
-            <thead>
-                <tr>
-                    <th>Data/Hora</th>
-                    <th>Cliente</th>
-                    <th>Organização/Tipo</th>
-                    <th>Telefone</th>
-                    <th>Produtos (Unidade)</th>
-                    <th>Valor Total</th>
-                    <th>Negociadoras</th>
-                    <th>Registrado Por</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="salesHistory"></tbody>
+          <thead>
+              <tr>
+                  <th>Data/Hora</th>
+                  <th>Cliente</th>
+                  <th>Organização/Tipo</th>
+                  <th>Telefone</th>
+                  <th>Produtos (Unidade)</th>
+                  <th>Valor Total</th>
+                  <th>Negociadoras</th>
+                  <th>Registrado Por</th> 
+                  <th>Ações</th> 
+              </tr>
+          </thead>
+          <tbody id="salesHistory"></tbody>
         </table></div>
       </div>
   </div>
   
   <div id="toast-container"></div>
-
-<script type="module">
-    // ------------------------------------
-    // 1. IMPORTAÇÕES E CONFIGURAÇÃO FIREBASE
-    // ------------------------------------
+  
+  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getDatabase, ref, set, push, onValue, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    
     const firebaseConfig = {
-        apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc",
-        authDomain: "hells-angels-438c2.firebaseapp.com",
-        databaseURL: "https://hells-angels-438c2-default-rtdb.firebaseio.com/",
-        projectId: "hells-angels-438c2",
-        storageBucket: "hells-angels-438c2.firebasestorage.app",
-        messagingSenderId: "429406215315",
-        appId: "1:429406215315:web:96b68b172247824b308166",
-        measurementId: "G-CR415MEY32"
+      apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc",
+      authDomain: "hells-angels-438c2.firebaseapp.com",
+      databaseURL: "https://hells-angels-438c2-default-rtdb.firebaseio.com/",
+      projectId: "hells-angels-438c2",
+      storageBucket: "hells-angels-438c2.firebasestorage.app",
+      messagingSenderId: "429406215315",
+      appId: "1:429406215315:web:96b68b172247824b308166",
+      measurementId: "G-CR415MEY32"
     };
-
-    // --- [CRITICAL SECURITY NOTE] ---
-    // Your Firebase configuration is visible on the client-side. This is normal,
-    // but it means you MUST secure your Realtime Database. Without security rules,
-    // anyone can read, write, or delete your entire database.
-    //
-    // Go to your Firebase Console -> Realtime Database -> Rules and paste the
-    // following rules to ensure only logged-in users can access the data:
-    //
-    // {
-    //   "rules": {
-    //     "vendas": {
-    //       ".read": "auth != null",
-    //       ".write": "auth != null",
-    //       "$vendaId": {
-    //         ".validate": "newData.hasChildren(['nomeCliente', 'dataVenda', 'produtos', 'valorTotal', 'registradoPor'])"
-    //       }
-    //     }
-    //   }
-    // }
-    //
-    // This is a basic rule set. You can make it more complex if needed.
-    // DO NOT SKIP THIS STEP!
-    // ---------------------------------
-
+    
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-
-    // ------------------------------------
-    // 2. CONSTANTES E ESTADO GLOBAL
-    // ------------------------------------
+    
     let vendas = [];
     let vendaEmEdicaoId = null;
     let currentUser = null;
-
-    const PER_UNIT = {
-        tickets: { moneyBruto: 525 },
-        tablets: { cobre: 20, plastico: 40, fita_adesiva: 2, lixo_eletronico: 2 },
-        nitro: { aluminio: 20, cobre: 20, vidro: 45, fita_adesiva: 1, porca: 1, parafuso: 1 }
-    };
-
-    const VALORES = {
-        tablets: { limpo: 17000, sujo: 20000, limpo_alianca: 15000, sujo_alianca: 18000 },
-        tickets: { limpo: 9800, sujo: 11700, limpo_alianca: 8000, sujo_alianca: 10000 },
-        nitro: { limpo: 42500, sujo: 50000, limpo_alianca: 38000, sujo_alianca: 45000 }
-    };
-
-    const VALOR_DESCRICAO = {
-        'limpo': 'Dinheiro Limpo',
-        'sujo': 'Dinheiro Sujo',
-        'limpo_alianca': 'Limpo (Aliança)',
-        'sujo_alianca': 'Sujo (Aliança)'
+    
+    const perUnit = {
+      tickets: { moneyBruto: 525 },
+      tablets: { cobre: 20, plastico: 40, fita_adesiva: 2, lixo_eletronico: 2 },
+      nitro: { aluminio: 20, cobre: 20, vidro: 45, fita_adesiva: 1, porca: 1, parafuso: 1 }
     };
     
-    // Usando 'logo-dark.png' como placeholder
-    const LOGO_SRC = "logo-dark.png";
+    const valores = {
+      tablets: { limpo: 17000, sujo: 20000, limpo_alianca: 15000, sujo_alianca: 18000 },
+      tickets: { limpo: 9800, sujo: 11700, limpo_alianca: 8000, sujo_alianca: 10000 },
+      nitro: { limpo: 42500, sujo: 50000, limpo_alianca: 38000, sujo_alianca: 45000 }
+    };
+    
+    const valorDescricao = {
+        'limpo': 'Dinheiro Limpo', 'sujo': 'Dinheiro Sujo',
+        'limpo_alianca': 'Limpo (Aliança)', 'sujo_alianca': 'Sujo (Aliança)'
+    };
 
-    // Mapeamento de elementos DOM
+    const logoLightModeSrc = "logo-dark.png";
+    const logoDarkModeSrc = "logo-dark.png";
+    const historyBackgroundSrc = "logo-dark.png";
+    const welcomeLogoSrc = "logo-dark.png";
+    
     const els = {
-        body: document.body,
-        qtyTickets: document.getElementById('qtyTickets'),
-        qtyTablets: document.getElementById('qtyTablets'),
-        qtyNitro: document.getElementById('qtyNitro'),
-        tipoValor: document.getElementById('tipoValor'),
-        nomeCliente: document.getElementById('nomeCliente'),
-        organizacao: document.getElementById('organizacao'),
-        organizacaoTipo: document.getElementById('organizacaoTipo'),
-        telefone: document.getElementById('telefone'),
-        negociadoras: document.getElementById('negociadoras'),
-        vendaValorObs: document.getElementById('vendaValorObs'),
-        dataVenda: document.getElementById('dataVenda'),
-        filtroHistorico: document.getElementById('filtroHistorico'),
-        resultsBody: document.getElementById('resultsBody'),
-        valuesBody: document.getElementById('valuesBody'),
-        valorTotalGeral: document.getElementById('valorTotalGeral'),
-        results: document.getElementById('results'),
-        mainCard: document.getElementById('mainCard'),
-        historyCard: document.getElementById('historyCard'),
-        salesHistory: document.getElementById('salesHistory'),
-        calcBtn: document.getElementById('calcBtn'),
-        resetBtn: document.getElementById('resetBtn'),
-        registerBtn: document.getElementById('registerBtn'),
-        cancelEditBtn: document.getElementById('cancelEditBtn'),
-        toggleHistoryBtn: document.getElementById('toggleHistoryBtn'),
-        toggleCalcBtn: document.getElementById('toggleCalcBtn'),
-        clearHistoryBtn: document.getElementById('clearHistoryBtn'),
-        csvBtn: document.getElementById('csvBtn'),
-        discordBtnCalc: document.getElementById('discordBtnCalc'),
-        themeBtn: document.getElementById('themeBtn'),
-        tutorialBtn: document.getElementById('tutorialBtn'),
-        logoLink: document.getElementById('logoLink'),
-        appLogo: document.getElementById('appLogo'),
-        historyImg: document.getElementById('historyImg'),
-        welcomeScreen: document.getElementById('welcomeScreen'),
-        enterBtn: document.getElementById('enterBtn'),
-        welcomeLogo: document.getElementById('welcomeLogo'),
-        authScreen: document.getElementById('authScreen'),
-        authTitle: document.getElementById('authTitle'),
-        username: document.getElementById('username'),
-        password: document.getElementById('password'),
-        authActionBtn: document.getElementById('authActionBtn'),
-        authToggleBtn: document.getElementById('authToggleBtn'),
-        authMessage: document.getElementById('authMessage'),
-        logoutBtn: document.getElementById('logoutBtn')
+      qtyTickets: document.getElementById('qtyTickets'), qtyTablets: document.getElementById('qtyTablets'),
+      qtyNitro: document.getElementById('qtyNitro'), tipoValor: document.getElementById('tipoValor'),
+      nomeCliente: document.getElementById('nomeCliente'), organizacao: document.getElementById('organizacao'),
+      organizacaoTipo: document.getElementById('organizacaoTipo'), telefone: document.getElementById('telefone'),
+      negociadoras: document.getElementById('negociadoras'), vendaValorObs: document.getElementById('vendaValorObs'),
+      dataVenda: document.getElementById('dataVenda'), filtroHistorico: document.getElementById('filtroHistorico'),
+      resultsBody: document.getElementById('resultsBody'), valuesBody: document.getElementById('valuesBody'),
+      valorTotalGeral: document.getElementById('valorTotalGeral'), results: document.getElementById('results'),
+      mainCard: document.getElementById('mainCard'), historyCard: document.getElementById('historyCard'),
+      salesHistory: document.getElementById('salesHistory'), calcBtn: document.getElementById('calcBtn'),
+      resetBtn: document.getElementById('resetBtn'), registerBtn: document.getElementById('registerBtn'),
+      toggleHistoryBtn: document.getElementById('toggleHistoryBtn'), toggleCalcBtn: document.getElementById('toggleCalcBtn'),
+      clearHistoryBtn: document.getElementById('clearHistoryBtn'), csvBtn: document.getElementById('csvBtn'),
+      discordBtnCalc: document.getElementById('discordBtnCalc'), themeBtn: document.getElementById('themeBtn'),
+      tutorialBtn: document.getElementById('tutorialBtn'), logoLink: document.getElementById('logoLink'),
+      appLogo: document.getElementById('appLogo'), historyImg: document.getElementById('historyImg'),
+      welcomeScreen: document.getElementById('welcomeScreen'), enterBtn: document.getElementById('enterBtn'),
+      welcomeLogo: document.getElementById('welcomeLogo'), authScreen: document.getElementById('authScreen'),
+      username: document.getElementById('username'), password: document.getElementById('password'),
+      loginBtn: document.getElementById('loginBtn'), registerUserBtn: document.getElementById('registerUserBtn'),
+      authMessage: document.getElementById('authMessage'), logoutBtn: document.getElementById('logoutBtn'),
+      userCounter: document.getElementById('user-counter')
+    };
+    
+    const formatCurrency = (value) => {
+      if (typeof value !== 'number' || isNaN(value)) { return 'R$ 0'; }
+      return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
     };
 
-    // ------------------------------------
-    // 3. FUNÇÕES DE UTILIDADE E FORMATO
-    // ------------------------------------
-
-    const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    const capitalizeText = (text) => text ? text.trim().toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : '';
-    const getQty = (element) => Math.max(0, parseInt(element.value, 10) || 0);
-
+    const capitalizeText = (text) => {
+        if (!text) return '';
+        return text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+    };
+    
     const showToast = (message, type = 'default', duration = 3000) => {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = message;
-        container.appendChild(toast);
-        setTimeout(() => toast.classList.add('show'), 10);
-        setTimeout(() => {
-            toast.classList.remove('show');
-            toast.addEventListener('transitionend', () => toast.remove());
-        }, duration);
+      const toastContainer = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      toastContainer.appendChild(toast);
+      setTimeout(() => { toast.classList.add('show'); }, 10);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+      }, duration);
     };
+    
+    const getQty = (element) => Math.max(0, parseInt(element.value) || 0);
 
+    const PREFIX = "(055) ";
     const phoneMask = (value) => {
-        const PREFIX = "(055) ";
-        let digits = value.replace(/\D/g, "");
-        if (digits.startsWith("055")) digits = digits.substring(3);
-        digits = digits.substring(0, 6);
-        let formatted = digits.length > 3 ? `${digits.substring(0, 3)}-${digits.substring(3)}` : digits;
-        return PREFIX + formatted;
-    };
+        let digits = value.replace(/\D/g, ""); 
+        if (digits.startsWith("055")) { digits = digits.substring(3); }
+        digits = digits.substring(0, 6); 
+        let formattedNumber = digits.length > 3 ? `${digits.substring(0, 3)}-${digits.substring(3)}` : digits;
+        return PREFIX + formattedNumber;
+    }
 
-    const updateDataVenda = () => {
-        els.dataVenda.value = new Date().toLocaleDateString('pt-BR');
-    };
+    if (els.telefone) {
+        els.telefone.addEventListener('input', (e) => {
+            e.target.value = e.target.value.length < PREFIX.length ? PREFIX : phoneMask(e.target.value);
+        });
+        els.telefone.addEventListener('focus', (e) => {
+            if (!e.target.value || e.target.value.length < PREFIX.length) { e.target.value = PREFIX; }
+        });
+    }
 
-    // ------------------------------------
-    // 4. LÓGICA DE CÁLCULO
-    // ------------------------------------
+    const updateDataVenda = () => { els.dataVenda.value = new Date().toLocaleDateString('pt-BR'); };
+    updateDataVenda();
+    
+    const camposParaCapitalizar = [ els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs ];
+    camposParaCapitalizar.forEach(campo => {
+      if (campo) {
+        campo.addEventListener('input', (e) => {
+          const { selectionStart, selectionEnd } = e.target;
+          e.target.value = capitalizeText(e.target.value);
+          e.target.setSelectionRange(selectionStart, selectionEnd);
+        });
+      }
+    });
+    
     const calculate = () => {
-        const qtyTickets = getQty(els.qtyTickets);
-        const qtyTablets = getQty(els.qtyTablets);
-        const qtyNitro = getQty(els.qtyNitro);
-        const tipoValor = els.tipoValor.value;
-        
-        if (qtyTickets === 0 && qtyTablets === 0 && qtyNitro === 0) {
-            els.results.style.display = 'none';
-            return;
-        }
-
-        const totals = {
-            cobre: qtyTablets * PER_UNIT.tablets.cobre + qtyNitro * PER_UNIT.nitro.cobre,
-            plastico: qtyTablets * PER_UNIT.tablets.plastico,
-            fita_adesiva: qtyTablets * PER_UNIT.tablets.fita_adesiva + qtyNitro * PER_UNIT.nitro.fita_adesiva,
-            lixo_eletronico: qtyTablets * PER_UNIT.tablets.lixo_eletronico,
-            aluminio: qtyNitro * PER_UNIT.nitro.aluminio,
-            vidro: qtyNitro * PER_UNIT.nitro.vidro,
-            porca: qtyNitro * PER_UNIT.nitro.porca,
-            parafuso: qtyNitro * PER_UNIT.nitro.parafuso,
-            moneyBruto: qtyTickets * PER_UNIT.tickets.moneyBruto
-        };
-
-        const values = {
-            tickets: qtyTickets * VALORES.tickets[tipoValor],
-            tablets: qtyTablets * VALORES.tablets[tipoValor],
-            nitro: qtyNitro * VALORES.nitro[tipoValor]
-        };
-        const totalGeral = values.tickets + values.tablets + values.nitro;
-
-        els.resultsBody.innerHTML = Object.entries(totals)
-            .filter(([, amount]) => amount > 0)
-            .map(([material, amount]) => `<tr><td>${capitalizeText(material.replace('_', ' '))}</td><td>${amount.toLocaleString('pt-BR')}</td></tr>`)
-            .join('');
-        
-        els.valuesBody.innerHTML = Object.entries(values)
-            .filter(([, value]) => value > 0)
-            .map(([product, value]) => `<tr><td>${capitalizeText(product)} (${VALOR_DESCRICAO[tipoValor]})</td><td>${formatCurrency(value)}</td></tr>`)
-            .join('');
-        
-        els.valorTotalGeral.textContent = formatCurrency(totalGeral);
-        els.results.style.display = 'block';
+      const { qtyTickets, qtyTablets, qtyNitro, tipoValor } = {
+        qtyTickets: getQty(els.qtyTickets), qtyTablets: getQty(els.qtyTablets),
+        qtyNitro: getQty(els.qtyNitro), tipoValor: els.tipoValor.value
+      };
+      const totalQuantities = { cobre: 0, plastico: 0, fita_adesiva: 0, lixo_eletronico: 0, aluminio: 0, vidro: 0, porca: 0, parafuso: 0, moneyBruto: 0 };
+      let totalValue = 0;
+      const productValues = [];
+      
+      if (qtyTablets > 0) {
+        totalQuantities.cobre += qtyTablets * perUnit.tablets.cobre; totalQuantities.plastico += qtyTablets * perUnit.tablets.plastico;
+        totalQuantities.fita_adesiva += qtyTablets * perUnit.tablets.fita_adesiva; totalQuantities.lixo_eletronico += qtyTablets * perUnit.tablets.lixo_eletronico;
+        const value = qtyTablets * valores.tablets[tipoValor]; totalValue += value;
+        productValues.push({ product: `Tablets (${qtyTablets} und.)`, value });
+      }
+      if (qtyTickets > 0) {
+        totalQuantities.moneyBruto += qtyTickets * perUnit.tickets.moneyBruto;
+        const value = qtyTickets * valores.tickets[tipoValor]; totalValue += value;
+        productValues.push({ product: `Tickets (${qtyTickets} und.)`, value });
+      }
+      if (qtyNitro > 0) {
+        totalQuantities.aluminio += qtyNitro * perUnit.nitro.aluminio; totalQuantities.cobre += qtyNitro * perUnit.nitro.cobre;
+        totalQuantities.vidro += qtyNitro * perUnit.nitro.vidro; totalQuantities.fita_adesiva += qtyNitro * perUnit.nitro.fita_adesiva;
+        totalQuantities.porca += qtyNitro * perUnit.nitro.porca; totalQuantities.parafuso += qtyNitro * perUnit.nitro.parafuso;
+        const value = qtyNitro * valores.nitro[tipoValor]; totalValue += value;
+        productValues.push({ product: `Nitro (${qtyNitro} und.)`, value });
+      }
+      
+      const hasQuantities = qtyTickets > 0 || qtyTablets > 0 || qtyNitro > 0;
+      if (hasQuantities) { updateResults(totalQuantities, productValues, totalValue); }
+      else { els.results.style.display = 'none'; showToast("Nenhuma quantidade inserida.", "error"); }
+      return { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities };
     };
-
-    // ------------------------------------
-    // 5. FUNÇÕES DE PERSISTÊNCIA (FIREBASE)
-    // ------------------------------------
-    const getVendaData = () => {
-        const qtyTickets = getQty(els.qtyTickets);
-        const qtyTablets = getQty(els.qtyTablets);
-        const qtyNitro = getQty(els.qtyNitro);
-
-        if (qtyTickets + qtyTablets + qtyNitro === 0) {
-            showToast("Nenhum produto selecionado para registro.", "error");
-            return null;
-        }
-
-        const essentialFields = [els.nomeCliente, els.organizacao];
+    
+    const updateResults = (totals, productValues, totalValue) => {
+      els.results.style.display = 'block';
+      els.resultsBody.innerHTML = Object.entries(totals)
+        .filter(([, value]) => value > 0)
+        .map(([material, value]) => `<tr><td>${capitalizeText(material.replace(/_/g, ' '))}</td><td>${value.toLocaleString('pt-BR')}</td></tr>`)
+        .join('');
+      els.valuesBody.innerHTML = productValues.map(item => `<tr><td>${item.product}</td><td>${formatCurrency(item.value)}</td></tr>`).join('');
+      els.valorTotalGeral.textContent = formatCurrency(totalValue);
+    };
+    
+    const clearAllFields = () => {
+      ['qtyTickets', 'qtyTablets', 'qtyNitro', 'nomeCliente', 'organizacao', 'negociadoras', 'vendaValorObs'].forEach(id => els[id].value = '');
+      els.tipoValor.value = 'limpo'; els.organizacaoTipo.value = 'CNPJ'; els.telefone.value = '';
+      els.results.style.display = 'none';
+      document.querySelectorAll('.input-invalido').forEach(input => input.classList.remove('input-invalido'));
+      if (vendaEmEdicaoId) { vendaEmEdicaoId = null; els.registerBtn.textContent = 'Registrar Venda'; }
+    };
+    
+    const validateFields = () => {
         let isValid = true;
-        essentialFields.forEach(field => {
-            field.classList.remove('input-invalido');
-            if (!field.value.trim()) {
-                field.classList.add('input-invalido');
-                isValid = false;
-            }
+        [ els.nomeCliente, els.organizacao, els.telefone, els.negociadoras ].forEach(field => {
+            if (!field.value.trim()) { field.classList.add('input-invalido'); isValid = false; }
+            else { field.classList.remove('input-invalido'); }
         });
+        return isValid;
+    };
+    
+    const registerVenda = () => {
+      const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
+      if (!hasQuantities) { showToast("É necessário calcular a venda antes de registrar.", "error"); return; }
+      if (!validateFields()) { showToast("Preencha todos os campos obrigatórios.", "error"); return; }
+      if (!currentUser || !currentUser.displayName) { showToast("Erro: Usuário não autenticado.", "error"); return; }
+      
+      const newVenda = {
+        timestamp: Date.now(), dataHora: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+        cliente: els.nomeCliente.value.trim(), organizacao: els.organizacao.value.trim(),
+        organizacaoTipo: els.organizacaoTipo.value, telefone: els.telefone.value.trim(),
+        negociadoras: els.negociadoras.value.trim(), vendaValorObs: els.vendaValorObs.value.trim(),
+        qtyTickets, qtyTablets, qtyNitro, valorTotal: totalValue, tipoValor,
+        registradoPor: currentUser.displayName,
+      };
 
-        if (!isValid) {
-            showToast("Preencha o Nome e a Organização antes de registrar.", "error");
-            return null;
-        }
+      const operation = vendaEmEdicaoId ? set(ref(db, `vendas/${vendaEmEdicaoId}`), newVenda) : push(ref(db, 'vendas'), newVenda);
+      operation
+          .then(() => { showToast(`Venda ${vendaEmEdicaoId ? 'atualizada' : 'registrada'} com sucesso!`, "success"); clearAllFields(); })
+          .catch((error) => { showToast(`Erro: ${error.message}`, "error"); });
+    };
 
+    const editVenda = (id) => {
+        const venda = vendas.find(v => v.id === id);
+        if (!venda) return;
+        Object.keys(venda).forEach(key => { if(els[key] && typeof venda[key] !== 'undefined') els[key].value = venda[key]; });
+        els.qtyTickets.value = venda.qtyTickets || 0; els.qtyTablets.value = venda.qtyTablets || 0; els.qtyNitro.value = venda.qtyNitro || 0;
         calculate();
-        const valorTotalNumeric = parseFloat(els.valorTotalGeral.textContent.replace(/[^0-9,-]+/g, "").replace(',', '.'));
-        
-        const produtos = [];
-        if (qtyTickets > 0) produtos.push(`Tickets (${qtyTickets})`);
-        if (qtyTablets > 0) produtos.push(`Tablets (${qtyTablets})`);
-        if (qtyNitro > 0) produtos.push(`Nitro (${qtyNitro})`);
-        
-        return {
-            nomeCliente: capitalizeText(els.nomeCliente.value) || "Não Informado",
-            organizacao: capitalizeText(els.organizacao.value),
-            organizacaoTipo: els.organizacaoTipo.value,
-            telefone: els.telefone.value,
-            negociadoras: capitalizeText(els.negociadoras.value) || (currentUser?.displayName || "Não Informado"),
-            vendaValorObs: capitalizeText(els.vendaValorObs.value) || "S/ Obs",
-            dataVenda: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
-            produtos: produtos.join(', '),
-            valorTotal: valorTotalNumeric,
-            tipoValor: VALOR_DESCRICAO[els.tipoValor.value],
-            registradoPor: currentUser?.displayName || "Desconhecido"
-        };
+        vendaEmEdicaoId = id;
+        els.registerBtn.textContent = 'Atualizar Venda';
+        toggleView(false);
+        showToast(`Editando venda de ${venda.cliente}`, "default");
     };
 
-    const registerVenda = async () => {
-        const data = getVendaData();
-        if (!data) return;
-
-        setLoading(true, els.registerBtn);
-        try {
-            if (vendaEmEdicaoId) {
-                await set(ref(db, 'vendas/' + vendaEmEdicaoId), data);
-                showToast("Venda atualizada com sucesso!", "success");
-            } else {
-                await push(ref(db, 'vendas'), data);
-                showToast("Venda registrada com sucesso!", "success");
-            }
-            clearAllFields();
-        } catch (error) {
-            console.error("Erro ao registrar/atualizar venda:", error);
-            showToast(`Erro ao salvar: ${error.message}`, "error");
-        } finally {
-            setLoading(false, els.registerBtn);
+    const removeVenda = (id) => {
+        if (confirm("Tem certeza que deseja remover esta venda?")) {
+            remove(ref(db, `vendas/${id}`))
+                .then(() => { showToast("Venda removida.", "success"); })
+                .catch((error) => { showToast(`Erro ao remover: ${error.message}`, "error"); });
         }
     };
 
-    const loadHistory = () => {
-        onValue(ref(db, 'vendas'), (snapshot) => {
-            vendas = [];
-            if (snapshot.exists()) {
-                snapshot.forEach((child) => vendas.push({ id: child.key, ...child.val() }));
-            }
-            vendas.reverse();
-            filterHistory();
-        }, (error) => {
-            console.error("Erro ao carregar histórico:", error);
-            showToast(`Erro ao carregar histórico: ${error.message}`, "error");
+    const copyToClipboard = (text) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text)
+          .then(() => { showToast("Mensagem copiada para o Discord!", "success"); })
+          .catch(err => { showToast("Erro ao copiar.", "error"); });
+    };
+
+    const buildDiscordMessage = (vendaData) => {
+        const { cliente, data, orgTipo, org, tel, produtos, valor, obs, negociadoras } = vendaData;
+        return `
+\`\`\`
+Nome: ${cliente}
+Data: ${data}
+Organização: ${orgTipo} - ${org}
+Telefone: ${tel}
+Produto (Unidade): ${produtos}
+Venda Valor: ${valor} (${obs})
+Negociadoras: ${negociadoras}
+\`\`\`
+        `.trim();
+    };
+
+    const copyDiscordMessage = (isFromHistory = false, venda = null) => {
+        let messageData;
+        if (isFromHistory) {
+            let produtos = [];
+            if (venda.qtyTickets > 0) produtos.push(`Tickets (${venda.qtyTickets})`);
+            if (venda.qtyTablets > 0) produtos.push(`Tablet (${venda.qtyTablets})`);
+            if (venda.qtyNitro > 0) produtos.push(`Nitros (${venda.qtyNitro})`);
+            
+            messageData = {
+                cliente: venda.cliente, data: venda.dataHora.split(', ')[0], orgTipo: venda.organizacaoTipo,
+                org: venda.organizacao, tel: venda.telefone, produtos: produtos.join(', '),
+                valor: formatCurrency(venda.valorTotal || 0),
+                obs: venda.vendaValorObs || valorDescricao[venda.tipoValor],
+                negociadoras: venda.negociadoras
+            };
+        } else {
+            const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
+            if (!hasQuantities) { showToast("Calcule uma venda antes de copiar.", "error"); return; }
+            if (!validateFields()) { showToast("Preencha os dados da venda antes de copiar.", "error"); return; }
+            
+            let produtos = [];
+            if (qtyTickets > 0) produtos.push(`Tickets (${qtyTickets})`);
+            if (qtyTablets > 0) produtos.push(`Tablet (${qtyTablets})`);
+            if (qtyNitro > 0) produtos.push(`Nitros (${qtyNitro})`);
+
+            messageData = {
+                cliente: els.nomeCliente.value.trim(), data: els.dataVenda.value,
+                orgTipo: els.organizacaoTipo.value, org: els.organizacao.value.trim(),
+                tel: els.telefone.value.trim(), produtos: produtos.join(', '),
+                valor: formatCurrency(totalValue),
+                obs: els.vendaValorObs.value.trim() || valorDescricao[tipoValor],
+                negociadoras: els.negociadoras.value.trim()
+            };
+        }
+        copyToClipboard(buildDiscordMessage(messageData));
+    };
+
+    const toggleView = (showHistory) => {
+        document.body.classList.toggle('history-view-active', showHistory);
+        els.mainCard.style.display = showHistory ? 'none' : 'block';
+        els.historyCard.style.display = showHistory ? 'block' : 'none';
+        if (showHistory) {
+            els.historyImg.src = historyBackgroundSrc;
+            els.filtroHistorico.value = ''; 
+            displaySalesHistory(vendas); 
+        }
+    };
+
+    const displaySalesHistory = (history) => {
+        els.salesHistory.innerHTML = '';
+        if (history.length === 0) {
+            const row = els.salesHistory.insertRow();
+            row.insertCell().colSpan = 9; 
+            row.cells[0].textContent = "Nenhuma venda registrada ainda.";
+            row.cells[0].style.textAlign = 'center'; row.cells[0].style.padding = '20px';
+            return;
+        }
+
+        history.sort((a, b) => b.timestamp - a.timestamp);
+
+        history.forEach(venda => {
+            const row = els.salesHistory.insertRow();
+            const [data, hora] = venda.dataHora.split(', ');
+            row.insertCell().innerHTML = `<span class="history-datetime-line">${data}</span><span class="history-datetime-line">${hora}</span>`;
+            row.insertCell().textContent = capitalizeText(venda.cliente);
+            row.insertCell().textContent = `${capitalizeText(venda.organizacao)} (${venda.organizacaoTipo})`;
+            row.insertCell().textContent = venda.telefone;
+
+            let produtos = [];
+            if (venda.qtyTickets > 0) produtos.push(`${venda.qtyTickets} Tickets`);
+            if (venda.qtyTablets > 0) produtos.push(`${venda.qtyTablets} Tablets`);
+            if (venda.qtyNitro > 0) produtos.push(`${venda.qtyNitro} Nitro`);
+            row.insertCell().textContent = capitalizeText(produtos.join(', '));
+            
+            const valorCell = row.insertCell();
+            valorCell.className = 'valor-total-cell';
+            valorCell.innerHTML = `<span>${formatCurrency(venda.valorTotal || 0)}</span><span class="valor-obs-text">(${valorDescricao[venda.tipoValor] || 'N/A'})</span>`;
+
+            row.insertCell().textContent = capitalizeText(venda.negociadoras);
+            row.insertCell().textContent = venda.registradoPor || 'Desconhecido';
+            
+            const actionsCell = row.insertCell();
+            actionsCell.className = 'history-actions-cell';
+            actionsCell.innerHTML = `
+                <button class="action-btn muted edit-btn">Editar</button>
+                <button class="action-btn danger delete-btn">Deletar</button>
+                <button class="action-btn muted discord-btn">Discord</button>
+            `;
+            actionsCell.querySelector('.edit-btn').onclick = () => editVenda(venda.id);
+            actionsCell.querySelector('.delete-btn').onclick = () => removeVenda(venda.id);
+            actionsCell.querySelector('.discord-btn').onclick = () => copyDiscordMessage(true, venda);
+        });
+    };
+
+    const filterHistory = () => {
+        const query = els.filtroHistorico.value.toLowerCase().trim();
+        const filteredVendas = vendas.filter(v => 
+            Object.values(v).some(val => String(val).toLowerCase().includes(query)) ||
+            (v.qtyTickets > 0 && `tickets`.includes(query)) || (v.qtyTablets > 0 && `tablets`.includes(query)) || (v.qtyNitro > 0 && `nitro`.includes(query))
+        );
+        displaySalesHistory(query ? filteredVendas : vendas);
+    };
+
+    const exportToCsv = () => {
+        if (vendas.length === 0) { showToast("Nenhum dado para exportar.", "error"); return; }
+        const headers = ["Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", "Observação", "Qtde Tickets", "Qtde Tablets", "Qtde Nitro", "Valor Total", "Tipo Valor", "Registrado Por"];
+        const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${v.cliente}"`, `"${v.organizacao}"`, `"${v.organizacaoTipo}"`, `"${v.telefone}"`, `"${v.negociadoras}"`, `"${v.vendaValorObs}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${v.registradoPor}"`].join(','));
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
+        link.download = `historico_vendas_HA_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        showToast("Histórico exportado para CSV!", "success");
+    };
+
+    const clearHistory = () => {
+        if (confirm("ATENÇÃO: Deseja APAGAR TODO o histórico de vendas? Esta ação é irreversível.")) {
+            remove(ref(db, 'vendas')).then(() => showToast("Histórico limpado.", "success")).catch(e => showToast(`Erro: ${e.message}`, "error"));
+        }
+    };
+    
+    const toggleTheme = () => {
+        const isDarkMode = document.body.classList.toggle('dark');
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        updateLogoAndThemeButton(isDarkMode);
+    };
+
+    const updateLogoAndThemeButton = (isDarkMode) => {
+        els.themeBtn.textContent = isDarkMode ? '☀️ Modo Claro' : '🌙 Modo Noturno';
+        els.appLogo.src = isDarkMode ? logoDarkModeSrc : logoLightModeSrc;
+        els.welcomeLogo.src = welcomeLogoSrc;
+        els.historyImg.src = historyBackgroundSrc;
+    };
+
+    const tourSteps = [
+        { element: 'qtyTickets', title: '1/5: Quantidades', content: 'Comece inserindo a quantidade de produtos que deseja calcular ou vender.' },
+        { element: 'tipoValor', title: '2/5: Tipo de Valor', content: 'Selecione o tipo de pagamento. Isso afeta o preço final de cada item.' },
+        { element: 'calcBtn', title: '3/5: Calcular', content: 'Clique aqui para ver os materiais necessários e o valor total da venda.' },
+        { element: 'registerBtn', title: '4/5: Registrar Venda', content: 'Após calcular, preencha os dados do cliente e clique para salvar no histórico.' },
+        { element: 'toggleHistoryBtn', title: '5/5: Ver Histórico', content: 'Acesse o histórico para ver, editar, apagar ou copiar vendas antigas.' }
+    ];
+    let currentStepIndex = -1, currentTooltip = null, tourOverlay = null;
+    
+    const clearTour = () => {
+        if(tourOverlay) {
+            tourOverlay.classList.remove('active');
+            setTimeout(() => { if (tourOverlay && tourOverlay.parentNode) tourOverlay.parentNode.removeChild(tourOverlay); tourOverlay = null; }, 300);
+        }
+        if (currentTooltip) {
+            currentTooltip.classList.remove('active');
+            setTimeout(() => { if (currentTooltip && currentTooltip.parentNode) currentTooltip.parentNode.removeChild(currentTooltip); currentTooltip = null; }, 300);
+        }
+        document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+        currentStepIndex = -1;
+    };
+    
+    const showNextTourStep = () => {
+        if (currentStepIndex >= 0) {
+            document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+            if(currentTooltip) currentTooltip.classList.remove('active');
+        }
+        
+        currentStepIndex++;
+        if (currentStepIndex >= tourSteps.length) { showToast("Tutorial concluído!", "success"); clearTour(); return; }
+        
+        const step = tourSteps[currentStepIndex];
+        const targetElement = els[step.element];
+        if (!targetElement) { clearTour(); return; }
+
+        if (currentStepIndex === 0) {
+            tourOverlay = document.createElement('div');
+            tourOverlay.id = 'tour-overlay';
+            document.body.appendChild(tourOverlay);
+            setTimeout(() => tourOverlay.classList.add('active'), 10);
+        }
+
+        targetElement.classList.add('tour-highlight');
+        
+        if(currentTooltip && currentTooltip.parentNode) document.body.removeChild(currentTooltip);
+        currentTooltip = document.createElement('div');
+        currentTooltip.className = 'tour-tooltip';
+        currentTooltip.innerHTML = `<h4>${step.title}</h4><p>${step.content}</p><div><button class="tourNextBtn">${currentStepIndex === tourSteps.length - 1 ? 'Finalizar' : 'Próximo'}</button><button class="tourSkipBtn">Pular</button></div>`;
+        document.body.appendChild(currentTooltip);
+
+        const rect = targetElement.getBoundingClientRect();
+        let top = rect.top < currentTooltip.offsetHeight + 20 ? rect.bottom + window.scrollY + 10 : rect.top + window.scrollY - currentTooltip.offsetHeight - 10;
+        let left = Math.max(10, Math.min(rect.left + window.scrollX, window.innerWidth - currentTooltip.offsetWidth - 20));
+        currentTooltip.style.top = `${top}px`;
+        currentTooltip.style.left = `${left}px`;
+        setTimeout(() => currentTooltip.classList.add('active'), 10);
+        
+        currentTooltip.querySelector('.tourNextBtn').onclick = showNextTourStep;
+        currentTooltip.querySelector('.tourSkipBtn').onclick = clearTour;
+
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    els.calcBtn.onclick = calculate;
+    els.resetBtn.onclick = clearAllFields;
+    els.registerBtn.onclick = registerVenda;
+    els.toggleHistoryBtn.onclick = () => toggleView(true);
+    els.toggleCalcBtn.onclick = () => toggleView(false);
+    els.clearHistoryBtn.onclick = clearHistory;
+    els.csvBtn.onclick = exportToCsv;
+    els.themeBtn.onclick = toggleTheme;
+    els.tutorialBtn.onclick = () => {
+        if (!currentUser) { showToast("Faça login para iniciar o tutorial.", "default"); return; }
+        showNextTourStep();
+    };
+    els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
+    els.filtroHistorico.addEventListener('input', filterHistory);
+    
+    const handleAuthAction = (isLogin) => {
+        const email = els.username.value.trim() + "@ha.com";
+        const password = els.password.value;
+        const displayName = els.username.value.trim();
+        if ((isLogin && (!email || password.length < 6)) || (!isLogin && (!displayName || password.length < 6))) {
+            showToast("Verifique os campos. A senha precisa ter no mínimo 6 caracteres.", "error"); return;
+        }
+        
+        const action = isLogin ? signInWithEmailAndPassword(auth, email, password) : createUserWithEmailAndPassword(auth, email, password).then(cred => updateProfile(cred.user, { displayName }));
+        action.catch((error) => {
+            const code = error.code;
+            const msg = code === 'auth/invalid-credential' ? "Usuário ou senha incorretos." :
+                        code === 'auth/email-already-in-use' ? "Nome de usuário já existe." :
+                        `Erro: ${code}`;
+            showToast(msg, "error");
         });
     };
     
-    const deleteVenda = async (id) => {
-        if (!confirm('Tem certeza que deseja excluir esta venda?')) return;
-        
-        try {
-            await remove(ref(db, 'vendas/' + id));
-            showToast("Venda excluída com sucesso!", "default");
-            if (vendaEmEdicaoId === id) clearAllFields();
-        } catch (error) {
-            console.error("Erro ao excluir venda:", error);
-            showToast(`Erro ao excluir: ${error.message}`, "error");
+    els.loginBtn.onclick = () => handleAuthAction(true);
+    els.registerUserBtn.onclick = () => handleAuthAction(false);
+    els.logoutBtn.onclick = () => {
+        if(currentUser) {
+            const userStatusRef = ref(db, `/status/${currentUser.uid}`);
+            remove(userStatusRef);
         }
+        auth.signOut();
     };
-    
-    const clearHistory = async () => {
-        if (!confirm('Tem certeza que deseja APAGAR TODO o histórico de vendas? Esta ação é irreversível.')) return;
+    els.password.addEventListener('keydown', (e) => { if(e.key === 'Enter') handleAuthAction(true); });
 
-        try {
-            await remove(ref(db, 'vendas'));
-            showToast("Todo o histórico de vendas foi apagado.", "success");
-        } catch (error) {
-            console.error("Erro ao limpar histórico:", error);
-            showToast(`Erro ao limpar histórico: ${error.message}`, "error");
-        }
-    };
-
-    // ------------------------------------
-    // 6. AUTENTICAÇÃO
-    // ------------------------------------
-    const handleAuthAction = async () => {
-        const username = els.username.value.trim();
-        const password = els.password.value.trim();
-        const isRegisterMode = els.authActionBtn.textContent.includes('Cadastrar');
-
-        if (!username || !password) {
-            els.authMessage.textContent = 'Preencha o nome de usuário e a senha.';
-            return;
-        }
-        if (isRegisterMode && password.length < 6) {
-            els.authMessage.textContent = 'A senha deve ter no mínimo 6 caracteres.';
-            return;
-        }
-
-        const email = `${username}@hells.com`;
-        setLoading(true, els.authActionBtn, els.authToggleBtn);
-        els.authMessage.textContent = '';
-
-        try {
-            if (isRegisterMode) {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                await updateProfile(userCredential.user, { displayName: username });
-                showToast(`Usuário ${username} registrado! Faça o login.`, "success");
-                toggleAuthMode(false); // Switch back to login mode
-            } else {
-                await signInWithEmailAndPassword(auth, email, password);
-                // Success is handled by onAuthStateChanged
-            }
-        } catch (error) {
-            const errorMessages = {
-                'auth/invalid-credential': "Nome de usuário ou senha incorretos.",
-                'auth/user-not-found': "Usuário não encontrado.",
-                'auth/wrong-password': "Senha incorreta.",
-                'auth/email-already-in-use': "Este nome de usuário já está em uso.",
-                'auth/weak-password': "A senha deve ter pelo menos 6 caracteres."
-            };
-            els.authMessage.textContent = errorMessages[error.code] || "Ocorreu um erro. Tente novamente.";
-            console.error("Auth Error:", error);
-        } finally {
-            setLoading(false, els.authActionBtn, els.authToggleBtn);
-        }
-    };
-
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            showToast("Você saiu com sucesso.", "default");
-            vendas = []; // Clear local data on logout
-            filterHistory();
-        } catch (error) {
-            console.error("Logout Error:", error);
-            showToast(`Erro ao sair: ${error.message}`, "error");
-        }
-    };
-    
     onAuthStateChanged(auth, (user) => {
-        currentUser = user;
         if (user) {
-            if (!user.displayName) {
-                const usernameFromEmail = user.email.split('@')[0];
-                updateProfile(user, { displayName: usernameFromEmail });
-                currentUser.displayName = usernameFromEmail;
-            }
-            loadHistory();
+            currentUser = user;
             els.authScreen.style.display = 'none';
             els.mainCard.style.display = 'block';
-            els.historyCard.style.display = 'none';
+
+            const userStatusRef = ref(db, `/status/${currentUser.uid}`);
+            const isOnline = { online: true };
+            
+            onValue(ref(db, '.info/connected'), (snapshot) => {
+                if (snapshot.val() === false) { return; }
+                onDisconnect(userStatusRef).remove().then(() => {
+                    set(userStatusRef, isOnline);
+                });
+            });
+
+            const statusRef = ref(db, '/status');
+            onValue(statusRef, (snapshot) => {
+                const count = snapshot.numChildren();
+                els.userCounter.innerHTML = `👤 <strong>${count}</strong>`;
+            });
+
+            onValue(ref(db, 'vendas'), (snapshot) => {
+                vendas = [];
+                snapshot.forEach((child) => { vendas.push({ id: child.key, ...child.val() }); });
+                if (els.historyCard.style.display !== 'none') { displaySalesHistory(vendas); }
+            });
         } else {
+            currentUser = null;
             els.authScreen.style.display = 'block';
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'none';
         }
-        clearTour();
     });
 
-    const toggleAuthMode = (isRegister) => {
-        if (isRegister) {
-            els.authTitle.textContent = 'Cadastro de Usuário';
-            els.authActionBtn.textContent = 'Confirmar Cadastro';
-            els.authToggleBtn.textContent = 'Voltar para Login';
-            els.authMessage.textContent = 'Preencha os campos para se cadastrar.';
-        } else {
-            els.authTitle.textContent = 'Autenticação de Usuário';
-            els.authActionBtn.textContent = 'Entrar';
-            els.authToggleBtn.textContent = 'Cadastrar';
-            els.authMessage.textContent = '';
-        }
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if(savedTheme === 'dark') document.body.classList.add('dark');
+    updateLogoAndThemeButton(savedTheme === 'dark');
+
+    if (localStorage.getItem('hasVisited')) {
+        els.welcomeScreen.style.display = 'none';
+    } else {
+        els.welcomeScreen.classList.add('show');
+        els.authScreen.style.display = 'none';
+        els.mainCard.style.display = 'none';
+    }
+    els.enterBtn.onclick = () => {
+        localStorage.setItem('hasVisited', 'true');
+        els.welcomeScreen.classList.add('hidden');
+        setTimeout(() => { els.welcomeScreen.style.display = 'none'; }, 500);
     };
-    
-    // ------------------------------------
-    // 7. FUNÇÕES DE UI E MANIPULAÇÃO DO DOM
-    // ------------------------------------
-    const setLoading = (isLoading, ...buttons) => {
-        buttons.forEach(btn => {
-            if (btn) btn.disabled = isLoading;
-        });
-    };
-
-    const clearAllFields = () => {
-        const fieldsToClear = [els.qtyTickets, els.qtyTablets, els.qtyNitro, els.nomeCliente, els.organizacao, els.telefone, els.negociadoras, els.vendaValorObs];
-        fieldsToClear.forEach(field => field.value = '');
-        
-        const fieldsToRemoveError = [els.nomeCliente, els.organizacao];
-        fieldsToRemoveError.forEach(field => field.classList.remove('input-invalido'));
-
-        els.tipoValor.value = 'limpo';
-        els.results.style.display = 'none';
-        els.valorTotalGeral.textContent = 'R$ 0';
-        
-        // Reset edit mode
-        vendaEmEdicaoId = null;
-        els.registerBtn.textContent = 'Registrar Venda';
-        els.cancelEditBtn.style.display = 'none';
-        els.resetBtn.style.display = 'inline-flex';
-        
-        updateDataVenda();
-    };
-    
-    const toggleView = (showHistory) => {
-        els.mainCard.style.display = showHistory ? 'none' : 'block';
-        els.historyCard.style.display = showHistory ? 'block' : 'none';
-        els.appLogo.src = LOGO_SRC;
-        if (showHistory) {
-            els.filtroHistorico.value = '';
-            filterHistory();
-        }
-    };
-
-    const exportCSV = () => {
-        if (vendas.length === 0) return showToast("Não há vendas para exportar.", "error");
-
-        const headers = ["ID", "Data/Hora", "Registrado Por", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", "Produtos", "Valor Total (R$)", "Tipo Valor", "Observação"];
-        const rows = vendas.map(v => [
-            v.id, v.dataVenda, v.registradoPor, v.nomeCliente, v.organizacao, v.organizacaoTipo, v.telefone, v.negociadoras,
-            `"${v.produtos.replace(/"/g, '""')}"`, v.valorTotal, v.tipoValor, `"${v.vendaValorObs.replace(/"/g, '""')}"`
-        ].join(','));
-
-        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
-        const link = document.createElement("a");
-        link.setAttribute("href", encodeURI(csvContent));
-        link.setAttribute("download", `historico_hells_angels_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`);
-        link.click();
-        link.remove();
-        showToast("Histórico exportado para CSV!", "success");
-    };
-    
-    const exportDiscord = () => {
-        const data = getVendaData();
-        if (!data) return;
-
-        const produtosLista = data.produtos.split(', ').map(p => `• ${p}`).join('\n');
-        const discordMessage = `
-**[ VENDA REGISTRADA ]**
-**Registrado Por:** ${data.registradoPor}
-**Data:** ${data.dataVenda}
-
-**--- DADOS DO CLIENTE ---**
-**Nome:** ${data.nomeCliente}
-**Organização/Opção:** ${data.organizacao} (${data.organizacaoTipo})
-**Telefone:** ${data.telefone}
-
-**--- PRODUTOS & VALOR ---**
-**Produtos:**
-${produtosLista}
-**Tipo de Valor:** ${data.tipoValor}
-**Valor Total:** ${formatCurrency(data.valorTotal)}
-
-**--- INFORMAÇÕES ADICIONAIS ---**
-**Negociadoras:** ${data.negociadoras}
-**Pagamento/Observação:** ${data.vendaValorObs}
-        `.trim();
-        
-        navigator.clipboard.writeText(discordMessage)
-            .then(() => showToast("Mensagem Discord copiada!", "success"))
-            .catch(err => {
-                console.error('Erro ao copiar:', err);
-                showToast("Erro ao copiar.", "error");
-            });
-    };
-    
-    const createHistoryRowHTML = (venda) => {
-        const [data, hora = ''] = venda.dataVenda.split(', ');
-        const valorObsText = venda.vendaValorObs.length > 15 ? venda.vendaValorObs.substring(0, 12) + '...' : venda.vendaValorObs;
-
-        return `
-            <tr id="venda-${venda.id}">
-                <td><span class="history-datetime-line">${data}</span><span class="history-datetime-line">${hora}</span></td>
-                <td>${venda.nomeCliente}</td>
-                <td>${venda.organizacao} (${venda.organizacaoTipo})</td>
-                <td>${venda.telefone}</td>
-                <td title="${venda.produtos}">${venda.produtos}</td>
-                <td class="valor-total-cell" title="${venda.vendaValorObs}">
-                    <span>${formatCurrency(venda.valorTotal)}</span>
-                    <span class="valor-obs-text">(${valorObsText})</span>
-                </td>
-                <td>${venda.negociadoras}</td>
-                <td>${venda.registradoPor}</td>
-                <td class="history-actions-cell">
-                    <button data-action="edit" data-id="${venda.id}" class="muted action-btn">Editar</button>
-                    <button data-action="delete" data-id="${venda.id}" class="danger action-btn">Excluir</button>
-                </td>
-            </tr>`;
-    };
-    
-    const filterHistory = () => {
-        const filterText = els.filtroHistorico.value.toLowerCase();
-        const filteredVendas = vendas.filter(v => 
-            `${v.nomeCliente} ${v.organizacao} ${v.produtos} ${v.dataVenda} ${v.negociadoras} ${v.vendaValorObs}`.toLowerCase().includes(filterText)
-        );
-        
-        if (filteredVendas.length > 0) {
-            els.salesHistory.innerHTML = filteredVendas.map(createHistoryRowHTML).join('');
-        } else {
-            const message = vendas.length === 0 
-                ? "Nenhuma venda registrada ainda." 
-                : `Nenhum resultado encontrado para "${els.filtroHistorico.value}".`;
-            els.salesHistory.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">${message}</td></tr>`;
-        }
-    };
-    
-    const editVenda = (id) => {
-        const venda = vendas.find(v => v.id === id);
-        if (!venda) return;
-        
-        toggleView(false);
-        
-        els.nomeCliente.value = venda.nomeCliente;
-        els.organizacao.value = venda.organizacao;
-        els.organizacaoTipo.value = venda.organizacaoTipo;
-        els.telefone.value = venda.telefone;
-        els.negociadoras.value = venda.negociadoras;
-        els.vendaValorObs.value = venda.vendaValorObs;
-
-        const ticketsMatch = venda.produtos.match(/Tickets \((\d+)\)/);
-        const tabletsMatch = venda.produtos.match(/Tablets \((\d+)\)/);
-        const nitroMatch = venda.produtos.match(/Nitro \((\d+)\)/);
-        
-        els.qtyTickets.value = ticketsMatch ? ticketsMatch[1] : '';
-        els.qtyTablets.value = tabletsMatch ? tabletsMatch[1] : '';
-        els.qtyNitro.value = nitroMatch ? nitroMatch[1] : '';
-        
-        const tipoKey = Object.keys(VALOR_DESCRICAO).find(key => VALOR_DESCRICAO[key] === venda.tipoValor);
-        els.tipoValor.value = tipoKey || 'limpo';
-        
-        vendaEmEdicaoId = id;
-        els.registerBtn.textContent = 'Salvar Edição';
-        els.cancelEditBtn.style.display = 'inline-flex';
-        els.resetBtn.style.display = 'none';
-        
-        calculate();
-        showToast(`Editando venda de ${venda.nomeCliente}.`, "default");
-        window.scrollTo(0, 0);
-    };
-
-    // ------------------------------------
-    // 8. LÓGICA DO TUTORIAL
-    // ------------------------------------
-    let currentTourStep = 0;
-    const tourSteps = [
-        { element: els.nomeCliente, title: "1/7: Dados do Cliente", content: "Comece preenchendo o nome do cliente. Lembre-se, a capitalização é automática!" },
-        { element: els.organizacao, title: "2/7: Organização e Telefone", content: "Informe a organização e o telefone. A máscara (055) XXX-XXX é aplicada automaticamente." },
-        { element: els.qtyTickets, title: "3/7: Quantidade de Produtos", content: "Preencha a quantidade de Tickets, Tablets ou Nitro." },
-        { element: els.tipoValor, title: "4/7: Tipo de Valor", content: "Escolha o tipo de dinheiro e se a venda é para uma Aliança." },
-        { element: els.calcBtn, title: "5/7: Calcular e Registrar", content: "Use 'Calcular' para ver os totais. Depois, use 'Registrar Venda' para salvar." },
-        { element: els.toggleHistoryBtn, title: "6/7: Histórico de Vendas", content: "Acesse todas as vendas salvas. Você pode editar, excluir ou exportar." },
-        { element: els.discordBtnCalc, title: "7/7: Exportar para o Discord", content: "Use este botão para copiar os dados formatados para colar no Discord!" }
-    ];
-
-    const showTourStep = (step) => {
-        clearTour();
-        const { element, title, content } = tourSteps[step];
-        element.classList.add('tour-highlight');
-
-        const tooltip = document.createElement('div');
-        tooltip.className = 'tour-tooltip';
-        tooltip.id = 'tourTooltip';
-        tooltip.innerHTML = `<h4>${title}</h4><p>${content}</p>
-            <button id="tourNextBtn">${step < tourSteps.length - 1 ? 'Próximo' : 'Finalizar'}</button>
-            <button id="tourExitBtn" style="background:#555; color: white;">Sair</button>`;
-        els.body.appendChild(tooltip);
-
-        const rect = element.getBoundingClientRect();
-        let top = rect.bottom + window.scrollY + 10;
-        let left = rect.left + window.scrollX;
-        if (left + 300 > window.innerWidth) left = window.innerWidth - 310;
-        if (left < 10) left = 10;
-        if (rect.bottom > window.innerHeight * 0.7) top = rect.top + window.scrollY - tooltip.offsetHeight - 10;
-        
-        tooltip.style.top = `${top}px`;
-        tooltip.style.left = `${left}px`;
-        setTimeout(() => tooltip.classList.add('active'), 10);
-
-        document.getElementById('tourNextBtn').addEventListener('click', nextTourStep);
-        document.getElementById('tourExitBtn').addEventListener('click', clearTour);
-    };
-
-    const startTour = () => {
-        currentTourStep = 0;
-        toggleView(false);
-        showTourStep(currentTourStep);
-    };
-
-    const nextTourStep = () => {
-        currentTourStep++;
-        if (currentTourStep < tourSteps.length) {
-            showTourStep(currentTourStep);
-        } else {
-            clearTour();
-            showToast("Tutorial finalizado!", "success");
-        }
-    };
-    
-    const clearTour = () => {
-        document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
-        const tooltip = document.getElementById('tourTooltip');
-        if (tooltip) tooltip.remove();
-    };
-
-    // ------------------------------------
-    // 9. EVENT LISTENERS E INICIALIZAÇÃO
-    // ------------------------------------
-    const bindEventListeners = () => {
-        // Ações da Calculadora
-        els.calcBtn.addEventListener('click', calculate);
-        els.resetBtn.addEventListener('click', clearAllFields);
-        els.registerBtn.addEventListener('click', registerVenda);
-        els.cancelEditBtn.addEventListener('click', clearAllFields);
-        els.toggleHistoryBtn.addEventListener('click', () => toggleView(true));
-        els.discordBtnCalc.addEventListener('click', exportDiscord);
-        els.csvBtn.addEventListener('click', exportCSV);
-
-        // Ações do Histórico
-        els.toggleCalcBtn.addEventListener('click', () => {
-            if (vendaEmEdicaoId) {
-                clearAllFields();
-                showToast("Edição pendente cancelada.", "error");
-            }
-            toggleView(false);
-        });
-        els.clearHistoryBtn.addEventListener('click', clearHistory);
-        els.filtroHistorico.addEventListener('input', filterHistory);
-        els.salesHistory.addEventListener('click', (e) => {
-            const button = e.target.closest('button[data-action]');
-            if (!button) return;
-            const { action, id } = button.dataset;
-            if (action === 'edit') editVenda(id);
-            if (action === 'delete') deleteVenda(id);
-        });
-
-        // Controles Globais
-        els.themeBtn.addEventListener('click', toggleTheme);
-        els.tutorialBtn.addEventListener('click', startTour);
-        els.logoLink.addEventListener('click', (e) => { e.preventDefault(); toggleView(false); });
-        els.logoutBtn.addEventListener('click', handleLogout);
-        
-        // Tela de Boas-Vindas
-        els.enterBtn.addEventListener('click', () => {
-            els.welcomeScreen.classList.add('hidden');
-            localStorage.setItem('hasVisited', 'true');
-            els.welcomeScreen.addEventListener('transitionend', () => els.welcomeScreen.style.display = 'none');
-        });
-
-        // Autenticação
-        els.authActionBtn.addEventListener('click', handleAuthAction);
-        els.authToggleBtn.addEventListener('click', () => {
-            const isCurrentlyRegisterMode = els.authTitle.textContent.includes('Cadastro');
-            toggleAuthMode(!isCurrentlyRegisterMode);
-        });
-        els.password.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleAuthAction();
-        });
-
-        // Formatação de Inputs
-        const fieldsToCapitalize = [els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs];
-        fieldsToCapitalize.forEach(field => {
-            field.addEventListener('input', (e) => e.target.value = capitalizeText(e.target.value));
-        });
-
-        els.telefone.addEventListener('input', (e) => e.target.value = phoneMask(e.target.value));
-        els.telefone.addEventListener('focus', (e) => {
-            if (!e.target.value.trim() || e.target.value.length < 7) {
-                e.target.value = "(055) ";
-            }
-        });
-    };
-
-    const toggleTheme = () => {
-        const isDark = els.body.classList.toggle('dark');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        els.themeBtn.textContent = isDark ? '☀️ Modo Claro' : '🌙 Modo Noturno';
-        showToast(`Modo ${isDark ? 'Noturno' : 'Claro'} ativado.`, "default");
-    };
-
-    const initializeApp = () => {
-        bindEventListeners();
-        updateDataVenda();
-
-        // Carregar tema salvo
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        els.body.className = savedTheme;
-        if (savedTheme === 'dark') {
-            els.themeBtn.textContent = '☀️ Modo Claro';
-        }
-        
-        // Lógica de primeira visita
-        if (localStorage.getItem('hasVisited')) {
-            els.welcomeScreen.style.display = 'none';
-        } else {
-            els.welcomeScreen.classList.add('show');
-            els.authScreen.style.display = 'none';
-            els.mainCard.style.display = 'none';
-        }
-        
-        // Todas as logos são as mesmas
-        els.appLogo.src = LOGO_SRC;
-        els.historyImg.src = LOGO_SRC;
-        els.welcomeLogo.src = LOGO_SRC;
-    };
-    
-    // Inicia a aplicação
-    initializeApp();
-</script>
-
+  </script>
 </body>
 </html>
