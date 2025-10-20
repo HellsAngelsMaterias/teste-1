@@ -81,7 +81,7 @@
     body.history-view-active { max-width: 1200px; }
 
     #mainCard { display: block; }
-    h1 { margin: 0 0 12px; font-size: 24px; font-weight: 700; color: var(--cor-principal); text-align: center; flex-grow: 1; }
+    h1 { margin: 0; font-size: 24px; font-weight: 700; color: var(--cor-principal); text-align: center; flex-grow: 1; }
     h2 { font-size: 20px; font-weight: 600; margin-bottom: 10px; color: var(--cor-principal); }
     h3 { color: var(--cor-principal); font-weight:600; margin-top: 16px; }
 
@@ -96,7 +96,7 @@
         padding: 5px 10px; background-color: var(--cor-btn-secundario);
         border-radius: 8px; min-width: 60px; text-align: center;
     }
-    .header-container { display:flex; justify-content: space-between; align-items: center; gap: 15px; }
+    .header-container { display:flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 12px; }
 
     label { display: block; margin: 10px 0 6px; font-weight: 600; color: var(--cor-principal); }
     input[type=number], input[type=text], select {
@@ -435,8 +435,10 @@
     };
     
     const valorDescricao = {
-        'limpo': 'Dinheiro Limpo', 'sujo': 'Dinheiro Sujo',
-        'limpo_alianca': 'Limpo (Aliança)', 'sujo_alianca': 'Sujo (Aliança)'
+        'limpo': 'Dinheiro Limpo',
+        'sujo': 'Dinheiro Sujo',
+        'limpo_alianca': 'Limpo (Aliança)',
+        'sujo_alianca': 'Sujo (Aliança)'
     };
 
     const logoLightModeSrc = "logo-dark.png";
@@ -445,27 +447,48 @@
     const welcomeLogoSrc = "logo-dark.png";
     
     const els = {
-      qtyTickets: document.getElementById('qtyTickets'), qtyTablets: document.getElementById('qtyTablets'),
-      qtyNitro: document.getElementById('qtyNitro'), tipoValor: document.getElementById('tipoValor'),
-      nomeCliente: document.getElementById('nomeCliente'), organizacao: document.getElementById('organizacao'),
-      organizacaoTipo: document.getElementById('organizacaoTipo'), telefone: document.getElementById('telefone'),
-      negociadoras: document.getElementById('negociadoras'), vendaValorObs: document.getElementById('vendaValorObs'),
-      dataVenda: document.getElementById('dataVenda'), filtroHistorico: document.getElementById('filtroHistorico'),
-      resultsBody: document.getElementById('resultsBody'), valuesBody: document.getElementById('valuesBody'),
-      valorTotalGeral: document.getElementById('valorTotalGeral'), results: document.getElementById('results'),
-      mainCard: document.getElementById('mainCard'), historyCard: document.getElementById('historyCard'),
-      salesHistory: document.getElementById('salesHistory'), calcBtn: document.getElementById('calcBtn'),
-      resetBtn: document.getElementById('resetBtn'), registerBtn: document.getElementById('registerBtn'),
-      toggleHistoryBtn: document.getElementById('toggleHistoryBtn'), toggleCalcBtn: document.getElementById('toggleCalcBtn'),
-      clearHistoryBtn: document.getElementById('clearHistoryBtn'), csvBtn: document.getElementById('csvBtn'),
-      discordBtnCalc: document.getElementById('discordBtnCalc'), themeBtn: document.getElementById('themeBtn'),
-      tutorialBtn: document.getElementById('tutorialBtn'), logoLink: document.getElementById('logoLink'),
-      appLogo: document.getElementById('appLogo'), historyImg: document.getElementById('historyImg'),
-      welcomeScreen: document.getElementById('welcomeScreen'), enterBtn: document.getElementById('enterBtn'),
-      welcomeLogo: document.getElementById('welcomeLogo'), authScreen: document.getElementById('authScreen'),
-      username: document.getElementById('username'), password: document.getElementById('password'),
-      loginBtn: document.getElementById('loginBtn'), registerUserBtn: document.getElementById('registerUserBtn'),
-      authMessage: document.getElementById('authMessage'), logoutBtn: document.getElementById('logoutBtn'),
+      qtyTickets: document.getElementById('qtyTickets'),
+      qtyTablets: document.getElementById('qtyTablets'),
+      qtyNitro: document.getElementById('qtyNitro'),
+      tipoValor: document.getElementById('tipoValor'),
+      nomeCliente: document.getElementById('nomeCliente'),
+      organizacao: document.getElementById('organizacao'),
+      organizacaoTipo: document.getElementById('organizacaoTipo'),
+      telefone: document.getElementById('telefone'),
+      negociadoras: document.getElementById('negociadoras'),
+      vendaValorObs: document.getElementById('vendaValorObs'),
+      dataVenda: document.getElementById('dataVenda'),
+      filtroHistorico: document.getElementById('filtroHistorico'),
+      resultsBody: document.getElementById('resultsBody'),
+      valuesBody: document.getElementById('valuesBody'),
+      valorTotalGeral: document.getElementById('valorTotalGeral'),
+      results: document.getElementById('results'),
+      mainCard: document.getElementById('mainCard'),
+      historyCard: document.getElementById('historyCard'),
+      salesHistory: document.getElementById('salesHistory'),
+      calcBtn: document.getElementById('calcBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      registerBtn: document.getElementById('registerBtn'),
+      toggleHistoryBtn: document.getElementById('toggleHistoryBtn'),
+      toggleCalcBtn: document.getElementById('toggleCalcBtn'),
+      clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+      csvBtn: document.getElementById('csvBtn'),
+      discordBtnCalc: document.getElementById('discordBtnCalc'),
+      themeBtn: document.getElementById('themeBtn'),
+      tutorialBtn: document.getElementById('tutorialBtn'),
+      logoLink: document.getElementById('logoLink'),
+      appLogo: document.getElementById('appLogo'),
+      historyImg: document.getElementById('historyImg'),
+      welcomeScreen: document.getElementById('welcomeScreen'),
+      enterBtn: document.getElementById('enterBtn'),
+      welcomeLogo: document.getElementById('welcomeLogo'),
+      authScreen: document.getElementById('authScreen'),
+      username: document.getElementById('username'),
+      password: document.getElementById('password'),
+      loginBtn: document.getElementById('loginBtn'),
+      registerUserBtn: document.getElementById('registerUserBtn'),
+      authMessage: document.getElementById('authMessage'),
+      logoutBtn: document.getElementById('logoutBtn'),
       userCounter: document.getElementById('user-counter')
     };
     
@@ -528,35 +551,49 @@
     
     const calculate = () => {
       const { qtyTickets, qtyTablets, qtyNitro, tipoValor } = {
-        qtyTickets: getQty(els.qtyTickets), qtyTablets: getQty(els.qtyTablets),
-        qtyNitro: getQty(els.qtyNitro), tipoValor: els.tipoValor.value
+        qtyTickets: getQty(els.qtyTickets),
+        qtyTablets: getQty(els.qtyTablets),
+        qtyNitro: getQty(els.qtyNitro),
+        tipoValor: els.tipoValor.value
       };
       const totalQuantities = { cobre: 0, plastico: 0, fita_adesiva: 0, lixo_eletronico: 0, aluminio: 0, vidro: 0, porca: 0, parafuso: 0, moneyBruto: 0 };
       let totalValue = 0;
       const productValues = [];
       
       if (qtyTablets > 0) {
-        totalQuantities.cobre += qtyTablets * perUnit.tablets.cobre; totalQuantities.plastico += qtyTablets * perUnit.tablets.plastico;
-        totalQuantities.fita_adesiva += qtyTablets * perUnit.tablets.fita_adesiva; totalQuantities.lixo_eletronico += qtyTablets * perUnit.tablets.lixo_eletronico;
-        const value = qtyTablets * valores.tablets[tipoValor]; totalValue += value;
+        totalQuantities.cobre += qtyTablets * perUnit.tablets.cobre;
+        totalQuantities.plastico += qtyTablets * perUnit.tablets.plastico;
+        totalQuantities.fita_adesiva += qtyTablets * perUnit.tablets.fita_adesiva;
+        totalQuantities.lixo_eletronico += qtyTablets * perUnit.tablets.lixo_eletronico;
+        const value = qtyTablets * valores.tablets[tipoValor];
+        totalValue += value;
         productValues.push({ product: `Tablets (${qtyTablets} und.)`, value });
       }
       if (qtyTickets > 0) {
         totalQuantities.moneyBruto += qtyTickets * perUnit.tickets.moneyBruto;
-        const value = qtyTickets * valores.tickets[tipoValor]; totalValue += value;
+        const value = qtyTickets * valores.tickets[tipoValor];
+        totalValue += value;
         productValues.push({ product: `Tickets (${qtyTickets} und.)`, value });
       }
       if (qtyNitro > 0) {
-        totalQuantities.aluminio += qtyNitro * perUnit.nitro.aluminio; totalQuantities.cobre += qtyNitro * perUnit.nitro.cobre;
-        totalQuantities.vidro += qtyNitro * perUnit.nitro.vidro; totalQuantities.fita_adesiva += qtyNitro * perUnit.nitro.fita_adesiva;
-        totalQuantities.porca += qtyNitro * perUnit.nitro.porca; totalQuantities.parafuso += qtyNitro * perUnit.nitro.parafuso;
-        const value = qtyNitro * valores.nitro[tipoValor]; totalValue += value;
+        totalQuantities.aluminio += qtyNitro * perUnit.nitro.aluminio;
+        totalQuantities.cobre += qtyNitro * perUnit.nitro.cobre;
+        totalQuantities.vidro += qtyNitro * perUnit.nitro.vidro;
+        totalQuantities.fita_adesiva += qtyNitro * perUnit.nitro.fita_adesiva;
+        totalQuantities.porca += qtyNitro * perUnit.nitro.porca;
+        totalQuantities.parafuso += qtyNitro * perUnit.nitro.parafuso;
+        const value = qtyNitro * valores.nitro[tipoValor];
+        totalValue += value;
         productValues.push({ product: `Nitro (${qtyNitro} und.)`, value });
       }
       
       const hasQuantities = qtyTickets > 0 || qtyTablets > 0 || qtyNitro > 0;
-      if (hasQuantities) { updateResults(totalQuantities, productValues, totalValue); }
-      else { els.results.style.display = 'none'; showToast("Nenhuma quantidade inserida.", "error"); }
+      if (hasQuantities) {
+        updateResults(totalQuantities, productValues, totalValue);
+      } else {
+        els.results.style.display = 'none';
+        showToast("Nenhuma quantidade inserida.", "error");
+      }
       return { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities };
     };
     
@@ -572,47 +609,84 @@
     
     const clearAllFields = () => {
       ['qtyTickets', 'qtyTablets', 'qtyNitro', 'nomeCliente', 'organizacao', 'negociadoras', 'vendaValorObs'].forEach(id => els[id].value = '');
-      els.tipoValor.value = 'limpo'; els.organizacaoTipo.value = 'CNPJ'; els.telefone.value = '';
+      els.tipoValor.value = 'limpo';
+      els.organizacaoTipo.value = 'CNPJ';
+      els.telefone.value = '';
       els.results.style.display = 'none';
       document.querySelectorAll('.input-invalido').forEach(input => input.classList.remove('input-invalido'));
-      if (vendaEmEdicaoId) { vendaEmEdicaoId = null; els.registerBtn.textContent = 'Registrar Venda'; }
+      if (vendaEmEdicaoId) {
+        vendaEmEdicaoId = null;
+        els.registerBtn.textContent = 'Registrar Venda';
+      }
     };
     
     const validateFields = () => {
         let isValid = true;
         [ els.nomeCliente, els.organizacao, els.telefone, els.negociadoras ].forEach(field => {
-            if (!field.value.trim()) { field.classList.add('input-invalido'); isValid = false; }
-            else { field.classList.remove('input-invalido'); }
+            if (!field.value.trim()) {
+                field.classList.add('input-invalido');
+                isValid = false;
+            } else {
+                field.classList.remove('input-invalido');
+            }
         });
         return isValid;
     };
     
     const registerVenda = () => {
       const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
-      if (!hasQuantities) { showToast("É necessário calcular a venda antes de registrar.", "error"); return; }
-      if (!validateFields()) { showToast("Preencha todos os campos obrigatórios.", "error"); return; }
-      if (!currentUser || !currentUser.displayName) { showToast("Erro: Usuário não autenticado.", "error"); return; }
+      if (!hasQuantities) {
+        showToast("É necessário calcular a venda antes de registrar.", "error");
+        return;
+      }
+      if (!validateFields()) {
+          showToast("Preencha todos os campos obrigatórios.", "error");
+          return;
+      }
+      if (!currentUser || !currentUser.displayName) {
+          showToast("Erro: Usuário não autenticado.", "error");
+          return;
+      }
       
       const newVenda = {
-        timestamp: Date.now(), dataHora: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
-        cliente: els.nomeCliente.value.trim(), organizacao: els.organizacao.value.trim(),
-        organizacaoTipo: els.organizacaoTipo.value, telefone: els.telefone.value.trim(),
-        negociadoras: els.negociadoras.value.trim(), vendaValorObs: els.vendaValorObs.value.trim(),
-        qtyTickets, qtyTablets, qtyNitro, valorTotal: totalValue, tipoValor,
+        timestamp: Date.now(),
+        dataHora: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+        cliente: els.nomeCliente.value.trim(),
+        organizacao: els.organizacao.value.trim(),
+        organizacaoTipo: els.organizacaoTipo.value,
+        telefone: els.telefone.value.trim(),
+        negociadoras: els.negociadoras.value.trim(),
+        vendaValorObs: els.vendaValorObs.value.trim(),
+        qtyTickets, qtyTablets, qtyNitro,
+        valorTotal: totalValue,
+        tipoValor,
         registradoPor: currentUser.displayName,
       };
 
       const operation = vendaEmEdicaoId ? set(ref(db, `vendas/${vendaEmEdicaoId}`), newVenda) : push(ref(db, 'vendas'), newVenda);
       operation
-          .then(() => { showToast(`Venda ${vendaEmEdicaoId ? 'atualizada' : 'registrada'} com sucesso!`, "success"); clearAllFields(); })
-          .catch((error) => { showToast(`Erro: ${error.message}`, "error"); });
+          .then(() => {
+              showToast(`Venda ${vendaEmEdicaoId ? 'atualizada' : 'registrada'} com sucesso!`, "success");
+              clearAllFields();
+          })
+          .catch((error) => {
+              showToast(`Erro: ${error.message}`, "error");
+          });
     };
 
     const editVenda = (id) => {
         const venda = vendas.find(v => v.id === id);
         if (!venda) return;
-        Object.keys(venda).forEach(key => { if(els[key] && typeof venda[key] !== 'undefined') els[key].value = venda[key]; });
-        els.qtyTickets.value = venda.qtyTickets || 0; els.qtyTablets.value = venda.qtyTablets || 0; els.qtyNitro.value = venda.qtyNitro || 0;
+        
+        Object.keys(venda).forEach(key => {
+            if(els[key] && typeof venda[key] !== 'undefined') {
+                els[key].value = venda[key];
+            }
+        });
+        els.qtyTickets.value = venda.qtyTickets || 0;
+        els.qtyTablets.value = venda.qtyTablets || 0;
+        els.qtyNitro.value = venda.qtyNitro || 0;
+        
         calculate();
         vendaEmEdicaoId = id;
         els.registerBtn.textContent = 'Atualizar Venda';
@@ -623,16 +697,24 @@
     const removeVenda = (id) => {
         if (confirm("Tem certeza que deseja remover esta venda?")) {
             remove(ref(db, `vendas/${id}`))
-                .then(() => { showToast("Venda removida.", "success"); })
-                .catch((error) => { showToast(`Erro ao remover: ${error.message}`, "error"); });
+                .then(() => {
+                    showToast("Venda removida.", "success");
+                })
+                .catch((error) => {
+                    showToast(`Erro ao remover: ${error.message}`, "error");
+                });
         }
     };
 
     const copyToClipboard = (text) => {
         if (!text) return;
         navigator.clipboard.writeText(text)
-          .then(() => { showToast("Mensagem copiada para o Discord!", "success"); })
-          .catch(err => { showToast("Erro ao copiar.", "error"); });
+          .then(() => {
+            showToast("Mensagem copiada para o Discord!", "success");
+          })
+          .catch(err => {
+            showToast("Erro ao copiar.", "error");
+          });
     };
 
     const buildDiscordMessage = (vendaData) => {
@@ -659,8 +741,12 @@ Negociadoras: ${negociadoras}
             if (venda.qtyNitro > 0) produtos.push(`Nitros (${venda.qtyNitro})`);
             
             messageData = {
-                cliente: venda.cliente, data: venda.dataHora.split(', ')[0], orgTipo: venda.organizacaoTipo,
-                org: venda.organizacao, tel: venda.telefone, produtos: produtos.join(', '),
+                cliente: venda.cliente,
+                data: venda.dataHora.split(', ')[0],
+                orgTipo: venda.organizacaoTipo,
+                org: venda.organizacao,
+                tel: venda.telefone,
+                produtos: produtos.join(', '),
                 valor: formatCurrency(venda.valorTotal || 0),
                 obs: venda.vendaValorObs || valorDescricao[venda.tipoValor],
                 negociadoras: venda.negociadoras
@@ -676,9 +762,12 @@ Negociadoras: ${negociadoras}
             if (qtyNitro > 0) produtos.push(`Nitros (${qtyNitro})`);
 
             messageData = {
-                cliente: els.nomeCliente.value.trim(), data: els.dataVenda.value,
-                orgTipo: els.organizacaoTipo.value, org: els.organizacao.value.trim(),
-                tel: els.telefone.value.trim(), produtos: produtos.join(', '),
+                cliente: els.nomeCliente.value.trim(),
+                data: els.dataVenda.value,
+                orgTipo: els.organizacaoTipo.value,
+                org: els.organizacao.value.trim(),
+                tel: els.telefone.value.trim(),
+                produtos: produtos.join(', '),
                 valor: formatCurrency(totalValue),
                 obs: els.vendaValorObs.value.trim() || valorDescricao[tipoValor],
                 negociadoras: els.negociadoras.value.trim()
@@ -704,7 +793,8 @@ Negociadoras: ${negociadoras}
             const row = els.salesHistory.insertRow();
             row.insertCell().colSpan = 9; 
             row.cells[0].textContent = "Nenhuma venda registrada ainda.";
-            row.cells[0].style.textAlign = 'center'; row.cells[0].style.padding = '20px';
+            row.cells[0].style.textAlign = 'center';
+            row.cells[0].style.padding = '20px';
             return;
         }
 
@@ -712,6 +802,8 @@ Negociadoras: ${negociadoras}
 
         history.forEach(venda => {
             const row = els.salesHistory.insertRow();
+            
+            // Células de dados
             const [data, hora] = venda.dataHora.split(', ');
             row.insertCell().innerHTML = `<span class="history-datetime-line">${data}</span><span class="history-datetime-line">${hora}</span>`;
             row.insertCell().textContent = capitalizeText(venda.cliente);
@@ -731,6 +823,7 @@ Negociadoras: ${negociadoras}
             row.insertCell().textContent = capitalizeText(venda.negociadoras);
             row.insertCell().textContent = venda.registradoPor || 'Desconhecido';
             
+            // Célula de Ações
             const actionsCell = row.insertCell();
             actionsCell.className = 'history-actions-cell';
             actionsCell.innerHTML = `
@@ -748,13 +841,18 @@ Negociadoras: ${negociadoras}
         const query = els.filtroHistorico.value.toLowerCase().trim();
         const filteredVendas = vendas.filter(v => 
             Object.values(v).some(val => String(val).toLowerCase().includes(query)) ||
-            (v.qtyTickets > 0 && `tickets`.includes(query)) || (v.qtyTablets > 0 && `tablets`.includes(query)) || (v.qtyNitro > 0 && `nitro`.includes(query))
+            (v.qtyTickets > 0 && `tickets`.includes(query)) ||
+            (v.qtyTablets > 0 && `tablets`.includes(query)) ||
+            (v.qtyNitro > 0 && `nitro`.includes(query))
         );
         displaySalesHistory(query ? filteredVendas : vendas);
     };
 
     const exportToCsv = () => {
-        if (vendas.length === 0) { showToast("Nenhum dado para exportar.", "error"); return; }
+        if (vendas.length === 0) {
+            showToast("Nenhum dado para exportar.", "error");
+            return;
+        }
         const headers = ["Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", "Observação", "Qtde Tickets", "Qtde Tablets", "Qtde Nitro", "Valor Total", "Tipo Valor", "Registrado Por"];
         const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${v.cliente}"`, `"${v.organizacao}"`, `"${v.organizacaoTipo}"`, `"${v.telefone}"`, `"${v.negociadoras}"`, `"${v.vendaValorObs}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${v.registradoPor}"`].join(','));
         const csvContent = [headers.join(','), ...csvRows].join('\n');
@@ -767,7 +865,9 @@ Negociadoras: ${negociadoras}
 
     const clearHistory = () => {
         if (confirm("ATENÇÃO: Deseja APAGAR TODO o histórico de vendas? Esta ação é irreversível.")) {
-            remove(ref(db, 'vendas')).then(() => showToast("Histórico limpado.", "success")).catch(e => showToast(`Erro: ${e.message}`, "error"));
+            remove(ref(db, 'vendas'))
+                .then(() => showToast("Histórico limpado.", "success"))
+                .catch(e => showToast(`Erro: ${e.message}`, "error"));
         }
     };
     
@@ -791,7 +891,9 @@ Negociadoras: ${negociadoras}
         { element: 'registerBtn', title: '4/5: Registrar Venda', content: 'Após calcular, preencha os dados do cliente e clique para salvar no histórico.' },
         { element: 'toggleHistoryBtn', title: '5/5: Ver Histórico', content: 'Acesse o histórico para ver, editar, apagar ou copiar vendas antigas.' }
     ];
-    let currentStepIndex = -1, currentTooltip = null, tourOverlay = null;
+    let currentStepIndex = -1;
+    let currentTooltip = null;
+    let tourOverlay = null;
     
     const clearTour = () => {
         if(tourOverlay) {
@@ -813,11 +915,18 @@ Negociadoras: ${negociadoras}
         }
         
         currentStepIndex++;
-        if (currentStepIndex >= tourSteps.length) { showToast("Tutorial concluído!", "success"); clearTour(); return; }
+        if (currentStepIndex >= tourSteps.length) {
+            showToast("Tutorial concluído!", "success");
+            clearTour();
+            return;
+        }
         
         const step = tourSteps[currentStepIndex];
         const targetElement = els[step.element];
-        if (!targetElement) { clearTour(); return; }
+        if (!targetElement) {
+            clearTour();
+            return;
+        }
 
         if (currentStepIndex === 0) {
             tourOverlay = document.createElement('div');
@@ -856,7 +965,10 @@ Negociadoras: ${negociadoras}
     els.csvBtn.onclick = exportToCsv;
     els.themeBtn.onclick = toggleTheme;
     els.tutorialBtn.onclick = () => {
-        if (!currentUser) { showToast("Faça login para iniciar o tutorial.", "default"); return; }
+        if (!currentUser) {
+            showToast("Faça login para iniciar o tutorial.", "default");
+            return;
+        }
         showNextTourStep();
     };
     els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
@@ -866,11 +978,16 @@ Negociadoras: ${negociadoras}
         const email = els.username.value.trim() + "@ha.com";
         const password = els.password.value;
         const displayName = els.username.value.trim();
+
         if ((isLogin && (!email || password.length < 6)) || (!isLogin && (!displayName || password.length < 6))) {
-            showToast("Verifique os campos. A senha precisa ter no mínimo 6 caracteres.", "error"); return;
+            showToast("Verifique os campos. A senha precisa ter no mínimo 6 caracteres.", "error");
+            return;
         }
         
-        const action = isLogin ? signInWithEmailAndPassword(auth, email, password) : createUserWithEmailAndPassword(auth, email, password).then(cred => updateProfile(cred.user, { displayName }));
+        const action = isLogin 
+            ? signInWithEmailAndPassword(auth, email, password) 
+            : createUserWithEmailAndPassword(auth, email, password).then(cred => updateProfile(cred.user, { displayName }));
+
         action.catch((error) => {
             const code = error.code;
             const msg = code === 'auth/invalid-credential' ? "Usuário ou senha incorretos." :
@@ -889,7 +1006,9 @@ Negociadoras: ${negociadoras}
         }
         auth.signOut();
     };
-    els.password.addEventListener('keydown', (e) => { if(e.key === 'Enter') handleAuthAction(true); });
+    els.password.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter') handleAuthAction(true);
+    });
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -897,27 +1016,34 @@ Negociadoras: ${negociadoras}
             els.authScreen.style.display = 'none';
             els.mainCard.style.display = 'block';
 
+            // --- LÓGICA DE PRESENÇA CORRIGIDA ---
             const userStatusRef = ref(db, `/status/${currentUser.uid}`);
-            const isOnline = { online: true };
+            const connectedRef = ref(db, '.info/connected');
             
-            onValue(ref(db, '.info/connected'), (snapshot) => {
-                if (snapshot.val() === false) { return; }
-                onDisconnect(userStatusRef).remove().then(() => {
-                    set(userStatusRef, isOnline);
-                });
+            onValue(connectedRef, (snap) => {
+                if (snap.val() === true) {
+                    set(userStatusRef, true);
+                    onDisconnect(userStatusRef).remove();
+                }
             });
 
             const statusRef = ref(db, '/status');
             onValue(statusRef, (snapshot) => {
-                const count = snapshot.numChildren();
+                const count = snapshot.exists() ? snapshot.numChildren() : 0;
                 els.userCounter.innerHTML = `👤 <strong>${count}</strong>`;
             });
+            // --- FIM DA LÓGICA DE PRESENÇA ---
 
             onValue(ref(db, 'vendas'), (snapshot) => {
                 vendas = [];
-                snapshot.forEach((child) => { vendas.push({ id: child.key, ...child.val() }); });
-                if (els.historyCard.style.display !== 'none') { displaySalesHistory(vendas); }
+                snapshot.forEach((child) => {
+                    vendas.push({ id: child.key, ...child.val() });
+                });
+                if (els.historyCard.style.display !== 'none') {
+                    displaySalesHistory(vendas);
+                }
             });
+
         } else {
             currentUser = null;
             els.authScreen.style.display = 'block';
@@ -937,10 +1063,13 @@ Negociadoras: ${negociadoras}
         els.authScreen.style.display = 'none';
         els.mainCard.style.display = 'none';
     }
+
     els.enterBtn.onclick = () => {
         localStorage.setItem('hasVisited', 'true');
         els.welcomeScreen.classList.add('hidden');
-        setTimeout(() => { els.welcomeScreen.style.display = 'none'; }, 500);
+        setTimeout(() => {
+            els.welcomeScreen.style.display = 'none';
+        }, 500);
     };
   </script>
 </body>
