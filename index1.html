@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <link rel="icon" type="image/png" href="logo-dark.png">
+  
+  <title>Hells Angels | Sistema de Registro</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="welcomeScreen">
+        <img id="welcomeLogo" src="logo-dark.png" alt="Logo Hells Angels">
+        <h2>Bem-vindo ao Sistema de Registro</h2>
+        <p>A ferramenta essencial para a gestão de registros de entrada, histórico e dossiês de contatos.</p>
+        <button id="enterBtn" class="primary">Entrar no Sistema</button>
+    </div>
+
+    <div id="authScreen" class="card" style="display: none; max-width: 350px; margin: 50px auto;">
+        <h2>Login HA</h2>
+        <label for="authUsername">Usuário:</label>
+        <input type="text" id="authUsername" placeholder="Seu nome de usuário ou placa" required>
+
+        <label for="authPassword">Senha:</label>
+        <input type="password" id="authPassword" placeholder="Sua senha" required>
+        
+        <p id="authMessage" style="color: var(--cor-erro); margin-top: 10px;"></p>
+
+        <div class="actions">
+            <button id="loginBtn" class="primary">Entrar</button>
+        </div>
+    </div>
+    
+    <a id="logoLink" href="#">
+        <img id="appLogo" class="app-logo" src="logo-dark.png" alt="Logo Hells Angels">
+    </a>
+    
+    <div class="header-container">
+        <h1>Sistema de Registro</h1>
+        
+        <span id="userStatus" class="user-status-display tag-hells" style="display: none;">HELLS</span>
+    </div>
+
+    <div class="top-right-controls">
+        <button id="themeToggleButton" class="control-btn" onclick="toggleTheme()">Modo Escuro</button>
+        <button id="investigacaoBtn" class="control-btn primary" style="display: none;">Investigação</button>
+        <button id="historyBtn" class="control-btn primary" style="display: none;">Histórico</button>
+        <button id="dossierBtn" class="control-btn primary" style="display: none;">Dossiê</button>
+        <button id="adminBtn" class="control-btn primary" style="display: none;">Admin</button>
+        <button id="logoutBtn" class="control-btn danger" style="display: none;">Sair</button>
+    </div>
+
+    <div id="mainCard" class="card" style="display: none;">
+        <h2>Registro de Entrada</h2>
+        
+        <div class="grid grid-venda">
+            <div class="input-group">
+                <label for="nomeCliente">Nome do Cliente:</label>
+                <input type="text" id="nomeCliente" placeholder="Nome Completo / Alias" required>
+                <p id="clienteSuggestion" class="suggestion-tip">Sugestão: Cliente HA. Adicione no Dossiê para autocomplete.</p>
+                
+                <label for="nomeOrganizacao">Organização/Facção (Opcional):</label>
+                <input type="text" id="nomeOrganizacao" placeholder="Hells Angels / Família / N/A">
+            </div>
+
+            <div class="input-group">
+                <label for="placaVeiculo">Placa Principal do Veículo:</label>
+                <input type="text" id="placaVeiculo" placeholder="ABC0000" required maxlength="7">
+
+                <label for="valorVenda">Valor da Venda (USD):</label>
+                <input type="number" id="valorVenda" placeholder="1000.00" min="0" step="0.01">
+            </div>
+
+            <div class="grid-venda-3col">
+                 <div class="input-group" style="grid-column: 1 / 2;">
+                    <label for="statusVenda">Status:</label>
+                    <select id="statusVenda">
+                        <option value="ativo">Ativo (Em Andamento)</option>
+                        <option value="concluido">Concluído/Fechado</option>
+                        <option value="inativo">Inativo (Cancelado/Pendente)</option>
+                    </select>
+                </div>
+                
+                <div class="input-group" style="grid-column: 2 / 4;">
+                    <label for="observacao">Observação:</label>
+                    <input type="text" id="observacao" placeholder="Detalhes importantes sobre a transação.">
+                </div>
+            </div>
+
+        </div>
+
+        <h3 style="margin-top: 20px;">Veículos Adicionais do Cliente</h3>
+        <p style="font-size: 14px; margin-top: -10px; color: var(--cor-texto);">Liste outros veículos que o cliente possui ou está comprando.</p>
+        <div id="modalListaVeiculos" style="max-height: 120px; overflow-y: auto;">
+             <div style="text-align: center; color: var(--cor-texto); font-size: 13px;">Nenhum veículo adicionado.</div>
+        </div>
+        <div class="actions" style="margin-top: 10px;">
+             <button id="btnGerenciarVeiculos" class="muted">Gerenciar Veículos</button>
+        </div>
+
+
+        <div class="actions" style="justify-content: flex-end;">
+            <button id="btnCadastrar" class="primary">Cadastrar Entrada</button>
+            <button id="btnSalvarEdicao" class="success" style="display: none;">Salvar Edição</button>
+            <button id="btnCancelarEdicao" class="danger" style="display: none;">Cancelar Edição</button>
+        </div>
+    </div>
+
+    <div id="historyCard" class="card" style="display: none;">
+        <h2>Histórico de Registros</h2>
+        
+        <div id="historyBackground">
+            <div class="history-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Placa Principal</th>
+                            <th>Cliente</th>
+                            <th>Organização</th>
+                            <th>Valor Total</th>
+                            <th>Obs.</th>
+                            <th>Status</th>
+                            <th>Data/Hora</th>
+                            <th>Registrado Por</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div id="dossierCard" class="card" style="display: none;">
+        <div id="dossierPeopleHeader">
+            <h2>Dossiê de Contatos</h2>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                 <input type="text" id="inputBuscaDossier" placeholder="Buscar por Nome, Cargo ou Facção..." style="width: 250px;">
+                 <button id="btnNovaPessoa" class="primary">Nova Pessoa</button>
+            </div>
+        </div>
+        
+        <div id="dossierPeopleGrid" class="dossier-people-grid">
+            </div>
+        
+        <div id="dossierOrgHeader">
+            <h2 style="margin-top: 30px;">Bases / Organizações</h2>
+            <div class="actions" style="justify-content: flex-end; margin-top: -10px;">
+                <button id="btnNovaOrganizacao" class="primary">Nova Organização</button>
+            </div>
+        </div>
+        
+        <div id="dossierOrgGrid" class="dossier-org-grid">
+            </div>
+
+    </div>
+
+    <div id="adminPanel" class="card" style="display: none;">
+        <h2>Painel de Administração</h2>
+        <p>Funcionalidades de gestão de usuários e configurações gerais estarão aqui.</p>
+    </div>
+
+    <div id="modalOverlay" class="modal-overlay"></div>
+
+    <div id="veiculoModalContent" class="modal-content" style="display: none;">
+        <h2>Gerenciar Veículos</h2>
+        <p style="font-size: 14px; margin-bottom: 10px;">Adicione ou remova veículos ligados a esta entrada de registro.</p>
+        
+        <div id="modalVeiculosTableBody">
+            </div>
+
+        <h4 style="margin-top: 15px;">Adicionar Novo Veículo</h4>
+        <div class="grid" style="grid-template-columns: 1fr 1.5fr 1fr; gap: 8px; margin-top: 8px;">
+            <div>
+                <label for="inputAddVeiculoPlaca">Placa:</label>
+                <input type="text" id="inputAddVeiculoPlaca" placeholder="ABC0000" maxlength="7">
+            </div>
+            <div>
+                <label for="inputAddVeiculoModelo">Modelo:</label>
+                <input type="text" id="inputAddVeiculoModelo" placeholder="Hellion / PCJ-600">
+            </div>
+            <div>
+                <label for="inputAddVeiculoCor">Cor (Opcional):</label>
+                <input type="text" id="inputAddVeiculoCor" placeholder="Preto Fosco">
+            </div>
+        </div>
+        
+        <div class="actions" style="justify-content: flex-end; margin-top: 10px;">
+            <button id="btnAddVeiculo" class="success">Adicionar à Lista</button>
+        </div>
+        
+        <div class="actions" style="justify-content: flex-end; margin-top: 20px; border-top: 1px solid var(--cor-borda); padding-top: 10px;">
+            <button class="muted" onclick="hideModal()">Concluir</button>
+        </div>
+    </div>
+
+    <div id="imageLightboxModal">
+        <img id="lightboxImg" src="" alt="Imagem Ampliada">
+    </div>
+
+    <div id="toast-container"></div>
+    
+    <div id="tour-overlay"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
