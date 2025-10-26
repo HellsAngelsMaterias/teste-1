@@ -13,7 +13,7 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     updateProfile, 
-    onAuthStateChanged, 
+    onAuthStateChanged, // <-- EXPORTADO AQUI
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { 
@@ -50,10 +50,7 @@ let auth;
 let db;
 
 // --- FUNÇÃO DE INICIALIZAÇÃO ---
-/**
- * Inicializa o aplicativo Firebase e define as variáveis.
- */
-function initFirebase() { // <-- FUNÇÃO DEFINIDA SEM 'export' aqui
+function initFirebase() { 
     if (!app) {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
@@ -63,7 +60,7 @@ function initFirebase() { // <-- FUNÇÃO DEFINIDA SEM 'export' aqui
 }
 // --- FIM DA FUNÇÃO DE INICIALIZAÇÃO ---
 
-// --- EXPORTS FINAIS (FUNÇÃO initFirebase exportada SOMENTE AQUI) ---
+// --- EXPORTS FINAIS ---
 export {
     app,
     auth,
@@ -74,7 +71,7 @@ export {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     updateProfile,
-    onAuthStateChanged,
+    onAuthStateChanged, // <-- EXPORTADO NOVAMENTE AQUI
     signOut,
     
     // Funções de Database
@@ -91,6 +88,6 @@ export {
     onDisconnect,     
     serverTimestamp,
     
-    // Função de Inicialização (exportada UMA VEZ)
+    // Funções de Inicialização 
     initFirebase 
 };
