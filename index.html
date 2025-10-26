@@ -264,13 +264,84 @@
   <div id="bottomPanel">
       <span id="bottomPanelDisplay">Este é o painel inferior. O conteúdo pode ser personalizado.</span>
   </div>
-  
+
   <div id="editDossierOverlay" class="modal-overlay"></div>
-  
   <div id="editDossierModal" class="card modal-content"> 
       <h2>Editar Entrada do Dossiê</h2> 
       <input type="hidden" id="editDossierOrg"> 
       <input type="hidden" id="editDossierId"> 
+      
+      <label for="editDossierNome">Nome:</label>
+      <input type="text" id="editDossierNome" placeholder="Nome completo da pessoa">
+      
+      <label for="editDossierNumero">Telefone (055):</label>
+      <input type="text" id="editDossierNumero" maxlength="13" placeholder="(055) XXX-XXX">
+      
+      <label for="editDossierCargo">Cargo/Função:</label>
+      <input type="text" id="editDossierCargo" placeholder="Ex: Gerente, Mão Direita">
+      
+      <label for="editDossierInstagram">Instagram (Opcional):</label>
+      <input type="text" id="editDossierInstagram" placeholder="@instagramdapessoa">
+      
+      <label for="editDossierFotoUrl">Link da Foto (URL):</label>
+      <input type="text" id="editDossierFotoUrl" placeholder="URL da foto">
+
+      <h3>Veículos Registrados</h3>
+      <ul id="editModalListaVeiculos" style="list-style: none; padding: 0;">
+          <li>Nenhum veículo registrado.</li>
+      </ul>
+
+      <div class="actions" style="margin-top: 20px; border-top: 1px solid var(--cor-borda); padding-top: 15px;">
+          <button id="saveDossierBtn" class="success">Salvar Alterações</button>
+          <button id="cancelDossierBtn" class="danger">Cancelar/Fechar</button>
+      </div>
+  </div>
+  
+  <div id="addDossierOverlay" class="modal-overlay"></div>
+  <div id="addDossierModal" class="card modal-content">
+      <h2>Adicionar Nova Pessoa</h2>
+      <label for="addDossierOrganizacao">Base (Organização):</label>
+      <input type="text" id="addDossierOrganizacao" readonly>
+      
+      <label for="addDossierNome">Nome:</label>
+      <input type="text" id="addDossierNome" placeholder="Nome completo da pessoa">
+      
+      <label for="addDossierNumero">Telefone (055):</label>
+      <input type="text" id="addDossierNumero" maxlength="13" placeholder="(055) XXX-XXX">
+      
+      <label for="addDossierCargo">Cargo/Função:</label>
+      <input type="text" id="addDossierCargo" placeholder="Ex: Gerente, Mão Direita">
+      
+      <label for="addDossierFotoUrl">Link da Foto (URL):</label>
+      <input type="text" id="addDossierFotoUrl" placeholder="URL da foto">
+
+      <div class="actions" style="margin-top: 20px; border-top: 1px solid var(--cor-borda); padding-top: 15px;">
+          <button id="saveNewDossierBtn" class="success">Adicionar Pessoa</button>
+          <button id="cancelNewDossierBtn" class="danger">Cancelar</button>
+      </div>
+  </div>
+  
+  <div id="orgModalOverlay" class="modal-overlay"></div>
+  <div id="orgModal" class="card modal-content" style="max-width: 500px;">
+      <h2 id="orgModalTitle">Editar Organização</h2>
+      <input type="hidden" id="editOrgId">
+      <label for="orgNome">Nome da Organização:</label>
+      <input type="text" id="orgNome" placeholder="Ex: Hells Angels, Nox">
+      <label for="orgFotoUrl">Link da Logo/Foto (URL):</label>
+      <input type="text" id="orgFotoUrl" placeholder="URL da imagem da organização">
+      <label for="orgInfo">Informações da Base:</label>
+      <textarea id="orgInfo" placeholder="Detalhes sobre a base, localização, etc." rows="4"></textarea>
+
+      <div class="actions" style="margin-top: 20px; border-top: 1px solid var(--cor-borda); padding-top: 15px;">
+          <button id="saveOrgBtn" class="success">Salvar</button>
+          <button id="deleteOrgBtn" class="danger" style="display: none;">Excluir</button>
+          <button id="cancelOrgBtn" class="muted">Cancelar</button>
+      </div>
+  </div>
+  
+  <div id="imageLightboxOverlay" class="modal-overlay"></div>
+  <div id="imageLightboxModal">
+      <img id="lightboxImg" src="" alt="Imagem Ampliada">
   </div>
   
   <script type="module" src="script.js"></script> 
