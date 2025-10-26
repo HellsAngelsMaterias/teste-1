@@ -27,7 +27,9 @@
   <div class="top-right-controls">
       <button class="control-btn" id="tutorialBtn">💡 Tutorial</button> 
       <button class="control-btn" id="themeBtn">🌙 Modo Noturno</button>
-      <button class="control-btn" id="investigacaoBtn" style="display:none; background-color: #0056b3;">🔎 Investigação</button> 
+      
+      <button class="control-btn" id="investigacaoBtn" style="background-color: #0056b3;">🔎 Investigação</button> 
+  
   </div>
 
   <div id="authScreen" class="card" style="max-width: 400px; margin: 100px auto 20px auto; display: none;">
@@ -181,7 +183,20 @@
       
       <h3>Gerenciamento de Usuários</h3>
       <p style="font-size: 13px;">Altere a permissão de usuários. Você não pode alterar sua própria tag.</p>
-      <div class="history-table-wrapper"> <table id="adminUserTable"> <thead> <tr> <th style="width: 80%;">Usuário / Status</th> <th style="width: 20%;">Ações</th> </tr> </thead> <tbody id="adminUserListBody"> <tr><td colspan="2" style="text-align: center;">Carregando usuários...</td></tr> </tbody> </table> </div>
+      <div class="history-table-wrapper">
+          <table id="adminUserTable">
+              <thead>
+                  <tr>
+                      <th style="width: 40%;">Usuário / Status</th>
+                      <th style="width: 30%;">Atividade Atual</th>
+                      <th style="width: 30%;">Ações</th>
+                  </tr>
+              </thead>
+              <tbody id="adminUserListBody">
+                  <tr><td colspan="3" style="text-align: center;">Carregando usuários...</td></tr>
+              </tbody>
+          </table>
+      </div>
       <h3 style="margin-top: 20px;">Controles de Layout Global</h3>
       <p style="font-size: 13px;">Habilitar ou desabilitar recursos para todos os usuários do site em tempo real.</p>
       <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
@@ -392,4 +407,3 @@
   
 </body>
 </html>
-
