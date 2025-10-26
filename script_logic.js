@@ -97,10 +97,8 @@ export const toggleTheme = () => {
 
 /**
  * Atualiza o logo e o botão de tema.
- * * CORREÇÃO DE ERRO: Adicionada exportação inline e removida do bloco final 
- * para resolver o erro 'Duplicate export'.
  */
-export const updateLogoAndThemeButton = (isDark) => { // <-- CORREÇÃO 1: Adicionado 'export'
+export const updateLogoAndThemeButton = (isDark) => { // <-- EXPORTADO AQUI (INLINE)
     els.appLogo.src = isDark ? logoDarkModeSrc : logoLightModeSrc;
     els.welcomeLogo.src = isDark ? logoDarkModeSrc : logoLightModeSrc;
     els.historyImg.src = historyBackgroundSrc; // Não muda
@@ -978,7 +976,7 @@ export const monitorAuth = () => {
 // As funções que precisam ser acessíveis globalmente ou por listeners de alto nível
 export {
     toggleView,
-    // updateLogoAndThemeButton, // <-- CORREÇÃO: REMOVIDA daqui, pois já foi exportada inline acima.
+    // updateLogoAndThemeButton, // <--- CORREÇÃO APLICADA: Esta linha foi removida para eliminar a exportação duplicada.
     toggleModal,
     // Dossier Listeners
     initializePeopleFilter,
