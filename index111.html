@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <link rel="icon" type="image/png" href="logo-dark.png">
+  
+  <title>Hells Angels</title>
+  
+  <link rel="stylesheet" href="style11.css"> 
+  
+</head>
+<body class="light">
+  
+  <a href="#" id="logoLink">
+    <img id="appLogo" src="logo-dark.png" alt="Hells Angels Logo" class="app-logo">
+  </a>
+
+  <div id="welcomeScreen"> 
+      <img id="welcomeLogo" src="logo-dark.png" alt="Welcome Logo"> 
+      <h2 style="font-weight: 900;">Bem-vindo(a)</h2>
+      <p style="margin-bottom: 20px; font-size: 16px;">Calculadora e Registro de Vendas Hells Angels</p>
+      <button id="enterBtn" class="primary">Entrar no Site</button>
+  </div>
+  
+  <div class="top-right-controls">
+      <button class="control-btn" id="tutorialBtn">💡 Tutorial</button> 
+      <button class="control-btn" id="themeBtn">🌙 Modo Noturno</button>
+      <button class="control-btn" id="investigacaoBtn" style="display:none; background-color: #0056b3;">🔎 Investigação</button> 
+  </div>
+
+  <div id="authScreen" class="card" style="max-width: 400px; margin: 100px auto 20px auto; display: none;">
+      <img src="logo-dark.png" alt="Hells Angels Logo" style="display: block; max-height: 100px; margin: 0 auto 20px auto;">
+      <h2>Autenticação de Usuário</h2>
+      <label for="username">Nome de Usuário:</label>
+      <input id="username" type="text" placeholder="Seu nome de usuário">
+      <label for="password">Senha:</label>
+      <input id="password" type="password" placeholder="Sua senha">
+      <div class="actions">
+          <button id="loginBtn" class="primary">Entrar</button>
+          <button id="registerUserBtn" class="muted">Cadastrar</button>
+      </div>
+      <a href="#" id="forgotPasswordLink" style="text-align: center; display: block; margin-top: 15px;">Esqueci a Senha</a>
+      <p id="authMessage" style="color: var(--cor-erro); margin-top: 10px;"></p>
+  </div>
+
+  <div class="card" id="mainCard" style="display:none">
+    <div class="header-container">
+        <h1 id="mainTitle">Calculadora e Registro de Vendas</h1>
+        <span id="userStatus" class="user-status-display" style="display:none;"></span>
+        <button id="logoutBtn" class="danger" style="animation: none;">Sair</button>
+    </div>
+    
+    <div class="card-venda">
+        <h2>Dados da Venda</h2>
+        <div class="grid grid-venda">
+            <div>
+                <label for="nomeCliente">Nome:</label>
+                <input id="nomeCliente" type="text" value="">
+            </div>
+            <div>
+                <label for="dataVenda">Data e Horário:</label>
+                <input id="dataVenda" type="text" readonly> 
+            </div>
+            <div>
+                <label for="organizacao">Organização:</label>
+                <input id="organizacao" type="text" value="" list="sugestoesOrganizacao">
+                <p class="suggestion-tip">Digite para ver sugestões de organizações.</p>
+                <datalist id="sugestoesOrganizacao">
+                    <option value="Hells Angels"></option>
+                    <option value="Serpents"></option> <option value="Nox"></option> <option value="NKT"></option> <option value="Ruptura"></option> <option value="Midnight"></option> <option value="Meraki"></option> <option value="Lotus"></option> <option value="Hydra"></option> <option value="Hooligans"></option> <option value="Families"></option> <option value="Cartel"></option> <option value="Blood Street"></option> <option value="Blood Reapers"></option> <option value="Blue Diamond"></option> <option value="Black Heart"></option> <option value="Ballas"></option> <option value="Aura"></option> <option value="Anarquia"></option> <option value="8 Anjo"></option> <option value="Vagos"></option> <option value="Vertice"></option> <option value="Void"></option> <option value="Solo"></option>
+                </datalist>
+            </div>
+            <div>
+                <label for="organizacaoTipo">Opção (CNPJ/CPF):</label>
+                <select id="organizacaoTipo">
+                    <option value="CNPJ">CNPJ (Obrigatório)</option>
+                    <option value="CPF">CPF (Opcional)</option>
+                    <option value="OUTROS">Outros (Opcional)</option>
+                </select>
+            </div>
+            <div>
+                <label for="telefone">Telefone:</label>
+                <input id="telefone" type="text" value="" maxlength="13">
+            </div>
+        </div>
+        
+        <div class="grid grid-venda grid-venda-produtos">
+            <div>
+                <label for="qtyTickets">Tickets (Unidades):</label>
+                <input id="qtyTickets" type="number" min="0" value="0">
+            </div>
+            <div>
+                <label for="qtyTablets">Tablets (Unidades):</label>
+                <input id="qtyTablets" type="number" min="0" value="0">
+            </div>
+            <div>
+                <label for="qtyNitro">Nitro (Unidades):</label>
+                <input id="qtyNitro" type="number" min="0" value="0">
+            </div>
+            <div>
+                <label for="tipoValor">Tipo de Valor:</label>
+                <select id="tipoValor">
+                    <option value="limpo">Dinheiro Limpo</option>
+                    <option value="sujo">Dinheiro Sujo</option>
+                    <option value="limpo_alianca">Limpo (Aliança)</option>
+                    <option value="sujo_alianca">Sujo (Aliança)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="grid grid-venda">
+            <div>
+                <label for="carroVeiculo">Carro/Veículo (Separar por vírgula se houver mais de um):</label>
+                <input id="carroVeiculo" type="text" placeholder="Ex: Comet, Blista">
+            </div>
+             <div>
+                <label for="placaVeiculo">Placa(s) (Separar por vírgula se houver mais de uma):</label>
+                <input id="placaVeiculo" type="text" placeholder="Ex: HA0001, HA0002">
+            </div>
+        </div>
+        
+        <label for="negociadoras">Negociadora(s) (Separar por vírgula):</label>
+        <input id="negociadoras" type="text" placeholder="Seu nome, Nome da 2ª pessoa">
+        
+        <label for="vendaValorObs">Observações/Cargo/Outras Info. (Opcional):</label>
+        <textarea id="vendaValorObs" placeholder="Ex: Cargo do cliente, ou detalhes sobre a negociação."></textarea>
+        
+        <div class="actions">
+            <button id="calcBtn" class="primary">Calcular</button>
+            <button id="registerBtn" class="success" style="display:none;">Registrar Venda</button>
+            <button id="resetBtn" class="muted">Limpar</button>
+        </div>
+    </div>
+    
+    <div class="card-resultado" id="results" style="display:none">
+        <h3>Resultado da Venda</h3>
+        <div class="grid grid-resultado">
+            <div>
+                <h4>Insumos Necessários</h4>
+                <table>
+                    <thead>
+                        <tr><th>Material</th><th>Quantidade</th></tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+            <div>
+                <h4>Valores por Item</h4>
+                <table>
+                    <thead>
+                        <tr><th>Produto</th><th>Valor</th></tr>
+                    </thead>
+                    <tbody id="valuesBody"></tbody>
+                    <tfoot>
+                        <tr><td><strong>Total Geral</strong></td><td><strong id="valorTotalGeral">R$ 0</strong></td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <button id="discordBtnCalc" class="secondary" style="margin-top: 15px;">Copiar para Discord</button>
+    </div>
+    
+    <div class="card-venda" id="historyCard" style="display:none">
+        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+             Histórico de Vendas 
+            <button id="toggleCalcBtn" class="muted" style="font-size: 14px; margin-left: 10px;">Voltar para Calculadora</button>
+        </h2>
+        <div class="history-controls">
+            <input type="text" id="filtroHistorico" placeholder="Filtrar por nome, organização ou negociadora..." style="flex-grow: 1;">
+            <button id="clearHistoryBtn" class="danger">Limpar Tudo (Admin)</button>
+            <button id="csvBtn" class="secondary">Exportar CSV</button>
+        </div>
+        <table class="sales-history-table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Vendedor</th>
+                    <th>Cliente</th>
+                    <th>Organização</th>
+                    <th>Valor Total</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="salesHistory">
+                <tr><td colspan="6" style="text-align: center;">Carregando histórico...</td></tr>
+            </tbody>
+        </table>
+        <div class="history-background">
+             <img id="historyImg" src="logo-dark.png" alt="Histórico Background"> 
+        </div>
+    </div>
+    
+    <div class="card-venda" id="adminPanel" style="display:none">
+        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+             Painel de Administração
+             <span class="online-status">Usuários Online: <strong id="onlineUsersCount">0</strong></span>
+            <button id="toggleCalcBtnAdmin" class="muted" style="font-size: 14px; margin-left: 10px;">Voltar para Calculadora</button>
+        </h2>
+        
+        <h3>Configurações Globais (Layout)</h3>
+        <div class="grid grid-admin">
+             <div class="config-item">
+                <label>Habilitar Modo Noturno:</label>
+                <div class="control-group">
+                    <input type="checkbox" id="layoutToggleNightMode">
+                </div>
+            </div>
+            <div class="config-item">
+                <label>Habilitar Painel Inferior (Rodapé):</label>
+                <div class="control-group">
+                    <input type="checkbox" id="layoutToggleBottomPanel">
+                </div>
+            </div>
+        </div>
+        
+        <label for="bottomPanelText">Texto do Painel Inferior:</label>
+        <textarea id="bottomPanelText" placeholder="Mensagem que aparecerá no rodapé para todos os usuários." rows="2"></textarea>
+        <button id="saveBottomPanelTextBtn" class="primary" style="margin-top: 10px;">Salvar Texto do Rodapé</button>
+        
+        <h3>Gerenciamento de Usuários</h3>
+        <table class="sales-history-table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Tag Atual</th>
+                    <th>Última Atividade</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="adminUserListBody">
+                <tr><td colspan="4" style="text-align: center;">Carregando usuários...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card-venda" id="dossierCard" style="display:none">
+        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+             Dossiê de Investigação
+            <button id="toggleCalcBtnDossier" class="muted" style="font-size: 14px; margin-left: 10px;">Voltar para Calculadora</button>
+        </h2>
+        
+        <div id="dossierOrgContainer">
+            <div class="history-controls">
+                <input type="text" id="filtroDossierOrgs" placeholder="Filtrar organizações..." style="flex-grow: 1;">
+                <button id="addOrgBtn" class="success">Adicionar Organização</button>
+            </div>
+            <div id="dossierOrgGrid" class="org-grid">
+                </div>
+            <button id="migrateDossierBtn" class="danger" style="margin-top: 20px;">Migrar/Limpar Dados Antigos (Admin)</button>
+             <button id="migrateVeiculosBtn" class="danger" style="margin-top: 5px;">Migrar Veículos (Admin)</button>
+        </div>
+        
+        <div id="dossierPeopleContainer" style="display: none;">
+            <h3 id="dossierPeopleTitle">Pessoas em [Nome da Organização]</h3>
+            <div class="history-controls">
+                <button id="dossierVoltarBtn" class="muted" style="margin-right: 10px;">&larr; Voltar para Organizações</button>
+                <input type="text" id="filtroDossierPeople" placeholder="Filtrar pessoas (nome, cargo, número)..." style="flex-grow: 1;">
+                <button id="addPessoaBtn" class="success">Adicionar Pessoa</button>
+            </div>
+            <div id="dossierPeopleGrid" class="person-grid">
+                </div>
+        </div>
+        
+    </div>
+    </div>
+
+  <div id="bottomPanel" style="display: none;">
+      <span id="bottomPanelDisplay"></span>
+  </div>
+
+  <div id="toast-container"></div>
+  
+  <div id="editDossierOverlay" class="modal-overlay"></div>
+  <div id="editDossierModal" class="card modal-content" style="max-width: 600px;">
+      <h2>Editar Pessoa</h2>
+      <p>Organização: <strong id="editDossierOrg"></strong></p>
+      <input type="hidden" id="editDossierId">
+      
+      <label for="editDossierNome">Nome:</label>
+      <input type="text" id="editDossierNome" placeholder="Nome Completo">
+      
+      <label for="editDossierNumero">Número:</label>
+      <input type="text" id="editDossierNumero" placeholder="(055) XXX-XXX" maxlength="13">
+      
+      <label for="editDossierCargo">Cargo / Informações Adicionais:</label>
+      <input type="text" id="editDossierCargo" placeholder="Ex: Membro, Gerente, Informações de Contato.">
+      
+      <label for="editDossierInstagram">Instagram (Opcional):</label>
+      <input type="text" id="editDossierInstagram" placeholder="Ex: @username. Incluir o @.">
+      
+      <label for="editDossierFotoUrl">Link da Foto (URL):</label>
+      <input type="text" id="editDossierFotoUrl" placeholder="URL da imagem (Ex: Discord, Imgur)">
+      
+      <h4 style="margin-top: 20px;">Veículos Registrados</h4>
+      <div id="editModalListaVeiculos" class="veiculos-list-modal">
+          </div>
+      
+      <div class="grid grid-venda veiculo-add-area">
+          <div>
+              <label for="editModalCarroNome">Carro/Veículo:</label>
+              <input type="text" id="editModalCarroNome" placeholder="Ex: Turismo, Sultan">
+          </div>
+          <div>
+              <label for="editModalCarroPlaca">Placa:</label>
+              <input type="text" id="editModalCarroPlaca" placeholder="Ex: HA0001 (Opcional)">
+          </div>
+          <div style="grid-column: 1 / 3;">
+              <label for="editModalCarroFoto">Foto (URL):</label>
+              <input type="text" id="editModalCarroFoto" placeholder="URL da foto do veículo (Opcional)">
+          </div>
+      </div>
+      <div class="actions veiculo-add-buttons">
+          <button id="editModalAddVeiculoBtn" class="secondary">Adicionar Veículo</button>
+          <button id="editModalCancelVeiculoBtn" class="muted" style="display:none;">Cancelar Edição</button>
+      </div>
+      <div class="actions" style="margin-top: 20px; border-top: 1px solid var(--cor-borda); padding-top: 15px;">
+          <button id="saveDossierBtn" class="success">Salvar Alterações</button>
+          <button id="deleteDossierBtn" class="danger">Excluir Pessoa</button>
+          <button id="cancelDossierBtn" class="muted">Cancelar</button>
+      </div>
+  </div>
+  
+  <div id="addDossierOverlay" class="modal-overlay"></div>
+  <div id="addDossierModal" class="card modal-content" style="max-width: 600px;">
+      <h2>Adicionar Nova Pessoa</h2>
+      <p>Organização: <strong id="addDossierOrganizacao"></strong></p>
+      
+      <label for="addDossierNome">Nome:</label>
+      <input type="text" id="addDossierNome" placeholder="Nome Completo">
+      
+      <label for="addDossierNumero">Número:</label>
+      <input type="text" id="addDossierNumero" placeholder="(055) XXX-XXX" maxlength="13">
+      
+      <label for="addDossierCargo">Cargo / Informações Adicionais:</label>
+      <input type="text" id="addDossierCargo" placeholder="Ex: Membro, Gerente, Informações de Contato.">
+      
+      <label for="addDossierFotoUrl">Link da Foto (URL):</label>
+      <input type="text" id="addDossierFotoUrl" placeholder="URL da imagem (Ex: Discord, Imgur)">
+      
+      <h4 style="margin-top: 20px;">Veículos Registrados</h4>
+       <div id="addModalListaVeiculos" class="veiculos-list-modal">
+          </div>
+      <div class="grid grid-venda veiculo-add-area">
+          <div>
+              <label for="addModalCarroNome">Carro/Veículo:</label>
+              <input type="text" id="addModalCarroNome" placeholder="Ex: Turismo, Sultan">
+          </div>
+          <div>
+              <label for="addModalCarroPlaca">Placa:</label>
+              <input type="text" id="addModalCarroPlaca" placeholder="Ex: HA0001 (Opcional)">
+          </div>
+          <div style="grid-column: 1 / 3;">
+              <label for="addModalCarroFoto">Foto (URL):</label>
+              <input type="text" id="addModalCarroFoto" placeholder="URL da foto do veículo (Opcional)">
+          </div>
+      </div>
+      <div class="actions veiculo-add-buttons">
+          <button id="addModalAddVeiculoBtn" class="secondary">Adicionar Veículo</button>
+          <button id="addModalCancelVeiculoBtn" class="muted" style="display:none;">Cancelar Edição</button>
+      </div>
+      <div class="actions" style="margin-top: 20px; border-top: 1px solid var(--cor-borda); padding-top: 15px;">
+          <button id="saveNewDossierBtn" class="success">Salvar Pessoa</button>
+          <button id="cancelNewDossierBtn" class="danger">Cancelar</button>
+      </div>
+  </div>
+  
+  <div id="orgModalOverlay" class="modal-overlay"></div>
+  <div id="orgModal" class="card modal-content" style="max-width: 500px;">
+      <h2 id="orgModalTitle">Editar Organização</h2>
+      <input type="hidden" id="editOrgId">
+      
+      <label for="orgNome">Nome da Organização:</label>
+      <input type="text" id="orgNome" placeholder="Ex: Hells Angels, Nox">
+      
+      <label for="orgFotoUrl">Link da Logo/Foto (URL):</label>
+      <input type="text" id="orgFotoUrl" placeholder="URL da imagem da organização">
+      
+      <label for="orgInfo">Informações da Base:</label>
+      <textarea id="orgInfo" placeholder="Detalhes sobre a base, localização, etc." rows="4"></textarea>
+
+      <div class="actions" style="margin-top: 20px; border-top: 1px solid var(--cor-borda); padding-top: 15px;">
+          <button id="saveOrgBtn" class="success">Salvar</button>
+          <button id="deleteOrgBtn" class="danger" style="display: none;">Excluir</button>
+          <button id="cancelOrgBtn" class="muted">Cancelar</button>
+      </div>
+  </div>
+  
+  <div id="imageLightboxOverlay" class="modal-overlay"></div>
+  <div id="imageLightboxModal" style="display: none;">
+      <img id="lightboxImg" src="" alt="Imagem Ampliada">
+  </div>
+
+  <script type="module" src="script111.js"></script>
+
+</body>
+</html>
