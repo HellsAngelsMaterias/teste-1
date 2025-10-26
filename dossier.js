@@ -7,7 +7,7 @@
 // --- IMPORTS ---
 import { db, ref, set, push, remove, get, query, orderByChild, equalTo, update } from './firebase.js';
 import { els, showToast, capitalizeText, showImageLightbox, 
-    toggleView // <--- CORREÇÃO AQUI
+    toggleView 
 } from './ui.js';
 import { getCurrentUserData } from './auth.js';
 
@@ -326,7 +326,7 @@ const initSortable = (orgName) => {
     
     sortableInstance = new Sortable(grid, {
         animation: 150,
-        handle: '.dossier-entry-card', 
+        handle: '.drag-handle', // <-- ALTERAÇÃO AQUI
         disabled: !canDrag, 
         ghostClass: 'sortable-ghost', 
         onEnd: (evt) => {
@@ -381,7 +381,7 @@ const initOrgSortable = () => {
     
     orgSortableInstance = new Sortable(grid, {
         animation: 150,
-        handle: '.dossier-org-card', 
+        handle: '.drag-handle', // <-- ALTERAÇÃO AQUI
         group: 'orgs', 
         disabled: !canDrag, 
         ghostClass: 'sortable-ghost',
@@ -445,6 +445,11 @@ const showDossierOrgs = async () => {
 
 // Renderiza os cards das Organizações (Bases)
 const displayOrgs = (orgs) => {
+    // --- ALTERAÇÃO AQUI: Checa permissão ---
+    const currentUserData = getCurrentUserData();
+    const userTagUpper = currentUserData ? currentUserData.tag.toUpperCase() : 'VISITANTE';
+    const canDrag = (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS');
+    
     els.dossierOrgGrid.innerHTML = '';
     if (orgs.length === 0) {
         els.dossierOrgGrid.innerHTML = '<p>Nenhuma organização encontrada para este filtro.</p>';
@@ -455,6 +460,14 @@ const displayOrgs = (orgs) => {
         const card = document.createElement('div');
         card.className = 'dossier-org-card';
         card.dataset.orgName = org.nome;
+        
+        // --- ALTERAÇÃO AQUI: Adiciona o ícone ---
+        if (canDrag) {
+            const dragHandle = document.createElement('div');
+            dragHandle.className = 'drag-handle';
+            dragHandle.innerHTML = '<span></span><span></span><span></span>';
+            card.appendChild(dragHandle);
+        }
         
         const fotoDiv = document.createElement('div');
         fotoDiv.className = 'dossier-org-foto';
@@ -508,6 +521,8 @@ const displayGlobalSearchResults = (orgs, people) => {
         return;
     }
 
+    // Não adicionamos ícone de drag aqui, pois a busca não é reordenável
+    
     if (orgs.length > 0) {
         const orgsHeader = document.createElement('h3');
         orgsHeader.className = 'dossier-org-title';
@@ -738,6 +753,11 @@ const showDossierPeople = async (orgName) => {
 
 // Renderiza os cards das Pessoas (Membros)
 const displayPeople = (people) => {
+    // --- ALTERAÇÃO AQUI: Checa permissão ---
+    const currentUserData = getCurrentUserData();
+    const userTagUpper = currentUserData ? currentUserData.tag.toUpperCase() : 'VISITANTE';
+    const canDrag = (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS');
+    
     els.dossierPeopleGrid.innerHTML = '';
     if (people.length === 0) {
         els.dossierPeopleGrid.innerHTML = '<p>Nenhum membro encontrado para este filtro.</p>';
@@ -748,6 +768,14 @@ const displayPeople = (people) => {
         const card = document.createElement('div');
         card.className = 'dossier-entry-card';
         card.dataset.id = entry.id; 
+        
+        // --- ALTERAÇÃO AQUI: Adiciona o ícone ---
+        if (canDrag) {
+            const dragHandle = document.createElement('div');
+            dragHandle.className = 'drag-handle';
+            dragHandle.innerHTML = '<span></span><span></span><span></span>';
+            card.appendChild(dragHandle);
+        }
         
         const fotoDiv = document.createElement('div');
         fotoDiv.className = 'dossier-foto';
