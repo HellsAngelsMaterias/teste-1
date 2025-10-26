@@ -6,7 +6,9 @@
 
 // --- IMPORTS ---
 import { db, ref, set, push, remove, get, query, orderByChild, equalTo, update } from './firebase.js';
-import { els, showToast, capitalizeText, showImageLightbox } from './ui.js';
+import { els, showToast, capitalizeText, showImageLightbox, 
+    toggleView // <--- CORREÇÃO AQUI
+} from './ui.js';
 import { getCurrentUserData } from './auth.js';
 
 // --- STATE ---
