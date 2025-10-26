@@ -49,12 +49,11 @@ let app;
 let auth;
 let db;
 
-// --- FUNÇÃO DE INICIALIZAÇÃO (NOVA) ---
+// --- FUNÇÃO DE INICIALIZAÇÃO ---
 /**
  * Inicializa o aplicativo Firebase e define as variáveis.
- * Exportamos esta função para ser chamada pelo script.js.
  */
-export function initFirebase() { // <-- FUNÇÃO ADICIONADA
+export function initFirebase() { // <-- FUNÇÃO DEFINIDA
     if (!app) {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
@@ -64,7 +63,8 @@ export function initFirebase() { // <-- FUNÇÃO ADICIONADA
 }
 // --- FIM DA FUNÇÃO DE INICIALIZAÇÃO ---
 
-// --- EXPORTS (EXPORTAMOS AS VARIÁVEIS APÓS A INICIALIZAÇÃO) ---
+// --- EXPORTS ---
+// Exporta tudo para que os outros módulos possam usar
 export {
     app,
     auth,
@@ -93,5 +93,5 @@ export {
     serverTimestamp,
     
     // Funções de Inicialização (Adicionada ao export)
-    initFirebase // <-- EXPORTADA AQUI
+    initFirebase // <-- FUNÇÃO EXPORTADA (CORREÇÃO)
 };
