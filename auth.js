@@ -6,8 +6,10 @@
  * =================================================== */
 
 // --- IMPORTS ---
-import { auth, db, ref, set, get, query, equalTo, onValue, orderByChild, sendPasswordResetEmail, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from './firebase.js';
-import { els, showToast, toggleView } from './ui.js';
+import { auth, db, ref, set, get, query, equalTo, onValue, orderByChild, sendPasswordResetEmail, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, 
+    onAuthStateChanged // <--- CORREÇÃO AQUI
+} from './firebase.js';
+import { els, showToast, toggleView, showNextTourStep } from './ui.js'; // Adicionado showNextTourStep
 import { loadVendas, unloadVendas } from './calculator.js';
 import { updateUserActivity, monitorOnlineStatus, loadAdminPanel } from './admin.js';
 
@@ -242,110 +244,13 @@ export function initAuth() {
     // Liga o listener principal
     startAuthListener();
     
-    // Ajusta o listener do tutorial para checar o login
-    els.tutorialBtn.onclick = () => { 
-        if (!currentUser) { 
-            showToast("Faça login para iniciar o tutorial.", "default"); 
-            return; 
-        } 
-        toggleView('main'); 
-        // A função showNextTourStep está em ui.js e é global (ou importada)
-        // Precisamos garantir que ela esteja disponível.
-        // Vamos chamá-la pelo 'els' para garantir
-        // (Revisão: A função não está em els, é global em ui.js, mas não foi exportada)
-        // **CORREÇÃO**: Vou assumir que showNextTourStep está em ui.js e precisa ser chamada
-        // Vamos voltar em ui.js e exportá-la
-        // ... (Feito. `showNextTourStep` não está exportada, mas é chamada por `els.tutorialBtn.onclick` em `ui.js`)
-        // **RE-CORREÇÃO**: O listener de `tutorialBtn` está em `ui.js`, mas ele não sabe
-        // sobre `currentUser`. O listener deve estar AQUI, ou o de `ui.js` deve ser removido.
-        
-        // **Solução Definitiva**: Removemos o listener de `ui.js` e colocamos aqui.
-        // Vou remover `els.tutorialBtn.onclick` de `ui.js` e colocar aqui.
-        
-        // (Removido de ui.js, agora está aqui):
-        // els.tutorialBtn.onclick = () => { 
-        //     if (!currentUser) { 
-        //         showToast("Faça login para iniciar o tutorial.", "default"); 
-        //         return; 
-        //     } 
-        //     toggleView('main'); 
-        //     showNextTourStep(); // Esta função precisa ser importada de ui.js
-        // };
-        
-        // **Problema**: `showNextTourStep` não foi exportada de `ui.js`.
-        // **Solução mais simples**: Deixar o listener em `ui.js` e adicionar a checagem lá,
-        // importando `getCurrentUser` para `ui.js`.
-        
-        // **VAMOS FAZER ISSO (Indo em `ui.js` e adicionando a checagem):**
-        // Em `ui.js`, na função `initUI()`:
-        // els.tutorialBtn.onclick = () => { 
-        //    const user = getCurrentUser(); // Precisa importar
-        //    if (!user) { 
-        //        showToast("Faça login para iniciar o tutorial.", "default"); 
-        //        return; 
-        //    } 
-        //    toggleView('main'); 
-        //    showNextTourStep(); 
-        // };
-        // Isso cria uma dependência circular (ui -> auth -> ui).
-        
-        // **PLANO C (Mais simples, sem dependência circular):**
-        // O listener em `ui.js` chama `showNextTourStep()`.
-        // `showNextTourStep()` (em `ui.js`) checa o `currentUser` importado de `auth.js`.
-        
-        // **REVISÃO FINAL (PLANO D - O MELHOR):**
-        // `initAuth()` é chamado *depois* de `initUI()`.
-        // Vamos apenas *sobrescrever* o listener do tutorial aqui.
-        
-        els.tutorialBtn.onclick = () => {
-            if (!currentUser) {
-                showToast("Faça login para iniciar o tutorial.", "default");
-                return;
-            }
-            toggleView('main');
-            // Como showNextTourStep não foi exportada, vamos replicar a chamada
-            // que estava em ui.js, mas que não foi exportada.
-            // (Procurando a função... `showNextTourStep`)
-            // Vou exportá-la de `ui.js` para usá-la aqui.
-            
-            // **OK, vou assumir que `showNextTourStep` foi exportada de `ui.js`**
-            // (Vou voltar no `ui.js` e exportá-la)
-            
-            /*
-            // Em ui.js, mude:
-            const showNextTourStep = () => { ... };
-            // Para:
-            export const showNextTourStep = () => { ... };
-            // (E também `clearTour`)
-            
-            // Então, aqui em auth.js, importamos:
-            import { showNextTourStep } from './ui.js';
-            
-            // E agora o listener funciona:
-            els.tutorialBtn.onclick = () => {
-                if (!currentUser) { ... }
-                toggleView('main');
-                showNextTourStep();
-            }
-            */
-            
-            // **REVISÃO DEPOIS DA REVISÃO**: É muito complexo.
-            // Vamos manter a simplicidade. O listener em `ui.js` não sabe sobre auth.
-            // O listener em `auth.js` sabe. Vamos só sobrescrever.
-            
-            // Em `ui.js`, `showNextTourStep` não é exportada.
-            // O `els.tutorialBtn.onclick` em `ui.js` já chama `showNextTourStep()`.
-            // Vamos apenas *adicionar* a verificação de auth *antes* da de `ui.js`.
-            
-            const originalTutorialClick = els.tutorialBtn.onclick;
-            els.tutorialBtn.onclick = () => {
-                if (!currentUser) {
-                    showToast("Faça login para iniciar o tutorial.", "default");
-                    return;
-                }
-                // Se estiver logado, chama a função original de ui.js
-                originalTutorialClick();
-            };
+    // Sobrescreve o listener do tutorial para checar o login
+    els.tutorialBtn.onclick = () => {
+        if (!currentUser) {
+            showToast("Faça login para iniciar o tutorial.", "default");
+            return;
         }
+        toggleView('main');
+        showNextTourStep(); // Agora podemos chamar a função importada
     };
 }
