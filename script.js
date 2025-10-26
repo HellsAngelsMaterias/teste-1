@@ -9,7 +9,7 @@ import { initFirebase } from './firebase.js';
 import { initAuth, getCurrentUser } from './auth.js';
 import { initUI, els, toggleView, showToast } from './ui.js';
 import { initCalculator, loadVendas, setVendasListener } from './calculator.js';
-import { initAdmin, loadAdminPanel, updateUserActivity } from './admin.js';
+import { initAdmin, loadAdminPanel, updateUserActivity, monitorOnlineStatus } from './admin.js'; // Adicionado monitorOnlineStatus
 import { initDossier } from './dossier.js';
 import { db, ref, onValue } from './firebase.js';
 
@@ -114,7 +114,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Inicia os listeners globais
     monitorOnlineUsers();
     monitorLayoutControls();
-    
+    monitorOnlineStatus(); // Inicia o monitoramento de presença
+
     // 5. Inicia o "heartbeat" de atividade do usuário
     // *** ALTERAÇÃO AQUI: Passa a atividade atual ***
     setInterval(() => {
