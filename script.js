@@ -5,38 +5,37 @@
  * =================================================== */
 
 // --- IMPORTS DOS MÓDULOS ---
-import { initFirebase } from './firebase.js';
+import { initFirebase, db, ref, onValue } from './firebase.js'; 
 import { initAuth, getCurrentUser } from './auth.js';
 import { initUI, els, toggleView, showToast } from './ui.js';
-import { initCalculator, loadVendas, setVendasListener } from './calculator.js';
-import { initAdmin, loadAdminPanel, updateUserActivity, monitorOnlineStatus } from './admin.js'; // Adicionado monitorOnlineStatus
+import { initCalculator, setVendasListener, unloadVendas } from './calculator.js'; 
+import { initAdmin, loadAdminPanel, updateUserActivity, monitorOnlineStatus } from './admin.js';
 import { initDossier } from './dossier.js';
-import { db, ref, onValue } from './firebase.js';
+
 
 // --- STATE GLOBAL ---
 let onlineUsersListener = null;
 let layoutControlsListener = null;
-let currentActivity = 'Iniciando'; // *** NOVO: Estado de Atividade ***
+let currentActivity = 'Iniciando'; 
 
 // --- FUNÇÃO GLOBAL DE ATIVIDADE ---
 /**
  * Define a atividade atual do usuário e a envia para o Firebase.
- * *** NOVO ***
  */
 export function setActivity(activity) {
     currentActivity = activity;
-    updateUserActivity(activity); // Envia para o Firebase
+    updateUserActivity(activity); 
 }
 
-// --- FUNÇÃO GLOBAL DE NAVEGAÇÃO ---
+// --- FUNÇÃO GLOBAL DE NAVEGAÇÃO (CORREÇÃO DE EXPORT) ---
 /**
  * Sobrescreve a função toggleView do ui.js para centralizar o controle
  * e adicionar o monitoramento de atividade.
  */
-function handleToggleView(viewName) {
-    toggleView(viewName); // Chama a função original do ui.js
+export function handleToggleView(viewName) { // <-- CORREÇÃO AQUI: EXPORT ADICIONADO
+    toggleView(viewName); 
     
-    // *** NOVO: Define a atividade com base na tela ***
+    // Define a atividade com base na tela
     switch(viewName) {
         case 'main':
             setActivity('Na Calculadora');
@@ -61,7 +60,7 @@ function handleToggleView(viewName) {
  * Ouve o nó /onlineStatus e atualiza o painel admin
  */
 function monitorOnlineUsers() {
-    if (onlineUsersListener) onlineUsersListener(); // Remove listener antigo
+    if (onlineUsersListener) onlineUsersListener(); 
     
     const onlineRef = ref(db, 'onlineStatus');
     onlineUsersListener = onValue(onlineRef, (snapshot) => {
@@ -71,22 +70,23 @@ function monitorOnlineUsers() {
 }
 
 /**
- * Ouve o nó /layoutControls e atualiza a UI
+ * Ouve o nó /configuracoesGlobais/layout e atualiza a UI
  */
 function monitorLayoutControls() {
-    if (layoutControlsListener) layoutControlsListener(); // Remove listener antigo
+    if (layoutControlsListener) layoutControlsListener(); 
     
-    const layoutRef = ref(db, 'layoutControls');
+    // Assumindo o nó 'configuracoesGlobais/layout' do seu modelo de regras
+    const layoutRef = ref(db, 'configuracoesGlobais/layout'); 
     layoutControlsListener = onValue(layoutRef, (snapshot) => {
         if (snapshot.exists()) {
             const controls = snapshot.val();
             
             // Botão Modo Noturno
-            els.themeBtn.style.display = controls.enableNightMode ? 'inline-block' : 'none';
+            if(els.themeBtn) els.themeBtn.style.display = controls.enableNightMode ? 'inline-block' : 'none';
             
             // Painel Inferior
-            els.bottomPanel.style.display = controls.enableBottomPanel ? 'flex' : 'none';
-            els.bottomPanelDisplay.textContent = controls.bottomPanelText || '';
+            if(els.bottomPanel) els.bottomPanel.style.display = controls.enableBottomPanel ? 'flex' : 'none';
+            if(els.bottomPanelDisplay) els.bottomPanelDisplay.textContent = controls.bottomPanelText || '';
         }
     });
 }
@@ -94,8 +94,8 @@ function monitorLayoutControls() {
 // --- INICIALIZAÇÃO DO APP ---
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Inicializa o Firebase
-    initFirebase();
-    
+    initFirebase(); 
+
     // 2. Inicializa os módulos
     initUI();
     initAuth();
@@ -103,21 +103,20 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdmin();
     initDossier();
     
-    // 3. Conecta os botões de navegação principais à nova função
-    els.toggleHistoryBtn.onclick = () => handleToggleView('history');
-    els.toggleCalcBtn.onclick = () => handleToggleView('main');
-    els.adminPanelBtn.onclick = () => handleToggleView('admin');
-    els.toggleCalcBtnAdmin.onclick = () => handleToggleView('main');
-    els.investigacaoBtn.onclick = () => handleToggleView('dossier');
-    els.toggleCalcBtnDossier.onclick = () => handleToggleView('main');
-
+    // 3. Conecta os botões de navegação principais
+    if(els.toggleHistoryBtn) els.toggleHistoryBtn.onclick = () => handleToggleView('history');
+    if(els.toggleCalcBtn) els.toggleCalcBtn.onclick = () => handleToggleView('main');
+    if(els.adminPanelBtn) els.adminPanelBtn.onclick = () => handleToggleView('admin');
+    if(els.toggleCalcBtnAdmin) els.toggleCalcBtnAdmin.onclick = () => handleToggleView('main');
+    if(els.investigacaoBtn) els.investigacaoBtn.onclick = () => handleToggleView('dossier');
+    if(els.toggleCalcBtnDossier) els.toggleCalcBtnDossier.onclick = () => handleToggleView('main');
+    
     // 4. Inicia os listeners globais
     monitorOnlineUsers();
     monitorLayoutControls();
     monitorOnlineStatus(); // Inicia o monitoramento de presença
 
     // 5. Inicia o "heartbeat" de atividade do usuário
-    // *** ALTERAÇÃO AQUI: Passa a atividade atual ***
     setInterval(() => {
         if (getCurrentUser()) {
             updateUserActivity(currentActivity);
