@@ -53,7 +53,7 @@ let db;
 /**
  * Inicializa o aplicativo Firebase e define as variáveis.
  */
-export function initFirebase() { // <-- FUNÇÃO DEFINIDA
+function initFirebase() { // <-- FUNÇÃO DEFINIDA SEM 'export' aqui
     if (!app) {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
@@ -63,8 +63,7 @@ export function initFirebase() { // <-- FUNÇÃO DEFINIDA
 }
 // --- FIM DA FUNÇÃO DE INICIALIZAÇÃO ---
 
-// --- EXPORTS ---
-// Exporta tudo para que os outros módulos possam usar
+// --- EXPORTS FINAIS (FUNÇÃO initFirebase exportada SOMENTE AQUI) ---
 export {
     app,
     auth,
@@ -92,6 +91,6 @@ export {
     onDisconnect,     
     serverTimestamp,
     
-    // Funções de Inicialização (Adicionada ao export)
-    initFirebase // <-- FUNÇÃO EXPORTADA (CORREÇÃO)
+    // Função de Inicialização (exportada UMA VEZ)
+    initFirebase 
 };
