@@ -286,11 +286,27 @@
       <label for="editDossierFotoUrl">Link da Foto (URL):</label>
       <input type="text" id="editDossierFotoUrl" placeholder="URL da foto">
 
+      <hr style="margin: 10px 0;">
+
       <h3>Veículos Registrados</h3>
       <ul id="editModalListaVeiculos" style="list-style: none; padding: 0;">
           <li>Nenhum veículo registrado.</li>
       </ul>
 
+      <h4>Gerenciar Veículo</h4>
+      <label for="editModalCarroNome">Carro:</label>
+      <input type="text" id="editModalCarroNome" placeholder="Nome do carro">
+      
+      <label for="editModalCarroPlaca">Placa (Chave):</label>
+      <input type="text" id="editModalCarroPlaca" placeholder="Placa do veículo (Ex: HELLS A1)">
+      
+      <label for="editModalCarroFoto">Link da Foto (URL):</label>
+      <input type="text" id="editModalCarroFoto" placeholder="URL da foto do veículo">
+      
+      <div class="actions" style="margin-top: 10px; padding-top: 0; border: none;">
+          <button id="editModalAddVeiculoBtn" class="primary" style="flex-grow: 1;">Salvar/Adicionar Veículo</button>
+          <button id="editModalCancelVeiculoBtn" class="muted" style="flex-grow: 1;">Cancelar Edição</button>
+      </div>
       <div class="actions" style="margin-top: 20px; border-top: 1px solid var(--cor-borda); padding-top: 15px;">
           <button id="saveDossierBtn" class="success">Salvar Alterações</button>
           <button id="cancelDossierBtn" class="danger">Cancelar/Fechar</button>
@@ -315,6 +331,29 @@
       <label for="addDossierFotoUrl">Link da Foto (URL):</label>
       <input type="text" id="addDossierFotoUrl" placeholder="URL da foto">
 
+      <hr style="margin: 10px 0;">
+
+      <div id="addDossierVeiculosSection">
+        <h3>Veículos (Opcional)</h3>
+        <ul id="addModalListaVeiculos" style="list-style: none; padding: 0; margin-bottom: 10px;">
+            <li>Nenhum veículo adicionado.</li>
+        </ul>
+        
+        <h4>Adicionar Novo Veículo</h4>
+        <label for="addModalCarroNome">Carro:</label>
+        <input type="text" id="addModalCarroNome" placeholder="Nome do carro">
+        
+        <label for="addModalCarroPlaca">Placa (Chave):</label>
+        <input type="text" id="addModalCarroPlaca" placeholder="Placa do veículo (Ex: HELLS A1)">
+        
+        <label for="addModalCarroFoto">Link da Foto (URL):</label>
+        <input type="text" id="addModalCarroFoto" placeholder="URL da foto do veículo">
+        
+        <div class="actions" style="margin-top: 10px; padding-top: 0; border: none;">
+            <button id="addModalAddVeiculoBtn" class="primary" style="width: 100%;">Adicionar Veículo à Pessoa</button>
+            <button id="addModalCancelVeiculoBtn" class="muted" style="display:none; width: 100%;">Cancelar Edição</button>
+        </div>
+      </div>
       <div class="actions" style="margin-top: 20px; border-top: 1px solid var(--cor-borda); padding-top: 15px;">
           <button id="saveNewDossierBtn" class="success">Adicionar Pessoa</button>
           <button id="cancelNewDossierBtn" class="danger">Cancelar</button>
