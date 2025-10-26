@@ -6,7 +6,7 @@
 
 // --- IMPORTS ---
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut, sendPasswordResetEmail, db, ref, get, set, update } from './firebase.js';
-import { els, showToast, toggleView, configureInterfaceByTag } from './ui.js';
+import { els, showToast, toggleView, configureInterfaceByTag } from './ui.js'; // configureInterfaceByTag importado
 import { unloadVendas } from './calculator.js'; // Importa função do calculator.js
 import { updateUserActivity } from './admin.js'; // Importa função do admin.js
 import { handleToggleView, setActivity } from './script.js'; // Importa funções do script.js
@@ -23,8 +23,7 @@ export const getCurrentUserData = () => currentUserData;
 // --- FUNÇÕES DE AUTH ---
 
 const startAuthListener = () => {
-    // onAuthStateChanged é importado de firebase.js e não deve ser declarado aqui
-    onAuthStateChanged(auth, async (user) => { // <-- Linha 154 (aproximadamente)
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
             
@@ -35,9 +34,8 @@ const startAuthListener = () => {
                 if (snapshot.exists()) {
                     currentUserData = snapshot.val();
                 } else {
-                    // Novo usuário que acabou de registrar?
+                    // Novo usuário ou nó ausente.
                     currentUserData = { displayName: user.displayName, tag: 'Visitante' };
-                    // Se o usuário existir mas o nó não, recria o nó.
                     set(userRef, currentUserData); 
                 }
             } catch (error) {
@@ -45,14 +43,14 @@ const startAuthListener = () => {
                 currentUserData = { displayName: user.displayName, tag: 'Visitante' };
             }
             
-            // 2. Configura a UI
+            // 2. Configura a UI (Usando a função corrigida do ui.js)
             configureInterfaceByTag(currentUserData.tag);
             
             // 3. Inicia o monitoramento de atividade
             updateUserActivity('Online'); 
 
             // 4. Exibe a tela principal
-            els.authScreen.style.display = 'none';
+            if(els.authScreen) els.authScreen.style.display = 'none';
             handleToggleView('main'); 
             
         } else {
@@ -60,13 +58,13 @@ const startAuthListener = () => {
             currentUser = null;
             currentUserData = null;
             
-            unloadVendas(); // Para o listener de vendas (economiza recursos)
+            unloadVendas(); 
 
-            els.authScreen.style.display = 'block';
-            els.mainCard.style.display = 'none';
-            els.historyCard.style.display = 'none';
-            els.adminPanel.style.display = 'none';
-            els.dossierCard.style.display = 'none';
+            if(els.authScreen) els.authScreen.style.display = 'block';
+            if(els.mainCard) els.mainCard.style.display = 'none';
+            if(els.historyCard) els.historyCard.style.display = 'none';
+            if(els.adminPanel) els.adminPanel.style.display = 'none';
+            if(els.dossierCard) els.dossierCard.style.display = 'none';
             
             if(els.userStatus) els.userStatus.style.display = 'none';
             if(els.investigacaoBtn) els.investigacaoBtn.style.display = 'none';
@@ -84,22 +82,19 @@ const handleLogin = (e) => {
         return;
     }
     
-    // Assumimos que o nome de usuário é o displayName. Procuramos o email.
-    // Como não temos um campo de email no login, vamos assumir um email de domínio fictício
-    // Você deve adaptar esta parte se tiver um sistema de emails real.
     const fictitiousEmail = `${email.toLowerCase().replace(/\s/g, '.')}@hells.local`;
 
     signInWithEmailAndPassword(auth, fictitiousEmail, password)
         .then((userCredential) => {
             showToast(`Bem-vindo, ${userCredential.user.displayName}!`, "success");
-            els.authMessage.textContent = '';
+            if(els.authMessage) els.authMessage.textContent = '';
         })
         .catch((error) => {
             console.error("Erro de login:", error);
             const errorMessage = (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') ? 
                 "Nome de usuário ou senha incorretos." : "Erro de autenticação: " + error.message;
             showToast(errorMessage, "error", 5000);
-            els.authMessage.textContent = errorMessage;
+            if(els.authMessage) els.authMessage.textContent = errorMessage;
         });
 };
 
@@ -113,18 +108,14 @@ const handleRegister = async (e) => {
         return;
     }
     
-    // Novo sistema: Usa displayName + @hells.local como email
     const fictitiousEmail = `${displayName.toLowerCase().replace(/\s/g, '.')}@hells.local`;
 
-    // 1. Tenta criar usuário
     createUserWithEmailAndPassword(auth, fictitiousEmail, password)
         .then(async (userCredential) => {
             const user = userCredential.user;
 
-            // 2. Atualiza o perfil (Display Name)
             await updateProfile(user, { displayName: displayName });
 
-            // 3. Salva no banco de dados como Visitante
             const userData = {
                 displayName: displayName,
                 email: fictitiousEmail,
@@ -134,9 +125,7 @@ const handleRegister = async (e) => {
             await set(userRef, userData);
 
             showToast(`Registro de "${displayName}" concluído! Logando...`, "success");
-            els.authMessage.textContent = '';
-
-            // O onAuthStateChanged cuida do resto do login
+            if(els.authMessage) els.authMessage.textContent = '';
         })
         .catch((error) => {
             console.error("Erro de registro:", error);
@@ -144,7 +133,7 @@ const handleRegister = async (e) => {
                 "Nome de usuário já existe. Tente outro nome ou use a senha." :
                 "Erro de registro: " + error.message;
             showToast(errorMessage, "error", 5000);
-            els.authMessage.textContent = errorMessage;
+            if(els.authMessage) els.authMessage.textContent = errorMessage;
         });
 };
 
@@ -152,7 +141,7 @@ const handleLogout = () => {
     if (confirm("Tem certeza que deseja sair?")) {
         signOut(auth).then(() => {
             showToast("Desconectado com sucesso.", "default");
-            setActivity('Offline'); // Garante que a atividade seja registrada
+            setActivity('Offline'); 
         }).catch((error) => {
             showToast(`Erro ao sair: ${error.message}`, "error");
         });
@@ -184,5 +173,5 @@ export const initAuth = () => {
     if(els.forgotPasswordLink) els.forgotPasswordLink.onclick = handlePasswordReset;
 
     // Inicia o listener de status de autenticação
-    startAuthListener(); // <-- Linha 243 (aproximadamente)
+    startAuthListener(); 
 };
