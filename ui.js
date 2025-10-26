@@ -249,7 +249,8 @@ const updateLogoAndThemeButton = (isDark) => {
     els.themeBtn.textContent = isDark ? '☀️ Modo Claro' : '🌙 Modo Noturno';
     
     // Atualiza a logo da tela de boas-vindas
-    els.welcomeLogo.src = logoSrc;
+    // (Presumindo que existe um els.welcomeLogo no index.html que não foi enviado)
+    // if(els.welcomeLogo) els.welcomeLogo.src = welcomeLogoSrc;
 };
 
 
@@ -322,7 +323,7 @@ if (els.enterBtn) {
     };
 }
 
-// **[A CORREÇÃO ESTÁ AQUI: EXPORTANDO initUI]**
+// **<--- O EXPORT FALTANTE FOI ADICIONADO AQUI! --->**
 /**
  * Função de inicialização do UI (chamada por script.js)
  * @returns {void}
