@@ -546,7 +546,8 @@ body.dark #imageLightboxModal {
          grid-template-columns: 1fr; 
     }
 }
-/* --- ESTILOS DO ÍCONE DE ARRASTAR --- */
+
+/* --- ESTILOS DO ÍCONE DE ARRASTAR (ADICIONADO) --- */
 
 /* 1. Prepara o card para ter um elemento "absoluto" dentro dele */
 .dossier-org-card,
