@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <link rel="icon" type="image/png" href="logo-dark.png">
+  
+  <title>Hells Angels</title>
+  
+  <link rel="stylesheet" href="style.css"> 
+  
+</head>
+<body class="light">
+  
+  <a href="#" id="logoLink">
+    <img id="appLogo" src="logo-dark.png" alt="Hells Angels Logo" class="app-logo">
+  </a>
+
+  <div id="welcomeScreen"> 
+      <img id="welcomeLogo" src="logo-dark.png" alt="Welcome Logo"> 
+      <h2 style="font-weight: 900;">Bem-vindo(a)</h2>
+      <p style="margin-bottom: 20px; font-size: 16px;">Calculadora e Registro de Vendas Hells Angels</p>
+      <button id="enterBtn" class="primary">Entrar no Site</button>
+  </div>
+  
+  <div class="top-right-controls">
+      <button class="control-btn" id="tutorialBtn">💡 Tutorial</button> 
+      <button class="control-btn" id="themeBtn">🌙 Modo Noturno</button>
+      <button class="control-btn" id="investigacaoBtn" style="display:none; background-color: #0056b3;">🔎 Investigação</button> 
+  </div>
+
+  <div id="authScreen" class="card" style="max-width: 400px; margin: 100px auto 20px auto; display: none;">
+      <img src="logo-dark.png" alt="Hells Angels Logo" style="display: block; max-height: 100px; margin: 0 auto 20px auto;">
+      <h2>Autenticação de Usuário</h2>
+      <label for="username">Nome de Usuário:</label>
+      <input id="username" type="text" placeholder="Seu nome de usuário">
+      <label for="password">Senha:</label>
+      <input id="password" type="password" placeholder="Sua senha">
+      <div class="actions">
+          <button id="loginBtn" class="primary">Entrar</button>
+          <button id="registerUserBtn" class="muted">Cadastrar</button>
+      </div>
+      <a href="#" id="forgotPasswordLink" style="text-align: center; display: block; margin-top: 15px;">Esqueci a Senha</a>
+      <p id="authMessage" style="color: var(--cor-erro); margin-top: 10px;"></p>
+  </div>
+
+  <div class="card" id="mainCard" style="display:none">
+    <div class="header-container">
+        <h1 id="mainTitle">Calculadora e Registro de Vendas</h1>
+        <span id="userStatus" class="user-status-display" style="display:none;"></span>
+        <button id="logoutBtn" class="danger" style="animation: none;">Sair</button>
+    </div>
+    
+    <div class="card-venda">
+        <h2>Dados da Venda</h2>
+        <div class="grid grid-venda">
+            <div>
+                <label for="nomeCliente">Nome:</label>
+                <input id="nomeCliente" type="text" value="">
+            </div>
+            <div>
+                <label for="dataVenda">Data e Horário:</label>
+                <input id="dataVenda" type="text" readonly> 
+            </div>
+            <div>
+                <label for="organizacao">Organização:</label>
+                <input id="organizacao" type="text" value="" list="sugestoesOrganizacao">
+                <p class="suggestion-tip">Digite para ver sugestões de organizações.</p>
+                <datalist id="sugestoesOrganizacao">
+                    <option value="Hells Angels"></option>
+                    <option value="Serpents"></option>
+                    <option value="Nox"></option>
+                    <option value="NKT"></option>
+                    <option value="Ruptura"></option>
+                    <option value="Midnight"></option>
+                    <option value="Meraki"></option>
+                    <option value="Lotus"></option>
+                    <option value="Hydra"></option>
+                    <option value="Hooligans"></option>
+                    <option value="Families"></option>
+                    <option value="Cartel"></option>
+                    <option value="Blood Street"></option>
+                    <option value="Blood Reapers"></option>
+                    <option value="Blue Diamond"></option>
+                    <option value="Black Heart"></option>
+                    <option value="Outros"></option>
+                </datalist>
+            </div>
+            <div>
+                <label for="organizacaoTipo">Tipo de Organização:</label>
+                <select id="organizacaoTipo">
+                    <option value="CNPJ">CNPJ</option>
+                    <option value="CPF">CPF</option>
+                    <option value="OUTROS">Outros</option>
+                </select>
+            </div>
+            <div>
+                <label for="telefone">Telefone/Whatsapp:</label>
+                <input id="telefone" type="text" placeholder="(99) 99999-9999">
+            </div>
+            <div>
+                <label for="negociadoras">Negociadora(s):</label>
+                <input id="negociadoras" type="text" placeholder="Seu nome, Nick">
+            </div>
+        </div>
+        
+        <div class="grid grid-veiculos" style="margin-top: 20px;">
+            <div>
+                <label for="carroVeiculo">Carro/Veículo:</label>
+                <input id="carroVeiculo" type="text" placeholder="Nome do veículo">
+            </div>
+            <div>
+                <label for="placaVeiculo">Placa/ID:</label>
+                <input id="placaVeiculo" type="text" placeholder="Placa ou ID do veículo">
+            </div>
+            <div class="full-width">
+                <button id="addVeiculoBtn" class="muted full-width-btn">Adicionar Veículo à Lista (Opcional)</button>
+                <div id="listaVeiculos" class="veiculos-list">
+                    </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-itens" style="margin-top: 20px;">
+            <div>
+                <label for="qtyTickets">Tickets (un.):</label>
+                <input id="qtyTickets" type="number" min="0" value="0">
+            </div>
+            <div>
+                <label for="qtyTablets">Tablets (un.):</label>
+                <input id="qtyTablets" type="number" min="0" value="0">
+            </div>
+            <div>
+                <label for="qtyNitro">Nitro (un.):</label>
+                <input id="qtyNitro" type="number" min="0" value="0">
+            </div>
+            <div>
+                <label for="tipoValor">Tipo de Valor:</label>
+                <select id="tipoValor">
+                    <option value="limpo">Dinheiro Limpo</option>
+                    <option value="sujo">Dinheiro Sujo</option>
+                    <option value="limpo_alianca">Limpo (Aliança)</option>
+                    <option value="sujo_alianca">Sujo (Aliança)</option>
+                </select>
+            </div>
+            <div class="full-width">
+                <label for="vendaValorObs">Observações (Valor/Venda):</label>
+                <textarea id="vendaValorObs" placeholder="Detalhes importantes sobre a venda ou valor."></textarea>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="calcBtn" class="secondary">Calcular</button>
+            <button id="registerBtn" class="primary">Registrar Venda</button>
+            <button id="resetBtn" class="danger">Limpar Tudo</button>
+        </div>
+    </div>
+    
+    <div id="results" class="card-venda results-card" style="display:none; margin-top: 20px;">
+        <h2>Resultado do Cálculo</h2>
+        <div class="grid grid-resultados">
+            <div class="results-table-container">
+                <h3>Recursos Totais (Entrada)</h3>
+                <table class="results-table">
+                    <thead>
+                        <tr><th>Material</th><th>Quantidade</th></tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        </tbody>
+                </table>
+            </div>
+            <div class="results-table-container">
+                <h3>Valor da Venda (Saída)</h3>
+                <table class="results-table">
+                    <thead>
+                        <tr><th>Produto</th><th>Valor</th></tr>
+                    </thead>
+                    <tbody id="valuesBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+        <h3 class="total-geral">Valor Total: <span id="valorTotalGeral">R$ 0</span></h3>
+        <div class="actions-footer">
+            <button id="copyBtnCalc" class="success">Copiar Valores</button>
+            <button id="discordBtnCalc" class="secondary">Copiar para Discord</button>
+        </div>
+    </div>
+
+    <div class="bottom-panel" id="bottomPanel" style="display:none">
+        <p id="bottomPanelText">Texto padrão do painel inferior.</p>
+    </div>
+    
+    <button id="adminPanelBtn" class="control-btn admin-btn" style="display:none; bottom: 16px; left: 16px;">⚙️ Admin</button>
+    <button id="toggleHistoryBtn" class="control-btn admin-btn" style="display:none; bottom: 16px; right: 16px;">📜 Histórico</button>
+
+  </div>
+
+  <div class="card" id="historyCard" style="display:none; margin-top: 20px;">
+      <div class="header-container">
+          <h1 id="historyTitle">Histórico de Vendas</h1>
+          <button id="toggleMainBtn" class="secondary">Voltar</button>
+      </div>
+      
+      <div class="history-controls">
+          <label for="filtroHistorico">Filtrar por Cliente ou Organização:</label>
+          <input type="text" id="filtroHistorico" placeholder="Digite para filtrar...">
+          <div class="history-actions">
+              <button id="csvBtn" class="secondary">Exportar para CSV</button>
+              <button id="clearHistoryBtn" class="danger" style="display:none;">Limpar Histórico (Admin)</button>
+          </div>
+      </div>
+      
+      <div class="sales-history-container">
+          <table class="history-table">
+              <thead>
+                  <tr>
+                      <th>Ações</th>
+                      <th>Cliente</th>
+                      <th>Organização</th>
+                      <th>Valor</th>
+                      <th>Negociadora(s)</th>
+                      <th>Itens</th>
+                      <th>Veículos</th>
+                      <th>Obs</th>
+                      <th>Data/Hora</th>
+                      <th>Registrado por</th>
+                  </tr>
+              </thead>
+              <tbody id="salesHistory">
+                  </tbody>
+          </table>
+      </div>
+      
+      <div id="historyImageContainer">
+          <img id="historyImg" src="" alt="Histórico Background" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s;">
+      </div>
+  </div>
+  
+  <div class="card" id="adminPanel" style="display:none; margin-top: 20px;">
+      <div class="header-container">
+          <h1 id="adminTitle">Painel de Administração</h1>
+          <button id="toggleMainBtnAdmin" class="secondary">Voltar</button>
+      </div>
+      
+      <div class="tabs">
+          <button class="tab-btn active" data-tab="users">Usuários e Tags</button>
+          <button class="tab-btn" data-tab="layout">Configurações de Layout</button>
+      </div>
+      
+      <div id="tab-users" class="tab-content active">
+          <div class="user-list-controls">
+              <label for="userFilter">Filtrar por Nome de Usuário:</label>
+              <input type="text" id="userFilter" placeholder="Digite o nome para filtrar...">
+              <p class="suggestion-tip">Total de Usuários: <span id="userCount">0</span> | Online: <span id="onlineCount">0</span></p>
+          </div>
+          <div class="user-list-container">
+              <table class="user-table">
+                  <thead>
+                      <tr>
+                          <th>Usuário</th>
+                          <th>Status</th>
+                          <th>Tag Atual</th>
+                          <th>Nova Tag</th>
+                          <th>Ação</th>
+                      </tr>
+                  </thead>
+                  <tbody id="userListBody">
+                      </tbody>
+              </table>
+          </div>
+      </div>
+      
+      <div id="tab-layout" class="tab-content">
+          <h2>Configurações Globais de Layout</h2>
+          <div class="setting-group">
+              <label class="toggle-switch">
+                  <input type="checkbox" id="layoutToggleNightMode">
+                  <span class="slider round"></span>
+              </label>
+              <span class="setting-label">Ativar Modo Noturno por Padrão</span>
+          </div>
+          
+          <div class="setting-group">
+              <label class="toggle-switch">
+                  <input type="checkbox" id="layoutToggleBottomPanel">
+                  <span class="slider round"></span>
+              </label>
+              <span class="setting-label">Ativar Painel Inferior (Mensagem Global)</span>
+          </div>
+          
+          <div class="setting-group full-width" style="margin-top: 20px;">
+              <label for="bottomPanelText">Texto do Painel Inferior:</label>
+              <textarea id="bottomPanelText" placeholder="Digite a mensagem global aqui."></textarea>
+              <button id="saveBottomPanelTextBtn" class="primary" style="margin-top: 10px;">Salvar Texto</button>
+          </div>
+      </div>
+  </div>
+  
+  <div class="card" id="dossierCard" style="display:none; margin-top: 20px;">
+      <div class="header-container">
+          <h1 id="dossierTitle">Dossiê de Investigação</h1>
+          <button id="toggleMainBtnDossier" class="secondary">Voltar</button>
+      </div>
+      
+      <div class="tabs">
+          <button class="tab-btn active" data-tab="organizations">Organizações</button>
+          <button class="tab-btn" data-tab="people">Pessoas</button>
+      </div>
+      
+      <div id="tab-organizations" class="tab-content active">
+          <div class="dossier-controls">
+              <label for="orgFilter">Filtrar por Organização:</label>
+              <input type="text" id="orgFilter" placeholder="Digite o nome para filtrar...">
+              <button id="addOrgBtn" class="primary">Adicionar Organização</button>
+          </div>
+          <div class="organization-list-container">
+              <ul id="orgList" class="org-list">
+                  </ul>
+          </div>
+      </div>
+      
+      <div id="tab-people" class="tab-content">
+          <div class="dossier-controls">
+              <label for="personFilter">Filtrar por Nome:</label>
+              <input type="text" id="personFilter" placeholder="Digite o nome para filtrar...">
+              <button id="addPersonBtn" class="primary">Adicionar Pessoa</button>
+          </div>
+          <div class="people-list-container">
+              <ul id="peopleList" class="org-list">
+                  </ul>
+          </div>
+      </div>
+  </div>
+  
+  <div id="toast" class="toast-message"></div>
+  <div id="modalOverlay" class="modal-overlay"></div>
+  
+  <div id="editSaleModal" class="card modal-content" style="max-width: 600px;">
+      <h2 id="modalTitle">Detalhes/Editar Venda</h2>
+      </div>
+
+  <div id="addDossierModal" class="card modal-content" style="max-width: 500px;">
+      <h2 id="dossierModalTitle">Adicionar Pessoa ao Dossiê</h2>
+      <input type="hidden" id="editDossierId">
+      <input type="hidden" id="editDossierVeiculos">
+      
+      <label for="addDossierOrg">Organização Principal:</label>
+      <input type="text" id="addDossierOrg" placeholder="Organização da pessoa" list="sugestoesOrganizacao">
+      
+      <label for="addDossierNome">Nome da Pessoa:</label>
+      <input type="text" id="addDossierNome" placeholder="Nome completo/nickname">
+      
+      <label for="addDossierNumero">Telefone/Whatsapp:</label>
+      <input type="text" id="addDossierNumero" placeholder="(99) 99999-9999">
+      
+      <label for="addDossierFotoUrl">Link da Foto (URL):</label>
+      <input type="text" id="addDossierFotoUrl" placeholder="URL da imagem da pessoa">
+      
+      <label for="addDossierNotas">Notas de Investigação:</label>
+      <textarea id="addDossierNotas" placeholder="Detalhes da investigação." rows="4"></textarea>
+
+      <div class="grid grid-veiculos-modal" style="margin-top: 20px;">
+          <div>
+              <label for="addModalCarroVeiculo">Carro/Veículo:</label>
+              <input id="addModalCarroVeiculo" type="text" placeholder="Nome do veículo">
+          </div>
+          <div>
+              <label for="addModalPlacaVeiculo">Placa/ID:</label>
+              <input id="addModalPlacaVeiculo" type="text" placeholder="Placa ou ID do veículo">
+          </div>
+          <div class="full-width">
+              <button id="addModalAddVeiculoBtn" class="muted full-width-btn">Adicionar Veículo</button>
+              <div id="addModalListaVeiculos" class="veiculos-list-modal">
+                  </div>
+          </div>
+      </div>
+      <div class="actions" style="margin-top: 20px; border-top: 1px solid var(--cor-borda); padding-top: 15px;">
+          <button id="saveNewDossierBtn" class="success">Salvar Pessoa</button>
+          <button id="deleteDossierBtn" class="danger" style="display: none;">Excluir</button>
+          <button id="cancelNewDossierBtn" class="danger">Cancelar</button>
+      </div>
+  </div>
+  
+  <div id="orgModalOverlay" class="modal-overlay"></div>
+  <div id="orgModal" class="card modal-content" style="max-width: 500px;">
+      <h2 id="orgModalTitle">Editar Organização</h2>
+      <input type="hidden" id="editOrgId">
+      
+      <label for="orgNome">Nome da Organização:</label>
+      <input type="text" id="orgNome" placeholder="Ex: Hells Angels, Nox">
+      
+      <label for="orgFotoUrl">Link da Logo/Foto (URL):</label>
+      <input type="text" id="orgFotoUrl" placeholder="URL da imagem da organização">
+      
+      <label for="orgInfo">Informações da Base:</label>
+      <textarea id="orgInfo" placeholder="Detalhes sobre a base, localização, etc." rows="4"></textarea>
+
+      <div class="actions" style="margin-top: 20px; border-top: 1px solid var(--cor-borda); padding-top: 15px;">
+          <button id="saveOrgBtn" class="success">Salvar</button>
+          <button id="deleteOrgBtn" class="danger" style="display: none;">Excluir</button>
+          <button id="cancelOrgBtn" class="muted">Cancelar</button>
+      </div>
+  </div>
+
+  <div id="imageLightboxOverlay" class="modal-overlay"></div>
+  <div id="imageLightboxModal" class="modal-content" style="max-width: 900px;">
+      <img id="lightboxImg" src="" alt="Imagem Ampliada" style="max-width: 100%; max-height: 80vh; display: block; margin: 0 auto; border-radius: 8px;">
+  </div>
+  
+  <script type="module" src="script.js"></script>
+
+</body>
+</html>
