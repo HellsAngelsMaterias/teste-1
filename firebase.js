@@ -28,11 +28,11 @@ import {
     orderByChild, 
     equalTo, 
     update,
-    onDisconnect,     // <-- CORREÇÃO
-    serverTimestamp   // <-- CORREÇÃO
+    onDisconnect,     
+    serverTimestamp   
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// --- CONFIGURAÇÃO ---
+// --- CONFIGURAÇÃO (SEUS DADOS) ---
 const firebaseConfig = {
   // Substitua pelos seus dados
   apiKey: "AIzaSyCPNd9INqIfqG1-rjaYAlz988RLDZvL528", 
@@ -44,13 +44,27 @@ const firebaseConfig = {
   appId: "1:429406215315:web:96b68b172247824b3080e7"
 };
 
-// --- INICIALIZAÇÃO ---
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+// --- VARIÁVEIS DE INICIALIZAÇÃO ---
+let app;
+let auth;
+let db;
 
-// --- EXPORTS ---
-// Exporta tudo para que os outros módulos possam usar
+// --- FUNÇÃO DE INICIALIZAÇÃO (NOVA) ---
+/**
+ * Inicializa o aplicativo Firebase e define as variáveis.
+ * Exportamos esta função para ser chamada pelo script.js.
+ */
+export function initFirebase() { // <-- FUNÇÃO ADICIONADA
+    if (!app) {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getDatabase(app);
+        console.log("Firebase inicializado com sucesso.");
+    }
+}
+// --- FIM DA FUNÇÃO DE INICIALIZAÇÃO ---
+
+// --- EXPORTS (EXPORTAMOS AS VARIÁVEIS APÓS A INICIALIZAÇÃO) ---
 export {
     app,
     auth,
@@ -75,6 +89,9 @@ export {
     orderByChild,
     equalTo,
     update,
-    onDisconnect,     // <-- CORREÇÃO
-    serverTimestamp   // <-- CORREÇÃO
+    onDisconnect,     
+    serverTimestamp,
+    
+    // Funções de Inicialização (Adicionada ao export)
+    initFirebase // <-- EXPORTADA AQUI
 };
