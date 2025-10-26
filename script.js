@@ -18,21 +18,21 @@ let onlineUsersListener = null;
 let layoutControlsListener = null;
 let currentActivity = 'Iniciando'; 
 
-// --- FUNÇÃO GLOBAL DE ATIVIDADE ---
+// --- FUNÇÃO GLOBAL DE ATIVIDADE (CORREÇÃO) ---
 /**
  * Define a atividade atual do usuário e a envia para o Firebase.
  */
-export function setActivity(activity) {
+export function setActivity(activity) { // <-- EXPORTADO
     currentActivity = activity;
     updateUserActivity(activity); 
 }
 
-// --- FUNÇÃO GLOBAL DE NAVEGAÇÃO (CORREÇÃO DE EXPORT) ---
+// --- FUNÇÃO GLOBAL DE NAVEGAÇÃO (CORREÇÃO) ---
 /**
  * Sobrescreve a função toggleView do ui.js para centralizar o controle
  * e adicionar o monitoramento de atividade.
  */
-export function handleToggleView(viewName) { // <-- CORREÇÃO AQUI: EXPORT ADICIONADO
+export function handleToggleView(viewName) { // <-- EXPORTADO
     toggleView(viewName); 
     
     // Define a atividade com base na tela
