@@ -6,10 +6,14 @@
  * =================================================== */
 
 // --- IMPORTS ---
-import { auth, db, ref, set, get, query, equalTo, onValue, orderByChild, sendPasswordResetEmail, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, 
-    onAuthStateChanged // <--- CORREÇÃO AQUI
+import { 
+    auth, db, ref, set, get, query, equalTo, onValue, orderByChild, 
+    sendPasswordResetEmail, signInWithEmailAndPassword, 
+    createUserWithEmailAndPassword, updateProfile, signOut, 
+    onAuthStateChanged // <--- A CORREÇÃO ESTÁ AQUI
 } from './firebase.js';
-import { els, showToast, toggleView, showNextTourStep } from './ui.js'; // Adicionado showNextTourStep
+
+import { els, showToast, toggleView, showNextTourStep } from './ui.js';
 import { loadVendas, unloadVendas } from './calculator.js';
 import { updateUserActivity, monitorOnlineStatus, loadAdminPanel } from './admin.js';
 
