@@ -28,8 +28,8 @@ import {
     orderByChild, 
     equalTo, 
     update,
-    onDisconnect,     // <-- ADICIONADO AQUI
-    serverTimestamp   // <-- ADICIONADO AQUI
+    onDisconnect,     // <-- CORREÇÃO
+    serverTimestamp   // <-- CORREÇÃO
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 // --- CONFIGURAÇÃO ---
@@ -75,6 +75,6 @@ export {
     orderByChild,
     equalTo,
     update,
-    onDisconnect,     // <-- ADICIONADO AQUI
-    serverTimestamp   // <-- ADICIONADO AQUI
+    onDisconnect,     // <-- CORREÇÃO
+    serverTimestamp   // <-- CORREÇÃO
 };
