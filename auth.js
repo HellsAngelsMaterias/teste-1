@@ -1,260 +1,188 @@
 /* ===================================================
  * auth.js
- * Responsável por toda a lógica de Autenticação,
- * gerenciamento de estado (currentUser) e
- * permissões (configurarInterfacePorTag).
+ * Módulo de Autenticação
+ * Responsável pelo login, registro e status do usuário
  * =================================================== */
 
 // --- IMPORTS ---
-import { 
-    auth, db, ref, set, get, query, equalTo, onValue, orderByChild, 
-    sendPasswordResetEmail, signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword, updateProfile, signOut, 
-    onAuthStateChanged // <--- A CORREÇÃO ESTÁ AQUI
-} from './firebase.js';
-
-import { els, showToast, toggleView, showNextTourStep } from './ui.js';
-import { loadVendas, unloadVendas } from './calculator.js';
-import { updateUserActivity, monitorOnlineStatus, loadAdminPanel } from './admin.js';
+import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut, sendPasswordResetEmail, db, ref, get, set, update } from './firebase.js';
+import { els, showToast, toggleView, configureInterfaceByTag } from './ui.js';
+import { unloadVendas } from './calculator.js'; // Importa função do calculator.js
+import { updateUserActivity } from './admin.js'; // Importa função do admin.js
+import { handleToggleView, setActivity } from './script.js'; // Importa funções do script.js
 
 // --- STATE ---
 let currentUser = null;
 let currentUserData = null;
-let vendasListener = null; // Listener de vendas precisa ser gerenciado aqui
 
-// --- EXPORTS ---
-// Exporta "getters" para o estado, permitindo que outros módulos leiam o estado atual
+// --- FUNÇÕES GLOBAIS DE ACESSO ---
 export const getCurrentUser = () => currentUser;
 export const getCurrentUserData = () => currentUserData;
 
-// --- FUNÇÕES ---
 
-/**
- * Configura a UI com base na tag do usuário (Admin, Hells, Visitante)
- */
-function configurarInterfacePorTag(tag) {
-  const tagUpper = tag ? tag.toUpperCase() : 'VISITANTE';
-  
-  const userStatusEl = els.userStatus;
-  if (currentUser && userStatusEl) {
-      if (currentUser.displayName.toLowerCase() === 'snow') {
-          userStatusEl.style.display = 'none';
-      } else {
-          userStatusEl.textContent = `${currentUser.displayName} (${tag})`;
-          userStatusEl.className = 'user-status-display';
-          if (tagUpper === 'ADMIN') {
-              userStatusEl.classList.add('tag-admin');
-          } else if (tagUpper === 'HELLS') {
-              userStatusEl.classList.add('tag-hells');
-          } else {
-              userStatusEl.classList.add('tag-visitante');
-          }
-          userStatusEl.style.display = 'block';
-      }
-  }
+// --- FUNÇÕES DE AUTH ---
 
-  // Mostrar/Esconder botões de Admin
-  if (tagUpper === 'ADMIN') {
-    els.clearHistoryBtn.style.display = 'inline-block';
-    els.adminPanelBtn.style.display = 'inline-block';
-  } else {
-    els.clearHistoryBtn.style.display = 'none';
-    els.adminPanelBtn.style.display = 'none';
-  }
-  
-  // Mostrar/Esconder botão de Investigação
-  if (tagUpper === 'ADMIN' || tagUpper === 'HELLS') {
-      els.investigacaoBtn.style.display = 'block';
-  } else {
-      els.investigacaoBtn.style.display = 'none';
-  }
-  
-  // Esconder painel admin se o usuário não for admin
-  if (tagUpper !== 'ADMIN') {
-      els.adminPanel.style.display = 'none';
-  }
-};
-
-/**
- * Lógica de Login/Cadastro
- */
-const handleAuthAction = (isLogin, creds) => {
-    const email = creds.username.trim() + "@ha.com";
-    const password = creds.password;
-    const displayName = creds.username.trim();
-
-    if ((isLogin && (!email || password.length < 6)) || (!isLogin && (!displayName || password.length < 6))) {
-        showToast("Verifique os campos. A senha precisa ter no mínimo 6 caracteres.", "error");
-        return;
-    }
-
-    if (isLogin) {
-        signInWithEmailAndPassword(auth, email, password)
-            .catch((error) => {
-                const code = error.code;
-                const msg = code === 'auth/invalid-credential' ? "Usuário ou senha incorretos." : `Erro: ${code}`;
-                showToast(msg, "error");
-            });
-    } else {
-        createUserWithEmailAndPassword(auth, email, password)
-            .then(userCredential => {
-                const user = userCredential.user;
-                return updateProfile(user, { displayName: displayName })
-                    .then(() => {
-                        const userRef = ref(db, `usuarios/${user.uid}`);
-                        const newUserProfile = { 
-                            displayName: displayName,
-                            email: user.email,
-                            tag: 'Visitante'
-                        };
-                        return set(userRef, newUserProfile); 
-                    });
-            })
-            .catch((error) => {
-                const code = error.code;
-                const msg = code === 'auth/email-already-in-use' ? "Nome de usuário já existe." : `Erro: ${code}`;
-                showToast(msg, "error");
-            });
-    }
-};
-
-const authAction = (isLogin) => handleAuthAction(isLogin, {username: els.username.value, password: els.password.value});
-
-/**
- * Lógica de "Esqueci a Senha"
- */
-const forgotPassword = async () => {
-    const username = prompt("Digite seu nome de usuário para solicitar a redefinição de senha:");
-    if (!username) return;
-
-    const usersRef = ref(db, 'usuarios');
-    const snapshot = await get(usersRef);
-    let userEmail = null;
-    if(snapshot.exists()) {
-        snapshot.forEach(child => {
-            const userData = child.val();
-            if(userData.displayName.toLowerCase() === username.toLowerCase().trim()) {
-                userEmail = userData.email;
-            }
-        });
-    }
-
-    if (userEmail) {
-        sendPasswordResetEmail(auth, userEmail)
-            .then(() => {
-                alert("Um e-mail de redefinição de senha foi enviado para o endereço associado a este usuário.");
-                showToast("E-mail de redefinição enviado!", "success");
-            })
-            .catch(err => showToast(`Erro: ${err.message}`, "error"));
-    } else {
-        showToast("Nome de usuário não encontrado.", "error");
-    }
-};
-
-
-/**
- * OUVINTE PRINCIPAL DE AUTENTICAÇÃO
- * Este é o coração do app, que reage a login/logout.
- */
-function startAuthListener() {
-    onAuthStateChanged(auth, (user) => {
+const startAuthListener = () => {
+    // onAuthStateChanged é importado de firebase.js e não deve ser declarado aqui
+    onAuthStateChanged(auth, async (user) => { // <-- Linha 154 (aproximadamente)
         if (user) {
-            // --- USUÁRIO LOGADO ---
-            currentUser = user; 
+            currentUser = user;
             
-            // Inicia rastreamento de atividade online
-            updateUserActivity(); 
-            monitorOnlineStatus();
-            
-            // Busca dados do usuário (tag, etc.)
+            // 1. Pega os dados extras (tag)
             const userRef = ref(db, `usuarios/${user.uid}`);
-            onValue(userRef, (snapshot) => {
+            try {
+                const snapshot = await get(userRef);
                 if (snapshot.exists()) {
-                    currentUserData = snapshot.val(); 
+                    currentUserData = snapshot.val();
                 } else {
-                    // Cria perfil se não existir (backup)
-                    const newUserProfile = {
-                        displayName: user.displayName, 
-                        email: user.email,
-                        tag: 'Visitante' 
-                    };
-                    set(userRef, newUserProfile);
-                    currentUserData = newUserProfile; 
+                    // Novo usuário que acabou de registrar?
+                    currentUserData = { displayName: user.displayName, tag: 'Visitante' };
+                    // Se o usuário existir mas o nó não, recria o nó.
+                    set(userRef, currentUserData); 
                 }
-                
-                // Configura a UI com base nas permissões
-                configurarInterfacePorTag(currentUserData.tag);
-                
-                // Carrega dados específicos do usuário (vendas)
-                // Remove o listener antigo antes de criar um novo
-                if(vendasListener) vendasListener(); 
-                
-                let vendasRef;
-                const userTagUpper = currentUserData.tag.toUpperCase();
-                
-                // Admin/Hells veem tudo, Visitante vê só o seu
-                if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
-                    vendasRef = ref(db, 'vendas');
-                } else {
-                    vendasRef = query(ref(db, 'vendas'), orderByChild('registradoPorId'), equalTo(currentUser.uid));
-                }
-                
-                // Passa o listener para o módulo de calculadora
-                vendasListener = loadVendas(vendasRef);
+            } catch (error) {
+                showToast("Erro ao carregar permissões do usuário.", "error");
+                currentUserData = { displayName: user.displayName, tag: 'Visitante' };
+            }
+            
+            // 2. Configura a UI
+            configureInterfaceByTag(currentUserData.tag);
+            
+            // 3. Inicia o monitoramento de atividade
+            updateUserActivity('Online'); 
 
-            }, (error) => {
-                console.error("Erro ao ler dados do usuário:", error);
-                showToast("Erro fatal ao ler permissões do usuário.", "error");
-                configurarInterfacePorTag('Visitante'); 
-            });
-
+            // 4. Exibe a tela principal
             els.authScreen.style.display = 'none';
-            toggleView('main');
-
+            handleToggleView('main'); 
+            
         } else {
-            // --- USUÁRIO DESLOGADO ---
+            // Logoff
             currentUser = null;
             currentUserData = null;
             
-            // Limpa dados
-            if (vendasListener) vendasListener(); 
-            vendasListener = null;
-            unloadVendas();
-            
-            // Reseta UI
+            unloadVendas(); // Para o listener de vendas (economiza recursos)
+
             els.authScreen.style.display = 'block';
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'none';
-            els.adminPanel.style.display = 'none'; 
+            els.adminPanel.style.display = 'none';
             els.dossierCard.style.display = 'none';
+            
             if(els.userStatus) els.userStatus.style.display = 'none';
             if(els.investigacaoBtn) els.investigacaoBtn.style.display = 'none';
-            
-            configurarInterfacePorTag(null);
         }
     });
-}
+};
+
+const handleLogin = (e) => {
+    e.preventDefault();
+    const email = els.username.value.trim();
+    const password = els.password.value.trim();
+
+    if (!email || !password) {
+        showToast("Preencha o nome de usuário e a senha.", "error");
+        return;
+    }
+    
+    // Assumimos que o nome de usuário é o displayName. Procuramos o email.
+    // Como não temos um campo de email no login, vamos assumir um email de domínio fictício
+    // Você deve adaptar esta parte se tiver um sistema de emails real.
+    const fictitiousEmail = `${email.toLowerCase().replace(/\s/g, '.')}@hells.local`;
+
+    signInWithEmailAndPassword(auth, fictitiousEmail, password)
+        .then((userCredential) => {
+            showToast(`Bem-vindo, ${userCredential.user.displayName}!`, "success");
+            els.authMessage.textContent = '';
+        })
+        .catch((error) => {
+            console.error("Erro de login:", error);
+            const errorMessage = (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') ? 
+                "Nome de usuário ou senha incorretos." : "Erro de autenticação: " + error.message;
+            showToast(errorMessage, "error", 5000);
+            els.authMessage.textContent = errorMessage;
+        });
+};
+
+const handleRegister = async (e) => {
+    e.preventDefault();
+    const displayName = els.username.value.trim();
+    const password = els.password.value.trim();
+    
+    if (!displayName || !password || password.length < 6) {
+        showToast("Preencha o nome (mín. 1 caractere) e a senha (mín. 6 caracteres).", "error");
+        return;
+    }
+    
+    // Novo sistema: Usa displayName + @hells.local como email
+    const fictitiousEmail = `${displayName.toLowerCase().replace(/\s/g, '.')}@hells.local`;
+
+    // 1. Tenta criar usuário
+    createUserWithEmailAndPassword(auth, fictitiousEmail, password)
+        .then(async (userCredential) => {
+            const user = userCredential.user;
+
+            // 2. Atualiza o perfil (Display Name)
+            await updateProfile(user, { displayName: displayName });
+
+            // 3. Salva no banco de dados como Visitante
+            const userData = {
+                displayName: displayName,
+                email: fictitiousEmail,
+                tag: 'Visitante'
+            };
+            const userRef = ref(db, `usuarios/${user.uid}`);
+            await set(userRef, userData);
+
+            showToast(`Registro de "${displayName}" concluído! Logando...`, "success");
+            els.authMessage.textContent = '';
+
+            // O onAuthStateChanged cuida do resto do login
+        })
+        .catch((error) => {
+            console.error("Erro de registro:", error);
+            const errorMessage = (error.code === 'auth/email-already-in-use') ?
+                "Nome de usuário já existe. Tente outro nome ou use a senha." :
+                "Erro de registro: " + error.message;
+            showToast(errorMessage, "error", 5000);
+            els.authMessage.textContent = errorMessage;
+        });
+};
+
+const handleLogout = () => {
+    if (confirm("Tem certeza que deseja sair?")) {
+        signOut(auth).then(() => {
+            showToast("Desconectado com sucesso.", "default");
+            setActivity('Offline'); // Garante que a atividade seja registrada
+        }).catch((error) => {
+            showToast(`Erro ao sair: ${error.message}`, "error");
+        });
+    }
+};
+
+const handlePasswordReset = (e) => {
+    e.preventDefault();
+    const email = prompt("Digite o nome de usuário (ex: 'hells.angels') para receber o link de recuperação de senha.");
+    if (email) {
+        const fictitiousEmail = `${email.toLowerCase().replace(/\s/g, '.')}@hells.local`;
+        sendPasswordResetEmail(auth, fictitiousEmail)
+            .then(() => {
+                showToast("E-mail de recuperação enviado! Verifique sua caixa de entrada.", "success", 6000);
+            })
+            .catch((error) => {
+                showToast(`Erro ao enviar e-mail: ${error.message}`, "error", 6000);
+            });
+    }
+};
 
 
 // --- INICIALIZAÇÃO ---
-export function initAuth() {
-    // Binds
-    els.loginBtn.onclick = () => authAction(true);
-    els.registerUserBtn.onclick = () => authAction(false);
-    els.logoutBtn.onclick = () => signOut(auth);
-    els.password.addEventListener('keydown', (e) => { if(e.key === 'Enter') authAction(true); });
-    els.forgotPasswordLink.onclick = forgotPassword;
-    
-    // Liga o listener principal
-    startAuthListener();
-    
-    // Sobrescreve o listener do tutorial para checar o login
-    els.tutorialBtn.onclick = () => {
-        if (!currentUser) {
-            showToast("Faça login para iniciar o tutorial.", "default");
-            return;
-        }
-        toggleView('main');
-        showNextTourStep(); // Agora podemos chamar a função importada
-    };
-}
+export const initAuth = () => {
+    // Binds de Login e Registro
+    if(els.loginBtn) els.loginBtn.onclick = handleLogin;
+    if(els.registerUserBtn) els.registerUserBtn.onclick = handleRegister;
+    if(els.logoutBtn) els.logoutBtn.onclick = handleLogout;
+    if(els.forgotPasswordLink) els.forgotPasswordLink.onclick = handlePasswordReset;
+
+    // Inicia o listener de status de autenticação
+    startAuthListener(); // <-- Linha 243 (aproximadamente)
+};
