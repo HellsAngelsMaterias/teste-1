@@ -15,27 +15,25 @@ import { addDossierEntry } from './dossier.js'; // Dependência para migração
 
 // --- Estado Interno
 let globalOnlineStatus = {}; 
-let migrationStatus = { dossierConcluida: false, veiculosConcluida: false }; // NOVO: Estado local da migração
+let migrationStatus = { dossierConcluida: false, veiculosConcluida: false }; // Estado local da migração
+let globalUserList = []; // NOVO: Armazena a lista de usuários
 
 // ===============================================
-// CONTROLES DE LAYOUT GLOBAL
+// CONTROLES DE LAYOUT GLOBAL E MIGRAÇÃO
 // ===============================================
 
 const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
-const globalMigrationRef = ref(db, 'configuracoesGlobais/migracao'); // NOVO: Ref para status de migração
+const globalMigrationRef = ref(db, 'configuracoesGlobais/migracao');
 
-// Função para atualizar a UI dos botões de migração
+// Funções de monitoramento e atualização de UI (mantidas do último update)
 const updateMigrationUI = () => {
     const { migrateDossierBtn, migrateVeiculosBtn } = els;
-    
-    // Certifique-se de que os elementos existem antes de manipulá-los
     if (!migrateDossierBtn || !migrateVeiculosBtn) return;
     
-    // Migração de Vendas para Dossiê
+    // ... (restante da lógica de updateMigrationUI)
     if (migrationStatus.dossierConcluida) {
         migrateDossierBtn.textContent = "Dossiê Migrado (Concluído)";
         migrateDossierBtn.disabled = true;
-        // Usando cor verde/sucesso para indicar conclusão
         migrateDossierBtn.style.backgroundColor = '#008000'; 
         migrateDossierBtn.style.animation = 'none';
         migrateDossierBtn.style.cursor = 'default';
@@ -43,19 +41,16 @@ const updateMigrationUI = () => {
     } else {
         migrateDossierBtn.textContent = "Migrar Vendas Antigas para Dossiê";
         migrateDossierBtn.disabled = false;
-        // Usando a cor de erro/perigo para indicar uma ação crítica pendente
         migrateDossierBtn.style.backgroundColor = 'var(--cor-erro)';
-        // Reativa a animação/estilo se estiver no style.css
         migrateDossierBtn.style.animation = 'pulse-glow 2s infinite ease-in-out';
         migrateDossierBtn.style.cursor = 'pointer';
         migrateDossierBtn.style.color = '#fff';
     }
 
-    // Migração de Carros/Placas para Veículos (dentro do Dossiê)
     if (migrationStatus.veiculosConcluida) {
         migrateVeiculosBtn.textContent = "Veículos Migrados (Concluído)";
         migrateVeiculosBtn.disabled = true;
-        migrateVeiculosBtn.style.backgroundColor = '#008000'; // Verde para concluído
+        migrateVeiculosBtn.style.backgroundColor = '#008000'; 
         migrateVeiculosBtn.style.animation = 'none';
         migrateVeiculosBtn.style.cursor = 'default';
         migrateVeiculosBtn.style.color = '#fff';
@@ -69,31 +64,26 @@ const updateMigrationUI = () => {
     }
 };
 
-// NOVO: Listener que monitora o status de migração (e aciona a UI)
 const monitorMigrationStatus = () => {
-    const listener = onValue(globalMigrationRef, (snapshot) => {
+    onValue(globalMigrationRef, (snapshot) => {
         if (snapshot.exists()) {
             migrationStatus = { 
                 dossierConcluida: snapshot.val().dossierConcluida || false, 
                 veiculosConcluida: snapshot.val().veiculosConcluida || false 
             };
         }
-        // Atualiza a UI imediatamente quando o status do Firebase muda
         if (els.migrateDossierBtn && els.migrateVeiculosBtn) { 
             updateMigrationUI(); 
         }
     }, (error) => {
         if(error.code !== "PERMISSION_DENIED") console.error("Erro ao monitorar status de migração:", error);
     });
-    // Armazenar o listener pode ser útil se precisar removê-lo em algum momento
-    // monitorMigrationStatus.listener = listener; 
 };
-
-// Chamado na inicialização do script.js
 monitorMigrationStatus(); 
 
-// Listener que atualiza o layout para TODOS os usuários em tempo real
+// Listener de Layout
 onValue(globalLayoutRef, (snapshot) => {
+    // ... (lógica de layout)
     if (!snapshot.exists()) {
         console.warn("Nó /configuracoesGlobais/layout não encontrado.");
         return;
@@ -113,7 +103,6 @@ onValue(globalLayoutRef, (snapshot) => {
         els.bottomPanelDisplay.textContent = settings.bottomPanelText || 'Este é o painel inferior.'; 
     }
     
-    // Atualiza os inputs do admin panel para refletir o estado do DB
     if (els.adminPanel.style.display !== 'none') {
          if (els.bottomPanelText) els.bottomPanelText.value = settings.bottomPanelText || '';
          if (els.layoutToggleNightMode) els.layoutToggleNightMode.checked = settings.enableNightMode;
@@ -126,7 +115,6 @@ onValue(globalLayoutRef, (snapshot) => {
     }
 });
 
-// Função chamada pelo event listener no script.js
 export const updateGlobalLayout = (key, value) => {
     const layoutRef = ref(db, `configuracoesGlobais/layout/${key}`);
     set(layoutRef, value)
@@ -148,7 +136,6 @@ export const updateUserActivity = (currentUser, currentUserData) => {
             tag: currentUserData ? currentUserData.tag : 'N/A'
         }).catch(e => console.warn("Erro ao registrar atividade online:", e.message));
         
-        // Define o próximo update
         setTimeout(() => updateUserActivity(currentUser, currentUserData), 30000); 
     }
 };
@@ -168,7 +155,6 @@ const formatInactivityTime = (inactivityMs) => {
 export const monitorOnlineStatus = () => {
     const statusRef = ref(db, 'onlineStatus');
     
-    // Remove listener anterior se existir
     if (monitorOnlineStatus.listener) {
         monitorOnlineStatus.listener();
     }
@@ -192,7 +178,6 @@ export const monitorOnlineStatus = () => {
         
         els.onlineUsersCount.textContent = activeCount.toString();
         
-        // Se o Painel Admin estiver aberto, força a atualização da lista
         if (els.adminPanel.style.display !== 'none') {
             loadAdminPanel(false); // Atualiza a lista sem recarregar tudo
         }
@@ -206,13 +191,11 @@ export const monitorOnlineStatus = () => {
 
 const deleteUser = (uid, displayName) => {
     if (confirm(`ATENÇÃO:\n\nTem certeza que deseja apagar o usuário "${displayName}"?\n\nIsso removerá o registro dele do banco de dados (e suas permissões).\n\nIMPORTANTE: Para apagar o LOGIN dele permanentemente, você ainda precisará ir ao painel "Authentication" do Firebase.`)) {
-        // Remove do nó 'usuarios'
         remove(ref(db, `usuarios/${uid}`))
             .then(() => {
-                // Tenta remover do nó 'onlineStatus' (pode não existir)
                 remove(ref(db, `onlineStatus/${uid}`)); 
                 showToast(`Usuário "${displayName}" apagado do banco de dados.`, 'success');
-                loadAdminPanel(true); // Recarrega a lista
+                loadAdminPanel(true);
             })
             .catch((error) => showToast(`Erro ao apagar usuário: ${error.message}`, 'error'));
     }
@@ -220,6 +203,12 @@ const deleteUser = (uid, displayName) => {
 
 export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
     
+    // Verifica se o usuário logado é Admin para tentar carregar o painel
+    if (currentUser && currentUser.uid && (!currentUser.userData || currentUser.userData.tag.toUpperCase() !== 'ADMIN')) {
+         els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Acesso negado. Apenas Administradores podem visualizar este painel.</td></tr>';
+         return;
+    }
+
     // 1. Garante que os dados de status online estejam disponíveis
     if (fetchStatus) {
         try {
@@ -234,6 +223,7 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
                 });
             }
         } catch (error) {
+            // Se falhar, é um problema de permissão (mas o get no /usuarios vai falhar também)
             if(error.code !== "PERMISSION_DENIED") showToast(`Erro ao carregar status online: ${error.message}`, 'error');
         }
     }
@@ -244,17 +234,22 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
         const usersSnapshot = await get(ref(db, 'usuarios'));
         if (!usersSnapshot.exists()) {
             els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
+            globalUserList = [];
             return;
         }
         
+        // 2. Processa e exibe a lista de usuários
         const usersList = [];
         usersSnapshot.forEach(userSnap => {
-            if (userSnap.val().displayName.toLowerCase() !== 'snow') {
-                usersList.push({ uid: userSnap.key, ...userSnap.val() });
+            const user = userSnap.val();
+            // Evita listar o usuário 'snow' se for um usuário de sistema
+            if (user.displayName && user.displayName.toLowerCase() !== 'snow') {
+                usersList.push({ uid: userSnap.key, ...user });
             }
         });
+        globalUserList = usersList; // Atualiza lista global
 
-        // Re-ordena: Online (Admin/Hells) > Offline (Admin/Hells) > Visitante
+        // Re-ordena
         const tagOrder = { 'ADMIN': 1, 'HELLS': 2, 'VISITANTE': 3 };
         usersList.sort((a, b) => {
             const statusA = globalOnlineStatus[a.uid] || { isOnline: false, inactivity: Infinity };
@@ -279,7 +274,6 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
             mainCell.style.verticalAlign = 'top';
             mainCell.style.padding = '8px 6px';
 
-            // 1. Nome (com status dot)
             const statusDotClass = status.isOnline ? 'status-online' : 'status-offline';
             const displayNameText = userData.displayName || '(Sem nome)';
             mainCell.innerHTML = `
@@ -289,7 +283,6 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
                 </div>
             `;
             
-            // 2. Atividade
             const activitySpan = document.createElement('span');
             activitySpan.style.cssText = 'font-size: 13px; display: block; margin-left: 20px; margin-bottom: 8px;';
             const statusText = status.isOnline ? `Ativo (agora)` : `Inativo há ${formatInactivityTime(status.inactivity)}`;
@@ -301,10 +294,9 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
             }
             mainCell.appendChild(activitySpan);
             
-            // 3. Permissão (Tag)
             const tagContainer = document.createElement('div');
             tagContainer.style.marginLeft = '20px';
-            if (uid === currentUser.uid) {
+            if (currentUser && uid === currentUser.uid) {
                 tagContainer.textContent = `👑 ${userData.tag} (Você)`;
                 tagContainer.style.fontWeight = '600';
             } else {
@@ -321,11 +313,10 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
             }
             mainCell.appendChild(tagContainer);
 
-            // CÉLULA DE AÇÕES
             const actionsCell = row.insertCell();
             actionsCell.style.textAlign = 'center';
             actionsCell.style.verticalAlign = 'middle';
-            if (uid === currentUser.uid) {
+            if (currentUser && uid === currentUser.uid) {
                 actionsCell.textContent = '---';
             } else {
                 const deleteBtn = document.createElement('button');
@@ -338,11 +329,26 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
         });
         
     } catch (error) {
-        // Trata erros de leitura do nó 'usuarios'
-        els.adminUserListBody.innerHTML = `<tr><td colspan="2" style="text-align: center;">Erro ao carregar lista de usuários.</td></tr>`;
+        // Se houver erro aqui, é quase certeza que é erro de permissão.
+        if(error.code !== "PERMISSION_DENIED") console.error("Erro ao carregar lista de usuários:", error);
+        showToast("Erro ao carregar lista de usuários.", 'error');
+        els.adminUserListBody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--cor-erro);">Erro ao carregar. Verifique as regras de leitura para /usuarios no Firebase.</td></tr>`;
     }
     
-    // 4. Garante que a UI de migração está correta
+    // 3. Carrega as configurações de layout nos checkboxes
+    try {
+        const layoutSnapshot = await get(ref(db, 'configuracoesGlobais/layout'));
+        if (layoutSnapshot.exists()) {
+            const settings = layoutSnapshot.val();
+            if(els.layoutToggleNightMode) els.layoutToggleNightMode.checked = settings.enableNightMode;
+            if(els.layoutToggleBottomPanel) els.layoutToggleBottomPanel.checked = settings.enableBottomPanel;
+            if(els.bottomPanelText) els.bottomPanelText.value = settings.bottomPanelText || '';
+        }
+    } catch (error) {
+        if(error.code !== "PERMISSION_DENIED") showToast(`Erro ao carregar configs de layout: ${error.message}`, 'error');
+    }
+    
+    // 4. Atualiza botões de migração
     updateMigrationUI();
 };
 
@@ -353,7 +359,7 @@ const updateUserTag = (uid, newTag) => {
 };
 
 // ===============================================
-// AÇÕES DE MIGRAÇÃO (AGORA COM RASTREAMENTO DE USO ÚNICO)
+// AÇÕES DE MIGRAÇÃO
 // ===============================================
 
 export const migrateVendasToDossier = async () => {
@@ -398,12 +404,11 @@ export const migrateVendasToDossier = async () => {
                     carro: venda.carro,
                     placas: venda.placas
                 };
-                await addDossierEntry(vendaData, null); // Importado de dossier.js
+                await addDossierEntry(vendaData, null); 
                 count++;
             }
         }
         
-        // ⭐️ NOVO: Marca a conclusão no Firebase
         if (count > 0) {
             await set(ref(db, 'configuracoesGlobais/migracao/dossierConcluida'), true); 
             showToast(`Migração de dossiê concluída! ${count} registros copiados.`, "success");
@@ -415,7 +420,7 @@ export const migrateVendasToDossier = async () => {
         showToast(`Erro na migração de dossiê: ${error.message}`, "error");
         isSuccess = false;
     } finally {
-        updateMigrationUI(); // Atualiza a UI para refletir o novo status
+        updateMigrationUI();
     }
 };
 
@@ -448,7 +453,6 @@ export const migrateVeiculosData = async () => {
         for (const org in dossies) {
             for (const personId in dossies[org]) {
                 const person = dossies[org][personId];
-                // Verifica se há dados antigos e se o novo sistema (veiculos) não foi usado
                 if ((person.carro || person.placas) && !person.veiculos) {
                     const newVeiculos = {};
                     const carros = (person.carro || '').split(',').map(c => c.trim());
@@ -458,20 +462,19 @@ export const migrateVeiculosData = async () => {
                     for (let i = 0; i < maxLen; i++) {
                         const carroNome = carros[i] || 'N/A';
                         
-                        // Garante que a chave seja única (usando placa ou um ID temporário)
                         if(carroNome !== 'N/A' || (placas[i] && placas[i].trim())) {
                             const key = placas[i] && placas[i].trim() ? placas[i].trim() : `MIG_TEMP_${Date.now()}_${i}`;
                             newVeiculos[key] = {
                                 carro: carroNome,
-                                placa: placas[i] || '', // Deixa placa vazia se não existir
+                                placa: placas[i] || '', 
                                 fotoUrl: '' 
                             };
                         }
                     }
                     const path = `dossies/${org}/${personId}`;
                     updates[`${path}/veiculos`] = newVeiculos;
-                    updates[`${path}/carro`] = null; // Remove campos antigos
-                    updates[`${path}/placas`] = null; // Remove campos antigos
+                    updates[`${path}/carro`] = null; 
+                    updates[`${path}/placas`] = null; 
                     count++;
                 }
             }
@@ -479,7 +482,6 @@ export const migrateVeiculosData = async () => {
         
         if (count > 0) {
             await update(ref(db), updates);
-            // ⭐️ NOVO: Marca a conclusão no Firebase
             await set(ref(db, 'configuracoesGlobais/migracao/veiculosConcluida'), true); 
             showToast(`Migração de veículos concluída! ${count} registros atualizados.`, "success");
         } else {
@@ -490,6 +492,6 @@ export const migrateVeiculosData = async () => {
         showToast(`Erro na migração de veículos: ${error.message}`, "error");
         isSuccess = false;
     } finally {
-        updateMigrationUI(); // Atualiza a UI para refletir o novo status
+        updateMigrationUI();
     }
 };
