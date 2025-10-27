@@ -186,7 +186,8 @@
               <thead> 
                   <tr> 
                       <th style="width: 35%;">Usuário / Status</th> 
-                      <th style="width: 45%;">Atividade Atual</th> <th style="width: 20%;">Ações</th> 
+                      <th style="width: 45%;">Atividade Atual</th> 
+                      <th style="width: 20%;">Ações</th> 
                   </tr> 
               </thead> 
               <tbody id="adminUserListBody"> 
@@ -225,6 +226,8 @@
               <button id="clearHistoryBtn" class="muted">Limpar Histórico</button>
               <button id="toggleCalcBtn" class="muted">Voltar à Calculadora</button>
           </div>
+          <div id="topHistoryScrollbar"></div>
+          
           <div class="history-table-wrapper"><table id="historicoVendas">
               <thead>
                   <tr>
@@ -325,7 +328,7 @@
       </div>
   </div>
   
-  <div id="addDossierOverlay" class="modal-overlay"></div>
+  <div id="addDossierOverlay" class=\"modal-overlay\"></div>
   <div id="addDossierModal" class="card modal-content">
       <h2>Adicionar Nova Pessoa</h2>
       <label for="addDossierOrganizacao">Base (Organização):</label>
@@ -372,7 +375,7 @@
       </div>
   </div>
   
-  <div id="orgModalOverlay" class="modal-overlay"></div>
+  <div id="orgModalOverlay" class=\"modal-overlay\"></div>
   <div id="orgModal" class="card modal-content" style="max-width: 500px;">
       <h2 id="orgModalTitle">Editar Organização</h2>
       <input type="hidden" id="editOrgId">
@@ -393,7 +396,7 @@
       </div>
   </div>
   
-  <div id="imageLightboxOverlay" class="modal-overlay"></div>
+  <div id="imageLightboxOverlay" class=\"modal-overlay\"></div>
   <div id="imageLightboxModal">
       <img id="lightboxImg" src="" alt="Imagem Ampliada">
   </div>
