@@ -28,18 +28,24 @@ const globalMigrationRef = ref(db, 'configuracoesGlobais/migracao'); // NOVO: Re
 const updateMigrationUI = () => {
     const { migrateDossierBtn, migrateVeiculosBtn } = els;
     
+    // Certifique-se de que os elementos existem antes de manipulá-los
+    if (!migrateDossierBtn || !migrateVeiculosBtn) return;
+    
     // Migração de Vendas para Dossiê
     if (migrationStatus.dossierConcluida) {
         migrateDossierBtn.textContent = "Dossiê Migrado (Concluído)";
         migrateDossierBtn.disabled = true;
-        migrateDossierBtn.style.backgroundColor = '#008000'; // Verde para concluído
+        // Usando cor verde/sucesso para indicar conclusão
+        migrateDossierBtn.style.backgroundColor = '#008000'; 
         migrateDossierBtn.style.animation = 'none';
         migrateDossierBtn.style.cursor = 'default';
         migrateDossierBtn.style.color = '#fff';
     } else {
         migrateDossierBtn.textContent = "Migrar Vendas Antigas para Dossiê";
         migrateDossierBtn.disabled = false;
-        migrateDossierBtn.style.backgroundColor = 'var(--cor-erro)'; 
+        // Usando a cor de erro/perigo para indicar uma ação crítica pendente
+        migrateDossierBtn.style.backgroundColor = 'var(--cor-erro)';
+        // Reativa a animação/estilo se estiver no style.css
         migrateDossierBtn.style.animation = 'pulse-glow 2s infinite ease-in-out';
         migrateDossierBtn.style.cursor = 'pointer';
         migrateDossierBtn.style.color = '#fff';
@@ -79,7 +85,8 @@ const monitorMigrationStatus = () => {
     }, (error) => {
         if(error.code !== "PERMISSION_DENIED") console.error("Erro ao monitorar status de migração:", error);
     });
-    monitorMigrationStatus.listener = listener;
+    // Armazenar o listener pode ser útil se precisar removê-lo em algum momento
+    // monitorMigrationStatus.listener = listener; 
 };
 
 // Chamado na inicialização do script.js
@@ -106,9 +113,9 @@ onValue(globalLayoutRef, (snapshot) => {
         els.bottomPanelDisplay.textContent = settings.bottomPanelText || 'Este é o painel inferior.'; 
     }
     
-    if (els.adminPanel.style.display !== 'none' && els.bottomPanelText) {
-         els.bottomPanelText.value = settings.bottomPanelText || '';
-         // Se o admin panel estiver aberto, garante que os checkboxes reflitam o estado
+    // Atualiza os inputs do admin panel para refletir o estado do DB
+    if (els.adminPanel.style.display !== 'none') {
+         if (els.bottomPanelText) els.bottomPanelText.value = settings.bottomPanelText || '';
          if (els.layoutToggleNightMode) els.layoutToggleNightMode.checked = settings.enableNightMode;
          if (els.layoutToggleBottomPanel) els.layoutToggleBottomPanel.checked = settings.enableBottomPanel;
     }
@@ -161,7 +168,7 @@ const formatInactivityTime = (inactivityMs) => {
 export const monitorOnlineStatus = () => {
     const statusRef = ref(db, 'onlineStatus');
     
-    // Remove listener anterior se existir (para evitar duplicação no HMR)
+    // Remove listener anterior se existir
     if (monitorOnlineStatus.listener) {
         monitorOnlineStatus.listener();
     }
@@ -331,11 +338,11 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
         });
         
     } catch (error) {
-        // O erro é tratado no showToast dentro da função
+        // Trata erros de leitura do nó 'usuarios'
         els.adminUserListBody.innerHTML = `<tr><td colspan="2" style="text-align: center;">Erro ao carregar lista de usuários.</td></tr>`;
     }
     
-    // 3. Garante que a UI de migração está correta
+    // 4. Garante que a UI de migração está correta
     updateMigrationUI();
 };
 
@@ -384,7 +391,7 @@ export const migrateVendasToDossier = async () => {
             if (orgDestino && venda.cliente) {
                 const vendaData = {
                     cliente: venda.cliente,
-                    organizacao: orgDestino, // Já usa a org corrigida
+                    organizacao: orgDestino, 
                     telefone: venda.telefone,
                     vendaValorObs: venda.vendaValorObs || 'N/A (Migrado)',
                     dataHora: venda.dataHora,
@@ -450,9 +457,9 @@ export const migrateVeiculosData = async () => {
                     
                     for (let i = 0; i < maxLen; i++) {
                         const carroNome = carros[i] || 'N/A';
-                        const placaNum = placas[i] || `MIG_TEMP_${i}`; // Usa placa ou chave temporária
                         
-                        if(carroNome !== 'N/A' || !placaNum.startsWith('MIG_TEMP_')) {
+                        // Garante que a chave seja única (usando placa ou um ID temporário)
+                        if(carroNome !== 'N/A' || (placas[i] && placas[i].trim())) {
                             const key = placas[i] && placas[i].trim() ? placas[i].trim() : `MIG_TEMP_${Date.now()}_${i}`;
                             newVeiculos[key] = {
                                 carro: carroNome,
@@ -463,8 +470,8 @@ export const migrateVeiculosData = async () => {
                     }
                     const path = `dossies/${org}/${personId}`;
                     updates[`${path}/veiculos`] = newVeiculos;
-                    updates[`${path}/carro`] = null; 
-                    updates[`${path}/placas`] = null; 
+                    updates[`${path}/carro`] = null; // Remove campos antigos
+                    updates[`${path}/placas`] = null; // Remove campos antigos
                     count++;
                 }
             }
