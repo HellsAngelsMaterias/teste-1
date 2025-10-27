@@ -8,7 +8,8 @@
 
 // --- Imports (CAMINHOS CORRIGIDOS)
 import { els } from './dom.js';
-import { db, ref, set, push, remove } from './firebase.js';
+// Importações do Firebase atualizadas
+import { db, ref, set, push, remove, get, query, orderByChild, limitToLast, endAt } from './firebase.js';
 import { perUnit, valores, valorDescricao } from './constantes.js';
 import { getQty, formatCurrency, capitalizeText, showToast, toggleView, copyToClipboard } from './helpers.js';
 import { addDossierEntry, updateDossierEntryOnEdit, findDossierEntryGlobal } from './dossier.js';
@@ -23,6 +24,12 @@ let vendaOriginalDataHora = null;
 let vendaOriginalDossierOrg = null; 
 let vendaOriginalCliente = null;
 let vendaOriginalOrganizacao = null;
+
+// --- Novas variáveis de estado para Paginação
+let oldestTimestampLoaded = null;
+let isLoadingHistory = false;
+export let historyFullyLoaded = false; // Exportado para script.js
+const PAGE_SIZE = 50; // 50 registros por página
 
 // --- Funções de Gerenciamento de Estado (Chamadas pelo script.js)
 export const setVendas = (newVendas) => {
@@ -263,7 +270,12 @@ export const editVenda = (id) => {
 export const removeVenda = (id) => {
     if (confirm("Tem certeza que deseja remover esta venda?")) {
         remove(ref(db, `vendas/${id}`))
-            .then(() => showToast("Venda removida.", "success"))
+            .then(() => {
+                showToast("Venda removida.", "success");
+                // Remove do array local e redesenha
+                vendas = vendas.filter(v => v.id !== id);
+                displaySalesHistory(null, null, null); // Força redesenho com dados locais
+            })
             .catch((error) => showToast(`Erro ao remover: ${error.message}`, "error"));
     }
 };
@@ -334,17 +346,112 @@ export const copyDiscordMessage = (isFromHistory = false, venda = null, currentU
     copyToClipboard(buildDiscordMessage(messageData));
 };
 
+/**
+ * Carrega o histórico de vendas com paginação.
+ * @param {boolean} isInitialLoad - True se for a primeira carga (limpa o array).
+ * @param {object} currentUser - Objeto do usuário autenticado.
+ * @param {object} currentUserData - Dados do usuário (com tag).
+ */
+export const loadSalesHistory = async (isInitialLoad, currentUser, currentUserData) => {
+    if (isLoadingHistory) return;
+    
+    // Reseta o estado se for uma carga inicial
+    if (isInitialLoad) {
+        historyFullyLoaded = false;
+        oldestTimestampLoaded = null;
+        setVendas([]); // Limpa o array de vendas global
+        els.salesHistory.innerHTML = '<p style="text-align: center; padding: 20px;">Carregando histórico...</p>';
+    }
+
+    if (historyFullyLoaded) {
+        showToast("Você carregou todo o histórico.", "default");
+        els.historyLoadMoreContainer.style.display = 'none';
+        return;
+    }
+
+    isLoadingHistory = true;
+    els.loadMoreHistoryBtn.textContent = 'Carregando...';
+    els.loadMoreHistoryBtn.disabled = true;
+
+    try {
+        // Todos os usuários (Admin, Hells, Visitante) usarão a query ordenada por timestamp.
+        // O filtro de "Visitante" será feito no cliente, em displaySalesHistory.
+        // Isso é necessário para que a paginação por timestamp funcione.
+        const baseQuery = query(ref(db, 'vendas'), orderByChild('timestamp'));
+        
+        let paginatedQuery;
+        if (oldestTimestampLoaded) {
+            // Carrega mais: busca os 50 anteriores ao mais antigo que já temos
+            paginatedQuery = query(baseQuery, endAt(oldestTimestampLoaded - 1), limitToLast(PAGE_SIZE));
+        } else {
+            // Carga Inicial: busca os 50 mais recentes
+            paginatedQuery = query(baseQuery, limitToLast(PAGE_SIZE));
+        }
+
+        const snapshot = await get(paginatedQuery);
+
+        if (!snapshot.exists() || snapshot.size === 0) {
+            historyFullyLoaded = true;
+            els.historyLoadMoreContainer.style.display = 'none';
+            if (isInitialLoad) {
+                els.salesHistory.innerHTML = '<p style="text-align: center; padding: 20px;">Nenhuma venda encontrada.</p>';
+            }
+            return;
+        }
+
+        let newVendas = [];
+        snapshot.forEach((child) => {
+            newVendas.push({ id: child.key, ...child.val() });
+        });
+
+        // A consulta (limitToLast) retorna em ordem ascendente (do mais antigo ao mais novo do lote).
+        // Nós invertemos para que os mais novos apareçam primeiro.
+        newVendas.reverse();
+
+        if (newVendas.length < PAGE_SIZE) {
+            historyFullyLoaded = true;
+            els.historyLoadMoreContainer.style.display = 'none';
+        } else {
+            els.historyLoadMoreContainer.style.display = 'flex';
+        }
+
+        // Define o timestamp do último item (o mais antigo) deste lote para a próxima busca
+        oldestTimestampLoaded = newVendas[newVendas.length - 1].timestamp;
+        
+        // Adiciona as novas vendas ao array global
+        setVendas([...vendas, ...newVendas]);
+        
+        // Redesenha o histórico completo
+        displaySalesHistory(vendas, currentUser, currentUserData);
+
+    } catch (error) {
+        if(error.code !== "PERMISSION_DENIED") showToast(`Erro ao carregar histórico: ${error.message}`, "error");
+        els.salesHistory.innerHTML = `<p style="text-align: center; padding: 20px; color: var(--cor-erro);">Erro ao carregar: ${error.message}</p>`;
+    } finally {
+        isLoadingHistory = false;
+        els.loadMoreHistoryBtn.textContent = 'Carregar Mais';
+        els.loadMoreHistoryBtn.disabled = false;
+    }
+};
+
 export const displaySalesHistory = (history, currentUser, currentUserData) => {
+    // Se os dados de auth não foram passados (ex: reload por remoção), usa os dados globais
+    // Esta função agora espera ser chamada por loadSalesHistory, que passa os dados.
     const historyData = history || vendas;
     
+    // Limpa a tabela antes de redesenhar
     els.salesHistory.innerHTML = '';
+    
     if (!currentUserData) { 
+         // Se ainda não tiver os dados do usuário, não exibe nada (acontece no primeiro load)
+         // A função loadSalesHistory será chamada de novo quando os dados estiverem prontos.
          return;
     }
 
     let vendasFiltradas = historyData;
     const userTagUpper = currentUserData.tag.toUpperCase();
     
+    // Filtro para Visitantes (agora sempre feito no cliente)
     if (userTagUpper === 'VISITANTE') {
         vendasFiltradas = historyData.filter(v => v.registradoPorId === currentUser.uid);
     }
@@ -358,10 +465,11 @@ export const displaySalesHistory = (history, currentUser, currentUserData) => {
         return;
     }
 
-    vendasFiltradas.sort((a, b) => b.timestamp - a.timestamp);
+    // Não precisa mais ordenar aqui, pois `loadSalesHistory` já carrega na ordem correta
+    // vendasFiltradas.sort((a, b) => b.timestamp - a.timestamp);
 
     vendasFiltradas.forEach(venda => {
-        const row = els.salesHistory.insertRow();
+        const row = els.salesHistory.insertRow(); // appendChild é mais eficiente que innerHTML
         
         const [data, hora] = venda.dataHora.split(', ');
         row.insertCell().innerHTML = `<span class="history-datetime-line">${data}</span><span class="history-datetime-line">${hora}</span>`;
@@ -414,6 +522,7 @@ export const displaySalesHistory = (history, currentUser, currentUserData) => {
 
 export const filterHistory = (currentUser, currentUserData) => {
     const query = els.filtroHistorico.value.toLowerCase().trim();
+    // Filtra apenas as vendas JÁ CARREGADAS
     const filteredVendas = vendas.filter(v => 
         Object.values(v).some(val => String(val).toLowerCase().includes(query)) ||
         (v.qtyTickets > 0 && `tickets`.includes(query)) ||
@@ -428,6 +537,14 @@ export const exportToCsv = () => {
         showToast("Nenhum dado para exportar.", "error");
         return;
     }
+    
+    // Avisa o usuário que apenas os dados carregados serão exportados
+    if (!historyFullyLoaded) {
+        showToast("Exportando apenas o histórico carregado. Carregue mais para exportar tudo.", "default", 4000);
+    } else {
+        showToast("Histórico completo exportado para CSV!", "success");
+    }
+    
     const headers = ["Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", "Cargo", "Carro", "Placas", "Qtde Tickets", "Qtde Tablets", "Qtde Nitro", "Valor Total", "Tipo Valor", "Registrado Por"];
     const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${v.cliente}"`, `"${v.organizacao}"`, `"${v.organizacaoTipo}"`, `"${v.telefone}"`, `"${v.negociadoras}"`, `"${v.vendaValorObs}"`, `"${v.carro || ''}"`, `"${v.placas || ''}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${v.registradoPor}"`].join(','));
     const csvContent = [headers.join(','), ...csvRows].join('\n');
@@ -435,7 +552,6 @@ export const exportToCsv = () => {
     link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
     link.download = `historico_vendas_HA_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-    showToast("Histórico exportado para CSV!", "success");
 };
 
 export const clearHistory = (currentUserData) => {
@@ -445,7 +561,13 @@ export const clearHistory = (currentUserData) => {
     }
     if (confirm("ATENÇÃO: Deseja APAGAR TODO o histórico de vendas? Esta ação é irreversível.")) {
         remove(ref(db, 'vendas'))
-            .then(() => showToast("Histórico limpado.", "success"))
+            .then(() => {
+                showToast("Histórico limpado.", "success");
+                setVendas([]); // Limpa o array local
+                historyFullyLoaded = true; // Marca como "totalmente carregado" (vazio)
+                displaySalesHistory(null, null, currentUserData); // Redesenha (mostrará "Nenhuma venda")
+                els.historyLoadMoreContainer.style.display = 'none'; // Esconde o botão
+            })
             .catch(e => showToast(`Erro: ${e.message}`, "error"));
     }
 };
