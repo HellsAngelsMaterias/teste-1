@@ -33,7 +33,8 @@ import {
 import { 
     calculate, registerVenda, editVenda, removeVenda, copyDiscordMessage, 
     displaySalesHistory, filterHistory, exportToCsv, clearHistory, 
-    clearAllFields, setVendas, setVendaEmEdicao 
+    clearAllFields, setVendas, setVendaEmEdicao,
+    loadSalesHistory, historyFullyLoaded // <-- Imports para paginação
 } from './sales.js'; // <-- Nome do seu arquivo
 
 import { els } from './dom.js'; 
@@ -46,7 +47,7 @@ import {
 // --- 4. Estado Global Principal
 let currentUser = null;
 let currentUserData = null;
-let vendasListener = null;
+// let vendasListener = null; // <-- REMOVIDO: Não vamos mais ouvir em tempo real
 
 // ===============================================
 // INICIALIZAÇÃO E UI
@@ -228,38 +229,12 @@ onAuthStateChanged(auth, (user) => {
             // 2. Configura a UI baseada na TAG
             configurarInterfacePorTag(currentUserData.tag);
              
-            // 3. Remove listener de vendas antigo (se houver)
-            if(vendasListener) vendasListener(); 
+            // 3. REMOVIDO: O listener de vendas em tempo real
+            // if(vendasListener) vendasListener(); 
             
-            // 4. Define a query de vendas baseada na TAG
-            let vendasRef;
-            const userTagUpper = currentUserData.tag.toUpperCase();
-            if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
-                vendasRef = ref(db, 'vendas');
-            } else {
-                vendasRef = query(ref(db, 'vendas'), orderByChild('registradoPorId'), equalTo(currentUser.uid));
-            }
-
-            // 5. Cria o novo listener de vendas
-            vendasListener = onValue(vendasRef, (vendasSnapshot) => {
-                let vendas = [];
-                vendasSnapshot.forEach((child) => {
-                    vendas.push({ id: child.key, ...child.val() });
-                });
-                
-                // Atualiza o módulo de Vendas com os novos dados
-                setVendas(vendas); 
-                
-                // Se a tela de histórico estiver aberta, atualiza ela
-                if (els.historyCard.style.display !== 'none') {
-                    displaySalesHistory(vendas, currentUser, currentUserData);
-                }
-            }, (error) => {
-                console.error("Erro ao carregar vendas: ", error);
-                if(error.code !== "PERMISSION_DENIED") {
-                    showToast("Erro de permissão ao carregar histórico.", "error");
-                }
-            });
+            // 4. REMOVIDO: A query de vendas
+            
+            // 5. REMOVIDO: O listener de vendas onValue
             
         }, (error) => {
             console.error("Erro ao ler dados do usuário:", error);
@@ -275,7 +250,7 @@ onAuthStateChanged(auth, (user) => {
         // --- USUÁRIO DESLOGADO ---
         currentUser = null;
         currentUserData = null;
-        if (vendasListener) vendasListener(); 
+        // if (vendasListener) vendasListener(); // REMOVIDO
         setVendas([]); // Limpa as vendas no módulo
         setVendaEmEdicao(null); // Reseta a edição
         
@@ -323,16 +298,35 @@ els.forgotPasswordLink.onclick = resetPassword;
 els.calcBtn.onclick = calculate;
 els.resetBtn.onclick = clearAllFields;
 els.registerBtn.onclick = () => registerVenda(currentUser, currentUserData);
+
+// ATUALIZADO: toggleHistoryBtn agora chama a função de carregamento
 els.toggleHistoryBtn.onclick = () => {
     toggleView('history');
-    // Passa os dados de auth para o displayHistory poder verificar permissões
-    displaySalesHistory(null, currentUser, currentUserData); 
+    // Chama a nova função de carregamento (true = carga inicial)
+    loadSalesHistory(true, currentUser, currentUserData); 
 };
 els.toggleCalcBtn.onclick = () => toggleView('main');
 els.clearHistoryBtn.onclick = () => clearHistory(currentUserData);
 els.csvBtn.onclick = exportToCsv;
 els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null, currentUserData);
-els.filtroHistorico.addEventListener('input', () => filterHistory(currentUser, currentUserData));
+
+// ATUALIZADO: filtroHistorico agora esconde o botão "Carregar Mais"
+els.filtroHistorico.addEventListener('input', () => {
+    filterHistory(currentUser, currentUserData);
+    
+    const query = els.filtroHistorico.value.trim();
+    if (query) {
+        els.historyLoadMoreContainer.style.display = 'none'; // Esconde se estiver filtrando
+    } else if (!historyFullyLoaded) { // 'historyFullyLoaded' é importado de sales.js
+        els.historyLoadMoreContainer.style.display = 'flex'; // Mostra se não estiver filtrando e não tiver carregado tudo
+    }
+});
+
+// ADICIONADO: Listener para o novo botão
+els.loadMoreHistoryBtn.onclick = () => {
+    loadSalesHistory(false, currentUser, currentUserData); // false = não é carga inicial
+};
+
 els.nomeCliente.addEventListener('change', autoFillFromDossier); // Módulo Dossie
 
 // --- Painel Admin (Módulo: admin.js) ---
