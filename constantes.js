@@ -42,3 +42,4 @@ export const tourSteps = [
     { element: 'registerBtn', title: '4.5: Registrar Venda', content: 'Após calcular, preencha os dados do cliente e clique para salvar no histórico.' },
     { element: 'toggleHistoryBtn', title: '5/5: Ver Histórico', content: 'Acesse o histórico para ver, editar, apagar ou copiar vendas antigas.' }
 ];
+
