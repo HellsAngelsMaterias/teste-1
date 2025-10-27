@@ -7,7 +7,7 @@
 ===============================================
 */
 
-// --- 1. Imports de Configuração e Firebase (CAMINHOS CORRIGIDOS)
+// --- 1. Imports (CAMINHOS CORRIGIDOS PARA SUA ESTRUTURA)
 import { 
     auth, db, 
     onAuthStateChanged, signOut, sendPasswordResetEmail, 
@@ -15,11 +15,11 @@ import {
     ref, set, get, onValue, query, orderByChild, equalTo 
 } from './firebase.js';
 
-// --- 2. Imports de Módulos (Funções) (CAMINHOS CORRIGIDOS)
 import { 
     loadAdminPanel, updateUserActivity, monitorOnlineStatus, 
     updateGlobalLayout, migrateVendasToDossier, migrateVeiculosData 
 } from './admin.js';
+
 import { 
     autoFillFromDossier, showDossierOrgs, filterOrgs, openAddOrgModal, 
     showDossierPeople, filterPeople, openAddDossierModal, removeDossierEntry, 
@@ -28,19 +28,20 @@ import {
     closeImageLightbox, openEditOrgModal,
     adicionarOuAtualizarVeiculoTemp, cancelarEdicaoVeiculo, 
     removerVeiculoTemp, iniciarEdicaoVeiculo
-} from './dossie.js'; // Nome do seu arquivo
+} from './dossie.js'; // <-- Usando seu nome de arquivo 'dossie.js'
+
 import { 
     calculate, registerVenda, editVenda, removeVenda, copyDiscordMessage, 
     displaySalesHistory, filterHistory, exportToCsv, clearHistory, 
     clearAllFields, setVendas, setVendaEmEdicao 
-} from './vendas.js'; // Nome do seu arquivo
+} from './vendas.js'; // <-- Usando seu nome de arquivo 'vendas.js'
 
-// --- 3. Imports de Utilidades (Helpers e DOM) (CAMINHOS CORRIGIDOS)
 import { els } from './dom.js';
+
 import { 
     showToast, toggleView, toggleTheme, updateLogoAndThemeButton, 
     showNextTourStep, phoneMask, PREFIX, camposParaCapitalizar 
-} from './ajudantes.js'; // Nome do seu arquivo
+} from './ajudantes.js'; // <-- Usando seu nome de arquivo 'ajudantes.js'
 
 // --- 4. Estado Global Principal
 let currentUser = null;
@@ -351,17 +352,21 @@ els.migrateDossierBtn.onclick = migrateVendasToDossier;
 els.migrateVeiculosBtn.onclick = migrateVeiculosData;
 
 // --- Dossiê (Módulo: dossie.js) ---
-els.investigacaoBtn.onclick = () => toggleView('dossier');
+els.investigacaoBtn.onclick = () => {
+    toggleView('dossier');
+    showDossierOrgs(currentUserData); // Passa os dados do usuário para o sortable
+};
 els.toggleCalcBtnDossier.onclick = () => toggleView('main');
 
 // Dossiê Nível 1: Organizações
-els.filtroDossierOrgs.addEventListener('input', filterOrgs);
+els.filtroDossierOrgs.addEventListener('input', () => filterOrgs(currentUserData));
 els.addOrgBtn.onclick = openAddOrgModal;
 els.dossierOrgGrid.addEventListener('click', (e) => {
     const editBtn = e.target.closest('.edit-dossier-btn');
     const deleteBtn = e.target.closest('.delete-dossier-btn');
     const fotoLinkBtn = e.target.closest('.veiculo-foto-link');
     const editOrgBtn = e.target.closest('.edit-org-btn');
+    const card = e.target.closest('.dossier-org-card');
 
     if (fotoLinkBtn) {
         e.preventDefault();
@@ -376,6 +381,9 @@ els.dossierOrgGrid.addEventListener('click', (e) => {
     if (editOrgBtn) {
         e.stopPropagation();
         openEditOrgModal(editOrgBtn.dataset.orgId);
+    }
+    if (card && !editOrgBtn) { // Se clicar no card, mas não no botão de editar
+        showDossierPeople(card.dataset.orgName, currentUserData);
     }
 });
 
@@ -404,16 +412,16 @@ els.dossierPeopleGrid.addEventListener('click', (e) => {
 });
 
 // Dossiê: Modais de Pessoa (Salvar/Cancelar)
-els.saveDossierBtn.onclick = saveDossierChanges;
+els.saveDossierBtn.onclick = () => saveDossierChanges(currentUserData);
 els.cancelDossierBtn.onclick = closeEditDossierModal;
 els.editDossierOverlay.onclick = closeEditDossierModal;
-els.saveNewDossierBtn.onclick = saveNewDossierEntry;
+els.saveNewDossierBtn.onclick = () => saveNewDossierEntry(currentUserData);
 els.cancelNewDossierBtn.onclick = closeAddDossierModal;
 els.addDossierOverlay.onclick = closeAddDossierModal;
 
 // Dossiê: Modais de Organização (Salvar/Cancelar)
-els.saveOrgBtn.onclick = saveOrg;
-els.deleteOrgBtn.onclick = deleteOrg;
+els.saveOrgBtn.onclick = () => saveOrg(currentUserData);
+els.deleteOrgBtn.onclick = () => deleteOrg(currentUserData);
 els.cancelOrgBtn.onclick = closeOrgModal;
 els.orgModalOverlay.onclick = closeOrgModal;
 
@@ -437,7 +445,3 @@ els.editModalListaVeiculos.onclick = (e) => {
     if (removeBtn) removerVeiculoTemp(removeBtn.dataset.key, els.editModalListaVeiculos);
     if (editBtn) iniciarEdicaoVeiculo(editBtn.dataset.key, 'editModal');
 };
-
-// --- Listener de Vendas (Módulo: vendas.js) ---
-// O listener de botões (editar, deletar) que são criados dinamicamente
-// é atribuído DENTRO do módulo `vendas.js` (na função `displaySalesHistory`).
