@@ -181,7 +181,19 @@
       
       <h3>Gerenciamento de Usuários</h3>
       <p style="font-size: 13px;">Altere a permissão de usuários. Você não pode alterar sua própria tag.</p>
-      <div class="history-table-wrapper"> <table id="adminUserTable"> <thead> <tr> <th style="width: 80%;">Usuário / Status</th> <th style="width: 20%;">Ações</th> </tr> </thead> <tbody id="adminUserListBody"> <tr><td colspan="2" style="text-align: center;">Carregando usuários...</td></tr> </tbody> </table> </div>
+      <div class="history-table-wrapper"> 
+          <table id="adminUserTable"> 
+              <thead> 
+                  <tr> 
+                      <th style="width: 35%;">Usuário / Status</th> 
+                      <th style="width: 45%;">Atividade Atual</th> <th style="width: 20%;">Ações</th> 
+                  </tr> 
+              </thead> 
+              <tbody id="adminUserListBody"> 
+                  <tr><td colspan="3" style="text-align: center;">Carregando usuários...</td></tr> 
+              </tbody> 
+          </table> 
+      </div>
       <h3 style="margin-top: 20px;">Controles de Layout Global</h3>
       <p style="font-size: 13px;">Habilitar ou desabilitar recursos para todos os usuários do site em tempo real.</p>
       <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
@@ -229,11 +241,6 @@
               </thead>
               <tbody id="salesHistory"></tbody>
           </table></div>
-          
-          <div class="actions" id="historyLoadMoreContainer" style="display:none; justify-content: center; margin-top: 15px;">
-              <button id="loadMoreHistoryBtn" class="primary">Carregar Mais</button>
-          </div>
-          
       </div>
   </div>
   
@@ -397,4 +404,3 @@
   
 </body>
 </html>
-
