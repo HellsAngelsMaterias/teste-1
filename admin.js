@@ -15,12 +15,62 @@ import { addDossierEntry } from './dossier.js'; // Dependência para migração
 
 // --- Estado Interno
 let globalOnlineStatus = {}; 
+let globalUserList = []; // Lista de todos os usuários
+let migrationStatus = { dossierConcluida: false, veiculosConcluida: false }; // NOVO
 
 // ===============================================
 // CONTROLES DE LAYOUT GLOBAL
 // ===============================================
 
 const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
+const globalMigrationRef = ref(db, 'configuracoesGlobais/migracao'); // NOVO REF
+
+// Função para atualizar a UI dos botões de migração
+const updateMigrationUI = () => {
+    const { migrateDossierBtn, migrateVeiculosBtn } = els;
+    
+    // Migração de Vendas para Dossiê
+    if (migrationStatus.dossierConcluida) {
+        migrateDossierBtn.textContent = "Dossiê Migrado (Concluído)";
+        migrateDossierBtn.disabled = true;
+        migrateDossierBtn.style.backgroundColor = 'var(--cor-tag-visitante)'; // Verde para concluído
+        migrateDossierBtn.style.animation = 'none';
+        migrateDossierBtn.style.cursor = 'default';
+    } else {
+        migrateDossierBtn.textContent = "Migrar Vendas Antigas para Dossiê";
+        migrateDossierBtn.disabled = false;
+        migrateDossierBtn.style.backgroundColor = 'var(--cor-erro)'; 
+        migrateDossierBtn.style.animation = 'none';
+        migrateDossierBtn.style.cursor = 'pointer';
+    }
+
+    // Migração de Carros/Placas para Veículos (dentro do Dossiê)
+    if (migrationStatus.veiculosConcluida) {
+        migrateVeiculosBtn.textContent = "Veículos Migrados (Concluído)";
+        migrateVeiculosBtn.disabled = true;
+        migrateVeiculosBtn.style.backgroundColor = 'var(--cor-tag-visitante)'; // Verde para concluído
+        migrateVeiculosBtn.style.animation = 'none';
+        migrateVeiculosBtn.style.cursor = 'default';
+    } else {
+        migrateVeiculosBtn.textContent = "Migrar Veículos Antigos (Dossiê)";
+        migrateVeiculosBtn.disabled = false;
+        migrateVeiculosBtn.style.backgroundColor = 'var(--cor-erro)';
+        migrateVeiculosBtn.style.animation = 'none';
+        migrateVeiculosBtn.style.cursor = 'pointer';
+    }
+};
+
+// Listener que monitora o status de migração
+onValue(globalMigrationRef, (snapshot) => {
+    if (snapshot.exists()) {
+        migrationStatus = { ...migrationStatus, ...snapshot.val() };
+    }
+    // Atualiza a UI imediatamente quando o status do Firebase muda
+    if (els.migrateDossierBtn && els.migrateVeiculosBtn) { // Verifica se os elementos foram carregados
+        updateMigrationUI(); 
+    }
+});
+
 
 // Listener que atualiza o layout para TODOS os usuários em tempo real
 onValue(globalLayoutRef, (snapshot) => {
@@ -40,341 +90,262 @@ onValue(globalLayoutRef, (snapshot) => {
     
     if (els.bottomPanel) {
         els.bottomPanel.style.display = settings.enableBottomPanel ? 'flex' : 'none';
-        els.bottomPanelDisplay.textContent = settings.bottomPanelText || 'Este é o painel inferior.'; 
+        els.bottomPanelDisplay.textContent = settings.bottomPanelText || 'Painel Inferior';
     }
     
-    if (els.adminPanel.style.display !== 'none' && els.bottomPanelText) {
-         els.bottomPanelText.value = settings.bottomPanelText || '';
-    }
-
-}, (error) => {
-    if(error.code !== "PERMISSION_DENIED") {
-        showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
+    // Atualiza os inputs do admin panel para refletir o estado do DB
+    if (els.adminPanel.style.display !== 'none') {
+        if (els.layoutToggleNightMode) els.layoutToggleNightMode.checked = settings.enableNightMode;
+        if (els.layoutToggleBottomPanel) els.layoutToggleBottomPanel.checked = settings.enableBottomPanel;
+        if (els.bottomPanelText) els.bottomPanelText.value = settings.bottomPanelText || '';
     }
 });
 
-// Função chamada pelo event listener no script.js
 export const updateGlobalLayout = (key, value) => {
-    const layoutRef = ref(db, `configuracoesGlobais/layout/${key}`);
-    set(layoutRef, value)
-        .catch((error) => {
-            showToast(`Erro ao salvar configuração: ${error.message}`, 'error');
-        });
+    update(globalLayoutRef, { [key]: value })
+        .then(() => showToast(`Configuração global '${key}' salva!`, "success"))
+        .catch(err => showToast(`Erro ao salvar: ${err.message}`, "error"));
 };
 
+
 // ===============================================
-// STATUS ONLINE E GERENCIAMENTO DE USUÁRIOS
+// STATUS ONLINE E ADMIN PANEL
 // ===============================================
 
 export const updateUserActivity = (currentUser, currentUserData) => {
-    if (currentUser) {
-        const activityRef = ref(db, `onlineStatus/${currentUser.uid}`);
-        set(activityRef, {
-            lastActive: Date.now(),
-            displayName: currentUser.displayName,
-            tag: currentUserData ? currentUserData.tag : 'N/A'
-        }).catch(e => console.warn("Erro ao registrar atividade online:", e.message));
-        
-        // Define o próximo update
-        setTimeout(() => updateUserActivity(currentUser, currentUserData), 30000); 
-    }
-};
-
-const formatInactivityTime = (inactivityMs) => {
-    const seconds = Math.floor(inactivityMs / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    if (seconds < 5) return "Agora";
-    if (seconds < 60) return `${seconds} Segundos`;
-    if (minutes < 60) return `${minutes} Minuto${minutes > 1 ? 's' : ''}`;
-    const remainingMinutes = minutes % 60;
-    if (hours < 2) return `1 Hora e ${remainingMinutes} Minutos`;
-    return `${hours} Horas e ${remainingMinutes} Minutos`;
+    if (!currentUser) return;
+    const { uid, displayName } = currentUser;
+    
+    const userStatusRef = ref(db, `onlineStatus/${uid}`);
+    
+    // Atualiza o timestamp e o nome/tag para o rastreamento
+    set(userStatusRef, {
+        lastActive: Date.now(),
+        displayName: displayName,
+        tag: currentUserData.tag || 'Visitante'
+    });
 };
 
 export const monitorOnlineStatus = () => {
     const statusRef = ref(db, 'onlineStatus');
-    
-    // Remove listener anterior se existir (para evitar duplicação no HMR)
-    if (monitorOnlineStatus.listener) {
-        monitorOnlineStatus.listener();
-    }
-    
-    const listener = onValue(statusRef, (snapshot) => {
+    onValue(statusRef, (snapshot) => {
         const now = Date.now();
-        let activeCount = 0;
-        globalOnlineStatus = {}; 
-        
+        const activeThreshold = now - (60 * 1000); // Últimos 60 segundos
+        globalOnlineStatus = {};
+
         if (snapshot.exists()) {
             snapshot.forEach(child => {
-                const uid = child.key;
-                const userStatus = child.val();
-                const inactivity = now - userStatus.lastActive;
-                const isOnline = inactivity < 60000; // 60 segundos
-                
-                if (isOnline) activeCount++;
-                globalOnlineStatus[uid] = { isOnline, inactivity, lastActive: userStatus.lastActive };
+                const user = child.val();
+                if (user.lastActive > activeThreshold) {
+                    globalOnlineStatus[child.key] = {
+                        displayName: user.displayName,
+                        tag: user.tag || 'Visitante',
+                        online: true
+                    };
+                } else {
+                    globalOnlineStatus[child.key] = {
+                        displayName: user.displayName,
+                        tag: user.tag || 'Visitante',
+                        online: false
+                    };
+                }
             });
         }
-        
-        els.onlineUsersCount.textContent = activeCount.toString();
-        
-        // Se o Painel Admin estiver aberto, força a atualização da lista
         if (els.adminPanel.style.display !== 'none') {
-            loadAdminPanel(false); // Atualiza a lista sem recarregar tudo
+            displayUserList(); // Atualiza a lista se o painel estiver aberto
         }
-
-    }, (error) => {
-        if(error.code !== "PERMISSION_DENIED") console.error("Erro ao monitorar status online:", error);
     });
-    
-    monitorOnlineStatus.listener = listener;
 };
 
-const deleteUser = (uid, displayName) => {
-    if (confirm(`ATENÇÃO:\n\nTem certeza que deseja apagar o usuário "${displayName}"?\n\nIsso removerá o registro dele do banco de dados (e suas permissões).\n\nIMPORTANTE: Para apagar o LOGIN dele permanentemente, você ainda precisará ir ao painel "Authentication" do Firebase.`)) {
-        remove(ref(db, `usuarios/${uid}`))
+const displayUserList = () => {
+    const listBody = els.adminUserListBody;
+    listBody.innerHTML = '';
+    
+    const allUsers = [...globalUserList]; 
+
+    // Adiciona usuários online que não estão na lista global (novos registros)
+    Object.keys(globalOnlineStatus).forEach(uid => {
+        if (!allUsers.some(u => u.uid === uid)) {
+            allUsers.push({ uid, displayName: globalOnlineStatus[uid].displayName, tag: globalOnlineStatus[uid].tag });
+        }
+    });
+
+    els.onlineUsersCount.textContent = Object.values(globalOnlineStatus).filter(u => u.online).length;
+
+    allUsers.sort((a, b) => (b.tag === 'Admin') - (a.tag === 'Admin') || a.displayName.localeCompare(b.displayName));
+    
+    allUsers.forEach(user => {
+        const isOnline = globalOnlineStatus[user.uid] && globalOnlineStatus[user.uid].online;
+        const onlineClass = isOnline ? 'status-online' : 'status-offline';
+        
+        const row = listBody.insertRow();
+        row.innerHTML = `
+            <td class="user-name-cell">
+                <span class="status-dot ${onlineClass}"></span>
+                ${user.displayName} 
+                <span class="user-status-display tag-${user.tag.toLowerCase()}">${user.tag}</span>
+            </td>
+            <td>
+                <select class="tag-select" data-uid="${user.uid}" ${user.uid === auth.currentUser.uid ? 'disabled' : ''}>
+                    <option value="Admin" ${user.tag === 'Admin' ? 'selected' : ''}>Admin</option>
+                    <option value="Hells" ${user.tag === 'Hells' ? 'selected' : ''}>Hells</option>
+                    <option value="Visitante" ${user.tag === 'Visitante' ? 'selected' : ''}>Visitante</option>
+                </select>
+                ${user.uid !== auth.currentUser.uid ? '<button class="action-btn danger delete-user-btn" data-uid="' + user.uid + '">❌</button>' : ''}
+            </td>
+        `;
+    });
+
+    listBody.querySelectorAll('.tag-select').forEach(select => {
+        select.onchange = (e) => changeUserTag(e.target.dataset.uid, e.target.value);
+    });
+    listBody.querySelectorAll('.delete-user-btn').forEach(btn => {
+        btn.onclick = (e) => deleteUser(e.target.dataset.uid);
+    });
+};
+
+const changeUserTag = (uid, newTag) => {
+    const userRef = ref(db, `usuarios/${uid}/tag`);
+    set(userRef, newTag)
+        .then(() => showToast(`Tag de usuário atualizada para ${newTag}.`, "success"))
+        .catch(err => showToast(`Erro ao atualizar tag: ${err.message}`, "error"));
+};
+
+const deleteUser = (uid) => {
+    if (confirm("ATENÇÃO: Deseja apagar este usuário PERMANENTEMENTE do seu banco de dados?")) {
+        // Remove do nó "usuarios" e do nó "onlineStatus"
+        const updates = {};
+        updates[`usuarios/${uid}`] = null;
+        updates[`onlineStatus/${uid}`] = null;
+        
+        update(ref(db), updates)
             .then(() => {
-                showToast(`Usuário "${displayName}" apagado do banco de dados.`, 'success');
-                loadAdminPanel(); // Recarrega a lista
+                showToast("Usuário removido do sistema.", "success");
+                loadAdminPanel(true); 
             })
-            .catch((error) => showToast(`Erro ao apagar usuário: ${error.message}`, 'error'));
+            .catch(err => showToast(`Erro ao apagar: ${err.message}`, "error"));
     }
 };
 
-export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
-    
-    // 1. Garante que os dados de status online estejam disponíveis
-    if (fetchStatus) {
-        const statusSnapshot = await get(ref(db, 'onlineStatus'));
-        const now = Date.now();
-        globalOnlineStatus = {}; 
-        if (statusSnapshot.exists()) {
-            statusSnapshot.forEach(child => {
-                const userStatus = child.val();
-                const inactivity = now - userStatus.lastActive;
-                globalOnlineStatus[child.key] = { isOnline: inactivity < 60000, inactivity };
-            });
-        }
-    }
-    
-    els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Carregando...</td></tr>';
-    
-    try {
-        const usersSnapshot = await get(ref(db, 'usuarios'));
-        if (!usersSnapshot.exists()) {
-            els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
-            return;
-        }
-        
-        const usersList = [];
-        usersSnapshot.forEach(userSnap => {
-            if (userSnap.val().displayName.toLowerCase() !== 'snow') {
-                usersList.push({ uid: userSnap.key, ...userSnap.val() });
-            }
-        });
+export const loadAdminPanel = async (forceUpdate = false, currentUser) => {
+    if (!currentUser) return;
 
-        // Re-ordena: Online (Hells/Admin) > Offline (Hells/Admin) > Visitante
-        const tagOrder = { 'ADMIN': 1, 'HELLS': 2, 'VISITANTE': 3 };
-        usersList.sort((a, b) => {
-            const statusA = globalOnlineStatus[a.uid] || { isOnline: false, inactivity: Infinity };
-            const statusB = globalOnlineStatus[b.uid] || { isOnline: false, inactivity: Infinity };
-            if (statusA.isOnline !== statusB.isOnline) return statusA.isOnline ? -1 : 1; 
-            const tagA = (tagOrder[a.tag.toUpperCase()] || 4);
-            const tagB = (tagOrder[b.tag.toUpperCase()] || 4);
-            if (tagA !== tagB) return tagA - tagB;
-            if (statusA.inactivity !== statusB.inactivity) return statusA.inactivity - statusB.inactivity;
-            return (a.displayName || '').localeCompare(b.displayName || '');
-        });
-
-        els.adminUserListBody.innerHTML = '';
-        
-        usersList.forEach(user => {
-            const uid = user.uid;
-            const userData = user;
-            const status = globalOnlineStatus[uid] || { isOnline: false, inactivity: Infinity };
-            
-            const row = els.adminUserListBody.insertRow();
-            const mainCell = row.insertCell();
-            mainCell.style.verticalAlign = 'top';
-            mainCell.style.padding = '8px 6px';
-
-            // 1. Nome (com status dot)
-            const statusDotClass = status.isOnline ? 'status-online' : 'status-offline';
-            const displayNameText = userData.displayName || '(Sem nome)';
-            mainCell.innerHTML = `
-                <div style="display: flex; align-items: center; font-weight: 700; font-size: 16px; margin-bottom: 4px;">
-                    <span class="status-dot ${statusDotClass}" title="${status.isOnline ? 'Online' : 'Inativo'}" style="flex-shrink: 0;"></span>
-                    <span>${displayNameText}</span>
-                </div>
-            `;
-            
-            // 2. Atividade
-            const activitySpan = document.createElement('span');
-            activitySpan.style.cssText = 'font-size: 13px; display: block; margin-left: 20px; margin-bottom: 8px;';
-            const statusText = status.isOnline ? `Ativo (agora)` : `Inativo há ${formatInactivityTime(status.inactivity)}`;
-            activitySpan.textContent = statusText;
-            activitySpan.style.color = status.isOnline ? '#00b33c' : 'var(--cor-erro)';
-            if (!status.isOnline && status.inactivity > 60000 * 60 * 24) {
-                 activitySpan.textContent = 'Inativo há muito tempo';
-                 activitySpan.style.color = '#888';
-            }
-            mainCell.appendChild(activitySpan);
-            
-            // 3. Permissão (Tag)
-            const tagContainer = document.createElement('div');
-            tagContainer.style.marginLeft = '20px';
-            if (uid === currentUser.uid) {
-                tagContainer.textContent = `👑 ${userData.tag} (Você)`;
-                tagContainer.style.fontWeight = '600';
+    // 1. Carrega a lista completa de usuários
+    if (forceUpdate) {
+        try {
+            const snapshot = await get(ref(db, 'usuarios'));
+            if (snapshot.exists()) {
+                globalUserList = [];
+                snapshot.forEach(child => {
+                    globalUserList.push({ uid: child.key, ...child.val() });
+                });
             } else {
-                tagContainer.innerHTML = `
-                    <select style="width: auto; max-width: 200px;" data-uid="${uid}">
-                        <option value="Visitante">Visitante</option>
-                        <option value="HELLS">Hells</option>
-                        <option value="ADMIN">👑 Administrador</option>
-                    </select>
-                `;
-                const select = tagContainer.querySelector('select');
-                select.value = userData.tag.toUpperCase() === 'HELLS' ? 'HELLS' : (userData.tag.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'Visitante');
-                select.onchange = (e) => updateUserTag(e.target.dataset.uid, e.target.value);
+                globalUserList = [];
             }
-            mainCell.appendChild(tagContainer);
-
-            // CÉLULA DE AÇÕES
-            const actionsCell = row.insertCell();
-            actionsCell.style.textAlign = 'center';
-            actionsCell.style.verticalAlign = 'middle';
-            if (uid === currentUser.uid) {
-                actionsCell.textContent = '---';
-            } else {
-                const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = '❌';
-                deleteBtn.className = 'danger action-btn'; 
-                deleteBtn.style.cssText = 'padding: 5px 8px; font-size: 14px; line-height: 1;';
-                deleteBtn.onclick = () => deleteUser(uid, userData.displayName);
-                actionsCell.appendChild(deleteBtn);
-            }
-        });
-        
-    } catch (error) {
-        showToast(`Erro ao carregar usuários: ${error.message}`, 'error');
-        els.adminUserListBody.innerHTML = `<tr><td colspan="2" style="text-align: center;">Erro ao carregar. ${error.message}</td></tr>`;
+            displayUserList();
+        } catch (error) {
+            showToast("Erro ao carregar lista de usuários.", "error");
+        }
     }
     
-    // Carrega as configurações de layout nos checkboxes
-    try {
-        const layoutSnapshot = await get(ref(db, 'configuracoesGlobais/layout'));
-        if (layoutSnapshot.exists()) {
-            const settings = layoutSnapshot.val();
-            els.layoutToggleNightMode.checked = settings.enableNightMode;
-            els.layoutToggleBottomPanel.checked = settings.enableBottomPanel;
-            els.bottomPanelText.value = settings.bottomPanelText || '';
-        }
-    } catch (error) {
-        if(error.code !== "PERMISSION_DENIED") showToast(`Erro ao carregar configs de layout: ${error.message}`, 'error');
-    }
+    // 2. Atualiza os botões de migração
+    updateMigrationUI(); // Garante que o estado visual está correto ao abrir
 };
 
-const updateUserTag = (uid, newTag) => {
-    set(ref(db, `usuarios/${uid}/tag`), newTag)
-        .then(() => showToast("Permissão do usuário atualizada!", 'success'))
-        .catch((error) => showToast(`Erro ao atualizar tag: ${error.message}`, 'error'));
-};
 
 // ===============================================
-// AÇÕES DE MIGRAÇÃO
+// FUNÇÕES DE MIGRAÇÃO DE DADOS (USO ÚNICO)
 // ===============================================
 
 export const migrateVendasToDossier = async () => {
-    if (!confirm("Isso irá copiar *todas* as vendas com organização para o Dossiê de Pessoas. (Já faz verificação de duplicados). Deseja continuar?")) return;
+    if (migrationStatus.dossierConcluida) {
+         showToast("Migração de Dossiê já concluída!", "default");
+         return;
+    }
     
-    showToast("Iniciando migração... Isso pode demorar.", "default", 5000);
-    let isSuccess = false;
     els.migrateDossierBtn.disabled = true;
     els.migrateDossierBtn.textContent = "Migrando...";
-    
+
     try {
-        const snapshot = await get(ref(db, 'vendas'));
-        if (!snapshot.exists()) {
-            showToast("Nenhuma venda encontrada para migrar.", "error");
-            isSuccess = true; 
+        const ventasSnap = await get(ref(db, 'vendas'));
+        if (!ventasSnap.exists()) {
+            showToast("Nenhuma venda para migrar.", "default");
             return;
         }
-        
-        const vendas = snapshot.val();
+
         let count = 0;
-        for (const vendaId in vendas) {
-            const venda = vendas[vendaId];
+        ventasSnap.forEach(child => {
+            const vendaData = child.val();
             
-            let orgDestino = '';
-            if (venda.organizacaoTipo === 'CPF') orgDestino = 'CPF';
-            else if (venda.organizacaoTipo === 'OUTROS') orgDestino = 'Outros';
-            else orgDestino = venda.organizacao.trim();
+            // Lógica para determinar a organização correta para o dossiê
+            let dossierOrg = '';
+            if (vendaData.organizacaoTipo === 'CPF') dossierOrg = 'CPF';
+            else if (vendaData.organizacaoTipo === 'OUTROS') dossierOrg = 'Outros';
+            else dossierOrg = vendaData.organizacao || '';
             
-            if (orgDestino && venda.cliente) {
-                const vendaData = {
-                    cliente: venda.cliente,
-                    organizacao: orgDestino, // Já usa a org corrigida
-                    telefone: venda.telefone,
-                    vendaValorObs: venda.vendaValorObs || 'N/A (Migrado)',
-                    dataHora: venda.dataHora,
-                    carro: venda.carro,
-                    placas: venda.placas
-                };
-                await addDossierEntry(vendaData, null); // Importado de dossier.js
+            // Cria uma entrada de dossiê se os campos necessários existirem
+            if (dossierOrg && vendaData.cliente) {
+                const dossierVendaData = { ...vendaData }; 
+                dossierVendaData.organizacao = dossierOrg; 
+                addDossierEntry(dossierVendaData);
                 count++;
             }
-        }
-        showToast(`Migração concluída! ${count} registros verificados/migrados.`, "success");
-        isSuccess = true;
-    } catch (error) {
-        showToast(`Erro na migração: ${error.message}`, "error");
-        isSuccess = false;
-    } finally {
-        if (isSuccess) {
-            els.migrateDossierBtn.textContent = "Migração Concluída";
+        });
+
+        if (count > 0) {
+            // ⭐️ NOVO: Define a flag de conclusão
+            await set(ref(db, 'configuracoesGlobais/migracao/dossierConcluida'), true); 
+            showToast(`Migração de dossiê concluída! ${count} registros copiados.`, "success");
         } else {
-            els.migrateDossierBtn.disabled = false;
-            els.migrateDossierBtn.textContent = "Migrar Vendas Antigas para Dossiê";
+            showToast("Nenhuma venda válida encontrada para migrar.", "default");
         }
+
+    } catch (error) {
+        showToast(`Erro na migração de dossiê: ${error.message}`, "error");
+    } finally {
+        updateMigrationUI(); // Atualiza a UI para refletir o novo status
     }
 };
 
+
 export const migrateVeiculosData = async () => {
-    if (!confirm("ATENÇÃO: Isso irá converter TODOS os campos 'carro' e 'placas' (com vírgulas) para o novo sistema de veículos. Faça isso APENAS UMA VEZ.\n\nDeseja continuar?")) return;
+    if (migrationStatus.veiculosConcluida) {
+         showToast("Migração de Veículos já concluída!", "default");
+         return;
+    }
     
-    showToast("Iniciando migração de veículos...", "default", 5000);
-    let isSuccess = false;
     els.migrateVeiculosBtn.disabled = true;
     els.migrateVeiculosBtn.textContent = "Migrando...";
-    
+
     try {
-        const snapshot = await get(ref(db, 'dossies'));
-        if (!snapshot.exists()) {
-            showToast("Nenhum dossiê encontrado.", "error");
-            isSuccess = true;
+        const dossiesSnap = await get(ref(db, 'dossies'));
+        if (!dossiesSnap.exists()) {
+            showToast("Nenhum dossiê para migrar veículos.", "default");
             return;
         }
-        
-        const dossies = snapshot.val();
-        let count = 0;
+
         const updates = {};
-        
-        for (const org in dossies) {
-            for (const personId in dossies[org]) {
-                const person = dossies[org][personId];
-                if ((person.carro || person.placas) && !person.veiculos) {
-                    const newVeiculos = {};
-                    const carros = (person.carro || '').split(',').map(c => c.trim());
-                    const placas = (person.placas || '').split(',').map(p => p.trim());
+        let count = 0;
+
+        dossiesSnap.forEach(orgSnapshot => {
+            const org = orgSnapshot.key;
+            orgSnapshot.forEach(personSnapshot => {
+                const personId = personSnapshot.key;
+                const personData = personSnapshot.val();
+                
+                // Procura os campos antigos 'carro' e 'placas'
+                if (personData.carro || personData.placas) {
+                    const carros = (personData.carro || '').split(',').map(c => c.trim());
+                    const placas = (personData.placas || '').split(',').map(p => p.trim());
                     const maxLen = Math.max(carros.length, placas.length);
                     
+                    const newVeiculos = personData.veiculos || {}; // Mantém veículos existentes
+
                     for (let i = 0; i < maxLen; i++) {
                         const carroNome = carros[i] || 'N/A';
-                        const placaNum = placas[i] || `MIG_${i}`; // Usa placa ou chave temporária
+                        const placaNum = placas[i] || `MIG_${Date.now()}_${i}`; // Chave temporária
                         
-                        if(carroNome !== 'N/A' || placaNum !== `MIG_${i}`) {
+                        if(carroNome !== 'N/A' || (placaNum && !placaNum.startsWith('MIG_'))) {
                             newVeiculos[placaNum] = {
                                 carro: carroNome,
                                 placa: placas[i] || '', // Deixa placa vazia se não existir
@@ -384,29 +355,24 @@ export const migrateVeiculosData = async () => {
                     }
                     const path = `dossies/${org}/${personId}`;
                     updates[`${path}/veiculos`] = newVeiculos;
-                    updates[`${path}/carro`] = null; 
-                    updates[`${path}/placas`] = null; 
+                    updates[`${path}/carro`] = null; // Apaga os campos antigos
+                    updates[`${path}/placas`] = null; // Apaga os campos antigos
                     count++;
                 }
-            }
-        }
+            });
+        });
         
         if (count > 0) {
             await update(ref(db), updates);
+            // ⭐️ NOVO: Define a flag de conclusão
+            await set(ref(db, 'configuracoesGlobais/migracao/veiculosConcluida'), true); 
             showToast(`Migração de veículos concluída! ${count} registros atualizados.`, "success");
         } else {
             showToast("Nenhum registro antigo para migrar.", "default");
         }
-        isSuccess = true;
     } catch (error) {
         showToast(`Erro na migração de veículos: ${error.message}`, "error");
-        isSuccess = false;
     } finally {
-        if (isSuccess) {
-            els.migrateVeiculosBtn.textContent = "Migração Concluída";
-        } else {
-            els.migrateVeiculosBtn.disabled = false;
-            els.migrateVeiculosBtn.textContent = "Migrar Veículos Antigos (Dossiê)";
-        }
+        updateMigrationUI(); // Atualiza a UI para refletir o novo status
     }
 };
