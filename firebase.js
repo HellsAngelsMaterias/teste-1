@@ -78,3 +78,4 @@ export {
     limitToLast, // <-- ADICIONADO
     endAt          // <-- ADICIONADO
 };
+
