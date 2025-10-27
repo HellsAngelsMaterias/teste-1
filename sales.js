@@ -11,7 +11,7 @@ import { els } from './dom.js';
 import { db, ref, set, push, remove } from './firebase.js';
 import { perUnit, valores, valorDescricao } from './constantes.js';
 import { getQty, formatCurrency, capitalizeText, showToast, toggleView, copyToClipboard } from './helpers.js';
-import { addDossierEntry, updateDossierEntryOnEdit, findDossierEntryGlobal } from './dossie.js';
+import { addDossierEntry, updateDossierEntryOnEdit, findDossierEntryGlobal } from './dossier.js';
 
 // --- Estado Interno do Módulo
 let vendas = [];
@@ -453,3 +453,4 @@ export const clearHistory = (currentUserData) => {
     }
 
 };
+
