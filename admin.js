@@ -10,8 +10,8 @@
 // --- Imports (CAMINHOS CORRIGIDOS)
 import { els } from './dom.js';
 import { db, ref, set, onValue, remove, get, update } from './firebase.js';
-import { showToast } from './ajudantes.js';
-import { addDossierEntry } from './dossie.js'; // Dependência para migração
+import { showToast } from './helpers.js';
+import { addDossierEntry } from './dossier.js'; // Dependência para migração
 
 // --- Estado Interno
 let globalOnlineStatus = {}; 
@@ -396,4 +396,5 @@ export const migrateVeiculosData = async () => {
             els.migrateVeiculosBtn.textContent = "Migrar Veículos Antigos (Dossiê)";
         }
     }
+
 };
