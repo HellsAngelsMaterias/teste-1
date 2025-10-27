@@ -175,7 +175,7 @@ export const showNextTourStep = () => {
     if(currentTooltip && currentTooltip.parentNode) document.body.removeChild(currentTooltip); 
     currentTooltip = document.createElement('div'); 
     currentTooltip.className = 'tour-tooltip'; 
-    currentTooltip.innerHTML = `<h4>${step.title}</h4><p>${step.content}</p><div><button class="tourNextBtn">${currentStepIndex === tourSteps.length - 1 ? 'Finalizar' : 'Próximo'}</button><button class="tourSkipBtn">Pular</button></div>`; 
+    currentTooltip.innerHTML = `<h4>${step.title}</h4><p>${step.content}</p><div><button class=\"tourNextBtn\">${currentStepIndex === tourSteps.length - 1 ? 'Finalizar' : 'Próximo'}</button><button class=\"tourSkipBtn\">Pular</button></div>`; 
     document.body.appendChild(currentTooltip); 
     const rect = targetElement.getBoundingClientRect(); 
     let top = rect.top < currentTooltip.offsetHeight + 20 ? rect.bottom + window.scrollY + 10 : rect.top + window.scrollY - currentTooltip.offsetHeight - 10; 
