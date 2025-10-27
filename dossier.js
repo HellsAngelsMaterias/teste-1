@@ -10,7 +10,7 @@
 // --- Imports (CAMINHOS CORRIGIDOS)
 import { els } from './dom.js';
 import { db, ref, set, push, onValue, remove, get, query, orderByChild, equalTo, update } from './firebase.js';
-import { showToast, capitalizeText } from './ajudantes.js';
+import { showToast, capitalizeText } from './helpers.js';
 
 // --- Estado Interno do Módulo
 let globalAllOrgs = []; 
@@ -982,4 +982,5 @@ export const removeDossierEntry = (orgName, entryId, currentUserData) => {
             })
             .catch((error) => showToast(`Erro ao remover: ${error.message}`, "error"));
     }
+
 };
