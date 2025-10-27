@@ -28,20 +28,20 @@ import {
     closeImageLightbox, openEditOrgModal,
     adicionarOuAtualizarVeiculoTemp, cancelarEdicaoVeiculo, 
     removerVeiculoTemp, iniciarEdicaoVeiculo
-} from './dossie.js'; // <-- Usando seu nome de arquivo 'dossie.js'
+} from './dossier.js'; 
 
 import { 
     calculate, registerVenda, editVenda, removeVenda, copyDiscordMessage, 
     displaySalesHistory, filterHistory, exportToCsv, clearHistory, 
     clearAllFields, setVendas, setVendaEmEdicao 
-} from './vendas.js'; // <-- Usando seu nome de arquivo 'vendas.js'
+} from './sales.js'; 
 
 import { els } from './dom.js';
 
 import { 
     showToast, toggleView, toggleTheme, updateLogoAndThemeButton, 
     showNextTourStep, phoneMask, PREFIX, camposParaCapitalizar 
-} from './ajudantes.js'; // <-- Usando seu nome de arquivo 'ajudantes.js'
+} from './helpers.js'; 
 
 // --- 4. Estado Global Principal
 let currentUser = null;
@@ -445,3 +445,4 @@ els.editModalListaVeiculos.onclick = (e) => {
     if (removeBtn) removerVeiculoTemp(removeBtn.dataset.key, els.editModalListaVeiculos);
     if (editBtn) iniciarEdicaoVeiculo(editBtn.dataset.key, 'editModal');
 };
+
