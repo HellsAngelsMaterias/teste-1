@@ -15,8 +15,8 @@ import { addDossierEntry } from './dossier.js'; // Dependência para migração
 
 // --- Estado Interno
 let globalOnlineStatus = {}; 
-let migrationStatus = { dossierConcluida: false, veiculosConcluida: false }; // Estado local da migração
-let globalUserList = []; // NOVO: Armazena a lista de usuários
+let migrationStatus = { dossierConcluida: false, veiculosConcluida: false }; 
+let globalUserList = []; 
 
 // ===============================================
 // CONTROLES DE LAYOUT GLOBAL E MIGRAÇÃO
@@ -25,12 +25,12 @@ let globalUserList = []; // NOVO: Armazena a lista de usuários
 const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
 const globalMigrationRef = ref(db, 'configuracoesGlobais/migracao');
 
-// Funções de monitoramento e atualização de UI (mantidas do último update)
+// Função para atualizar a UI dos botões de migração
 const updateMigrationUI = () => {
     const { migrateDossierBtn, migrateVeiculosBtn } = els;
     if (!migrateDossierBtn || !migrateVeiculosBtn) return;
     
-    // ... (restante da lógica de updateMigrationUI)
+    // Migração de Vendas para Dossiê
     if (migrationStatus.dossierConcluida) {
         migrateDossierBtn.textContent = "Dossiê Migrado (Concluído)";
         migrateDossierBtn.disabled = true;
@@ -47,6 +47,7 @@ const updateMigrationUI = () => {
         migrateDossierBtn.style.color = '#fff';
     }
 
+    // Migração de Carros/Placas para Veículos
     if (migrationStatus.veiculosConcluida) {
         migrateVeiculosBtn.textContent = "Veículos Migrados (Concluído)";
         migrateVeiculosBtn.disabled = true;
@@ -83,7 +84,6 @@ monitorMigrationStatus();
 
 // Listener de Layout
 onValue(globalLayoutRef, (snapshot) => {
-    // ... (lógica de layout)
     if (!snapshot.exists()) {
         console.warn("Nó /configuracoesGlobais/layout não encontrado.");
         return;
@@ -127,16 +127,18 @@ export const updateGlobalLayout = (key, value) => {
 // STATUS ONLINE E GERENCIAMENTO DE USUÁRIOS
 // ===============================================
 
-export const updateUserActivity = (currentUser, currentUserData) => {
+// ⭐️ ATUALIZADA: Adicionado currentActivity
+export const updateUserActivity = (currentUser, currentUserData, currentActivity = 'Calculadora') => {
     if (currentUser) {
         const activityRef = ref(db, `onlineStatus/${currentUser.uid}`);
         set(activityRef, {
             lastActive: Date.now(),
             displayName: currentUser.displayName,
-            tag: currentUserData ? currentUserData.tag : 'N/A'
+            tag: currentUserData ? currentUserData.tag : 'N/A',
+            currentActivity: currentActivity // ⭐️ NOVO CAMPO
         }).catch(e => console.warn("Erro ao registrar atividade online:", e.message));
         
-        setTimeout(() => updateUserActivity(currentUser, currentUserData), 30000); 
+        setTimeout(() => updateUserActivity(currentUser, currentUserData, currentActivity), 30000); 
     }
 };
 
@@ -152,6 +154,7 @@ const formatInactivityTime = (inactivityMs) => {
     return `${hours} Horas e ${remainingMinutes} Minutos`;
 };
 
+// ⭐️ ATUALIZADA: Busca o campo currentActivity
 export const monitorOnlineStatus = () => {
     const statusRef = ref(db, 'onlineStatus');
     
@@ -172,14 +175,19 @@ export const monitorOnlineStatus = () => {
                 const isOnline = inactivity < 60000; // 60 segundos
                 
                 if (isOnline) activeCount++;
-                globalOnlineStatus[uid] = { isOnline, inactivity, lastActive: userStatus.lastActive };
+                globalOnlineStatus[uid] = { 
+                    isOnline, 
+                    inactivity, 
+                    lastActive: userStatus.lastActive,
+                    currentActivity: userStatus.currentActivity || 'Navegando' 
+                };
             });
         }
         
         els.onlineUsersCount.textContent = activeCount.toString();
         
         if (els.adminPanel.style.display !== 'none') {
-            loadAdminPanel(false); // Atualiza a lista sem recarregar tudo
+            loadAdminPanel(false);
         }
 
     }, (error) => {
@@ -201,15 +209,16 @@ const deleteUser = (uid, displayName) => {
     }
 };
 
+// ⭐️ ATUALIZADA: Ajustada para exibir a nova coluna
 export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
     
-    // Verifica se o usuário logado é Admin para tentar carregar o painel
-    if (currentUser && currentUser.uid && (!currentUser.userData || currentUser.userData.tag.toUpperCase() !== 'ADMIN')) {
-         els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Acesso negado. Apenas Administradores podem visualizar este painel.</td></tr>';
+    // 1. Verifica Acesso (Admin)
+    if (!currentUser || !currentUser.uid || (currentUser.userData && currentUser.userData.tag.toUpperCase() !== 'ADMIN')) {
+         els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Acesso negado. Apenas Administradores podem visualizar este painel.</td></tr>';
          return;
     }
 
-    // 1. Garante que os dados de status online estejam disponíveis
+    // 2. Garante que os dados de status online estejam disponíveis
     if (fetchStatus) {
         try {
             const statusSnapshot = await get(ref(db, 'onlineStatus'));
@@ -219,37 +228,38 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
                 statusSnapshot.forEach(child => {
                     const userStatus = child.val();
                     const inactivity = now - userStatus.lastActive;
-                    globalOnlineStatus[child.key] = { isOnline: inactivity < 60000, inactivity };
+                    globalOnlineStatus[child.key] = { 
+                        isOnline: inactivity < 60000, 
+                        inactivity,
+                        currentActivity: userStatus.currentActivity || 'Navegando'
+                    };
                 });
             }
         } catch (error) {
-            // Se falhar, é um problema de permissão (mas o get no /usuarios vai falhar também)
             if(error.code !== "PERMISSION_DENIED") showToast(`Erro ao carregar status online: ${error.message}`, 'error');
         }
     }
     
-    els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Carregando...</td></tr>';
+    els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Carregando...</td></tr>';
     
     try {
         const usersSnapshot = await get(ref(db, 'usuarios'));
         if (!usersSnapshot.exists()) {
-            els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
+            els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
             globalUserList = [];
             return;
         }
         
-        // 2. Processa e exibe a lista de usuários
+        // 3. Processa e exibe a lista de usuários
         const usersList = [];
         usersSnapshot.forEach(userSnap => {
             const user = userSnap.val();
-            // Evita listar o usuário 'snow' se for um usuário de sistema
             if (user.displayName && user.displayName.toLowerCase() !== 'snow') {
                 usersList.push({ uid: userSnap.key, ...user });
             }
         });
-        globalUserList = usersList; // Atualiza lista global
+        globalUserList = usersList;
 
-        // Re-ordena
         const tagOrder = { 'ADMIN': 1, 'HELLS': 2, 'VISITANTE': 3 };
         usersList.sort((a, b) => {
             const statusA = globalOnlineStatus[a.uid] || { isOnline: false, inactivity: Infinity };
@@ -268,8 +278,11 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
             const uid = user.uid;
             const userData = user;
             const status = globalOnlineStatus[uid] || { isOnline: false, inactivity: Infinity };
+            const activityText = status.currentActivity || 'Navegando';
             
             const row = els.adminUserListBody.insertRow();
+            
+            // Coluna Usuário / Status (35%)
             const mainCell = row.insertCell();
             mainCell.style.verticalAlign = 'top';
             mainCell.style.padding = '8px 6px';
@@ -313,6 +326,22 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
             }
             mainCell.appendChild(tagContainer);
 
+            // ⭐️ NOVA COLUNA: Atividade Atual (45%)
+            const activityCell = row.insertCell();
+            activityCell.style.verticalAlign = 'top';
+            activityCell.style.padding = '8px 6px';
+            activityCell.style.fontSize = '14px';
+            if(status.isOnline) {
+                 activityCell.textContent = activityText;
+                 activityCell.style.fontWeight = '600';
+                 activityCell.style.color = 'var(--cor-principal)';
+            } else {
+                 activityCell.textContent = 'Offline';
+                 activityCell.style.fontStyle = 'italic';
+                 activityCell.style.color = '#888';
+            }
+
+            // Coluna Ações (20%)
             const actionsCell = row.insertCell();
             actionsCell.style.textAlign = 'center';
             actionsCell.style.verticalAlign = 'middle';
@@ -329,13 +358,12 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
         });
         
     } catch (error) {
-        // Se houver erro aqui, é quase certeza que é erro de permissão.
         if(error.code !== "PERMISSION_DENIED") console.error("Erro ao carregar lista de usuários:", error);
         showToast("Erro ao carregar lista de usuários.", 'error');
-        els.adminUserListBody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--cor-erro);">Erro ao carregar. Verifique as regras de leitura para /usuarios no Firebase.</td></tr>`;
+        els.adminUserListBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--cor-erro);">Erro ao carregar. Verifique as regras de leitura para /usuarios no Firebase.</td></tr>`;
     }
     
-    // 3. Carrega as configurações de layout nos checkboxes
+    // 4. Carrega as configurações de layout nos checkboxes
     try {
         const layoutSnapshot = await get(ref(db, 'configuracoesGlobais/layout'));
         if (layoutSnapshot.exists()) {
@@ -348,7 +376,6 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
         if(error.code !== "PERMISSION_DENIED") showToast(`Erro ao carregar configs de layout: ${error.message}`, 'error');
     }
     
-    // 4. Atualiza botões de migração
     updateMigrationUI();
 };
 
