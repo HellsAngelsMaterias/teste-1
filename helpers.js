@@ -187,3 +187,4 @@ export const showNextTourStep = () => {
     currentTooltip.querySelector('.tourSkipBtn').onclick = clearTour; 
     targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
 };
+
