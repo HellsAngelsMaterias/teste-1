@@ -136,5 +136,8 @@ export const els = {
   
   imageLightboxOverlay: document.getElementById('imageLightboxOverlay'),
   imageLightboxModal: document.getElementById('imageLightboxModal'),
-  lightboxImg: document.getElementById('lightboxImg')
+  lightboxImg: document.getElementById('lightboxImg'),
+  
+  // ⭐️ NOVO ELEMENTO
+  topHistoryScrollbar: document.getElementById('topHistoryScrollbar')
 };
