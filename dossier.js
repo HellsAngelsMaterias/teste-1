@@ -272,7 +272,7 @@ const initSortable = (orgName, currentUserData) => {
     
     sortableInstance = new Sortable(els.dossierPeopleGrid, {
         animation: 150,
-        handle: '.dossier-entry-card', 
+        handle: '.drag-handle-icon', // <-- ALTERAÇÃO AQUI
         disabled: !canDrag, 
         ghostClass: 'sortable-ghost', 
         onEnd: () => saveHierarchyOrder(orgName)
@@ -309,7 +309,7 @@ const initOrgSortable = (currentUserData) => {
     
     orgSortableInstance = new Sortable(els.dossierOrgGrid, {
         animation: 150,
-        handle: '.dossier-org-card', 
+        handle: '.drag-handle-icon', // <-- ALTERAÇÃO AQUI
         group: 'orgs', 
         disabled: !canDrag, 
         ghostClass: 'sortable-ghost',
@@ -368,6 +368,9 @@ const displayOrgs = (orgs) => {
         card.className = 'dossier-org-card';
         card.dataset.orgName = org.nome;
         
+        // ADICIONA O ÍCONE DE ARRASTAR
+        card.innerHTML = `<span class="drag-handle-icon org-drag-handle">☰</span>`;
+        
         const fotoDiv = document.createElement('div');
         fotoDiv.className = 'dossier-org-foto';
         if (org.fotoUrl) {
@@ -408,6 +411,9 @@ const displayGlobalSearchResults = (orgs, people) => {
             card.dataset.orgName = org.nome;
             card.style.cursor = 'pointer'; 
             
+            // ADICIONA O ÍCONE DE ARRASTAR
+            card.innerHTML = `<span class="drag-handle-icon org-drag-handle">☰</span>`;
+            
             const fotoDiv = document.createElement('div');
             fotoDiv.className = 'dossier-org-foto';
             if (org.fotoUrl) {
@@ -419,7 +425,7 @@ const displayGlobalSearchResults = (orgs, people) => {
             } else {
                 fotoDiv.textContent = 'Sem Foto da Base';
             }
-            card.appendChild(fotoDiv);
+            card.prepend(fotoDiv); // Adiciona a foto no início (APÓS o ícone)
             
             card.innerHTML += `
                 <h4>${org.nome}</h4>
@@ -439,6 +445,9 @@ const displayGlobalSearchResults = (orgs, people) => {
             card.className = 'dossier-entry-card';
             card.dataset.id = entry.id; 
             card.style.cursor = 'default'; 
+            
+            // ADICIONA O ÍCONE DE ARRASTAR
+            card.innerHTML = `<span class="drag-handle-icon people-drag-handle">☰</span>`;
             
             const baseLink = document.createElement('a'); 
             baseLink.href = '#';
@@ -584,6 +593,9 @@ const displayPeople = (people) => {
         const card = document.createElement('div');
         card.className = 'dossier-entry-card';
         card.dataset.id = entry.id; 
+        
+        // ADICIONA O ÍCONE DE ARRASTAR
+        card.innerHTML = `<span class="drag-handle-icon people-drag-handle">☰</span>`;
         
         const fotoDiv = document.createElement('div');
         fotoDiv.className = 'dossier-foto';
