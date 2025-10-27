@@ -10,7 +10,7 @@
 import { els } from './dom.js';
 import { db, ref, set, push, remove } from './firebase.js';
 import { perUnit, valores, valorDescricao } from './constantes.js';
-import { getQty, formatCurrency, capitalizeText, showToast, toggleView, copyToClipboard } from './ajudantes.js';
+import { getQty, formatCurrency, capitalizeText, showToast, toggleView, copyToClipboard } from './helpers.js';
 import { addDossierEntry, updateDossierEntryOnEdit, findDossierEntryGlobal } from './dossie.js';
 
 // --- Estado Interno do Módulo
@@ -451,4 +451,5 @@ export const clearHistory = (currentUserData) => {
             .then(() => showToast("Histórico limpado.", "success"))
             .catch(e => showToast(`Erro: ${e.message}`, "error"));
     }
+
 };
