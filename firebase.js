@@ -29,10 +29,7 @@ import {
     query, 
     orderByChild, 
     equalTo, 
-    update,
-    // ADICIONADAS para a paginação
-    limitToLast, 
-    endAt 
+    update 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 // --- Configuração do Firebase
@@ -75,7 +72,5 @@ export {
     query,
     orderByChild,
     equalTo,
-    update,
-    limitToLast, // <-- ADICIONADO
-    endAt          // <-- ADICIONADO
+    update
 };
