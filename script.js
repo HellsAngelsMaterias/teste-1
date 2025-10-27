@@ -33,8 +33,7 @@ import {
 import { 
     calculate, registerVenda, editVenda, removeVenda, copyDiscordMessage, 
     displaySalesHistory, filterHistory, exportToCsv, clearHistory, 
-    clearAllFields, setVendas, setVendaEmEdicao,
-    loadSalesHistory, historyFullyLoaded // <-- Imports para paginação
+    clearAllFields, setVendas, setVendaEmEdicao 
 } from './sales.js'; // <-- Nome do seu arquivo
 
 import { els } from './dom.js'; 
@@ -47,7 +46,15 @@ import {
 // --- 4. Estado Global Principal
 let currentUser = null;
 let currentUserData = null;
-// let vendasListener = null; // <-- REMOVIDO: Não vamos mais ouvir em tempo real
+let vendasListener = null;
+
+// --- FUNÇÃO GLOBAL DE ATIVIDADE ---
+const setUserActivity = (activity) => {
+    if (currentUser && currentUserData) {
+        // currentUserData deve ser completo para o updateUserActivity em admin.js funcionar
+        updateUserActivity(currentUser, currentUserData, activity);
+    }
+};
 
 // ===============================================
 // INICIALIZAÇÃO E UI
@@ -74,7 +81,7 @@ camposParaCapitalizar.forEach(campo => {
   if (campo) {
     campo.addEventListener('input', (e) => {
       const { selectionStart, selectionEnd } = e.target;
-      e.target.value = e.target.value; // A lógica de capitalização está no helper
+      e.target.value = e.target.value; 
       e.target.setSelectionRange(selectionStart, selectionEnd);
     });
   }
@@ -223,18 +230,44 @@ onAuthStateChanged(auth, (user) => {
                 currentUserData = newUserProfile; 
             }
             
-            // 1a. Atualiza atividade com dados completos
-            updateUserActivity(currentUser, currentUserData); 
+            // 1a. Atualiza atividade inicial com dados completos
+            setUserActivity('Calculadora'); 
             
             // 2. Configura a UI baseada na TAG
             configurarInterfacePorTag(currentUserData.tag);
              
-            // 3. REMOVIDO: O listener de vendas em tempo real
-            // if(vendasListener) vendasListener(); 
+            // 3. Remove listener de vendas antigo (se houver)
+            if(vendasListener) vendasListener(); 
             
-            // 4. REMOVIDO: A query de vendas
-            
-            // 5. REMOVIDO: O listener de vendas onValue
+            // 4. Define a query de vendas baseada na TAG
+            let vendasRef;
+            const userTagUpper = currentUserData.tag.toUpperCase();
+            if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
+                vendasRef = query(ref(db, 'vendas'), orderByChild('timestamp')); // Ordena para visualização
+            } else {
+                vendasRef = query(ref(db, 'vendas'), orderByChild('registradoPorId'), equalTo(currentUser.uid));
+            }
+
+            // 5. Cria o novo listener de vendas
+            vendasListener = onValue(vendasRef, (vendasSnapshot) => {
+                let vendas = [];
+                vendasSnapshot.forEach((child) => {
+                    vendas.push({ id: child.key, ...child.val() });
+                });
+                
+                // Atualiza o módulo de Vendas com os novos dados
+                setVendas(vendas); 
+                
+                // Se a tela de histórico estiver aberta, atualiza ela
+                if (els.historyCard.style.display !== 'none') {
+                    displaySalesHistory(vendas, currentUser, currentUserData);
+                }
+            }, (error) => {
+                console.error("Erro ao carregar vendas: ", error);
+                if(error.code !== "PERMISSION_DENIED") {
+                    showToast("Erro de permissão ao carregar histórico.", "error");
+                }
+            });
             
         }, (error) => {
             console.error("Erro ao ler dados do usuário:", error);
@@ -250,7 +283,7 @@ onAuthStateChanged(auth, (user) => {
         // --- USUÁRIO DESLOGADO ---
         currentUser = null;
         currentUserData = null;
-        // if (vendasListener) vendasListener(); // REMOVIDO
+        if (vendasListener) vendasListener(); 
         setVendas([]); // Limpa as vendas no módulo
         setVendaEmEdicao(null); // Reseta a edição
         
@@ -285,6 +318,7 @@ els.tutorialBtn.onclick = () => {
     } 
     toggleView('main'); 
     showNextTourStep(); 
+    setUserActivity('Tutorial');
 };
 
 // --- Autenticação ---
@@ -295,50 +329,45 @@ els.password.addEventListener('keydown', (e) => { if(e.key === 'Enter') authActi
 els.forgotPasswordLink.onclick = resetPassword;
 
 // --- Calculadora/Vendas (Módulo: sales.js) ---
-els.calcBtn.onclick = calculate;
-els.resetBtn.onclick = clearAllFields;
-els.registerBtn.onclick = () => registerVenda(currentUser, currentUserData);
-
-// ATUALIZADO: toggleHistoryBtn agora chama a função de carregamento
-els.toggleHistoryBtn.onclick = () => {
-    toggleView('history');
-    // Chama a nova função de carregamento (true = carga inicial)
-    loadSalesHistory(true, currentUser, currentUserData); 
+els.calcBtn.onclick = () => {
+    calculate();
+    setUserActivity('Calculando Venda'); 
 };
-els.toggleCalcBtn.onclick = () => toggleView('main');
+els.resetBtn.onclick = clearAllFields;
+els.registerBtn.onclick = () => {
+    registerVenda(currentUser, currentUserData);
+    setUserActivity('Registrando/Atualizando Venda'); 
+};
+els.toggleHistoryBtn.onclick = () => {
+    setUserActivity('Visualizando Histórico'); 
+    toggleView('history');
+    displaySalesHistory(null, currentUser, currentUserData); 
+};
+els.toggleCalcBtn.onclick = () => {
+    setUserActivity('Calculadora'); 
+    toggleView('main');
+};
 els.clearHistoryBtn.onclick = () => clearHistory(currentUserData);
 els.csvBtn.onclick = exportToCsv;
 els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null, currentUserData);
-
-// ATUALIZADO: filtroHistorico agora esconde o botão "Carregar Mais"
-els.filtroHistorico.addEventListener('input', () => {
-    filterHistory(currentUser, currentUserData);
-    
-    const query = els.filtroHistorico.value.trim();
-    if (query) {
-        els.historyLoadMoreContainer.style.display = 'none'; // Esconde se estiver filtrando
-    } else if (!historyFullyLoaded) { // 'historyFullyLoaded' é importado de sales.js
-        els.historyLoadMoreContainer.style.display = 'flex'; // Mostra se não estiver filtrando e não tiver carregado tudo
-    }
-});
-
-// ADICIONADO: Listener para o novo botão
-els.loadMoreHistoryBtn.onclick = () => {
-    loadSalesHistory(false, currentUser, currentUserData); // false = não é carga inicial
-};
-
+els.filtroHistorico.addEventListener('input', () => filterHistory(currentUser, currentUserData));
 els.nomeCliente.addEventListener('change', autoFillFromDossier); // Módulo Dossie
 
 // --- Painel Admin (Módulo: admin.js) ---
 els.adminPanelBtn.onclick = () => {
+    setUserActivity('Painel Admin'); 
     toggleView('admin');
     loadAdminPanel(true, currentUser); // Força atualização ao abrir
 };
-els.toggleCalcBtnAdmin.onclick = () => toggleView('main');
+els.toggleCalcBtnAdmin.onclick = () => {
+    setUserActivity('Calculadora'); 
+    toggleView('main');
+};
 els.saveBottomPanelTextBtn.onclick = () => {
     const newText = els.bottomPanelText.value.trim();
     updateGlobalLayout('bottomPanelText', newText);
     showToast("Mensagem do rodapé salva!", "success");
+    setUserActivity('Painel Admin (Salvando Configs)');
 };
 els.layoutToggleNightMode.onchange = (e) => updateGlobalLayout('enableNightMode', e.target.checked);
 els.layoutToggleBottomPanel.onchange = (e) => updateGlobalLayout('enableBottomPanel', e.target.checked);
@@ -347,14 +376,21 @@ els.migrateVeiculosBtn.onclick = migrateVeiculosData;
 
 // --- Dossiê (Módulo: dossier.js) ---
 els.investigacaoBtn.onclick = () => {
+    setUserActivity('Investigação (Bases)'); 
     toggleView('dossier');
     showDossierOrgs(currentUserData); // Passa os dados do usuário para o sortable
 };
-els.toggleCalcBtnDossier.onclick = () => toggleView('main');
+els.toggleCalcBtnDossier.onclick = () => {
+    setUserActivity('Calculadora'); 
+    toggleView('main');
+};
 
 // Dossiê Nível 1: Organizações
 els.filtroDossierOrgs.addEventListener('input', () => filterOrgs(currentUserData));
-els.addOrgBtn.onclick = openAddOrgModal;
+els.addOrgBtn.onclick = () => {
+    setUserActivity('Adicionando Base'); 
+    openAddOrgModal();
+};
 els.dossierOrgGrid.addEventListener('click', (e) => {
     const editBtn = e.target.closest('.edit-dossier-btn');
     const deleteBtn = e.target.closest('.delete-dossier-btn');
@@ -375,18 +411,27 @@ els.dossierOrgGrid.addEventListener('click', (e) => {
     if (editOrgBtn) {
         e.stopPropagation();
         openEditOrgModal(editOrgBtn.dataset.orgId);
+        setUserActivity(`Editando Base: ${editOrgBtn.dataset.orgId}`);
     }
     if (card && !editOrgBtn && !e.target.closest('a')) { // Se clicar no card, mas não no botão de editar ou link
-        showDossierPeople(card.dataset.orgName, currentUserData);
+        const orgName = card.dataset.orgName;
+        setUserActivity(`Visualizando Base: ${orgName}`);
+        showDossierPeople(orgName, currentUserData);
     }
 });
 
 // Dossiê Nível 2: Pessoas
-els.dossierVoltarBtn.onclick = () => showDossierOrgs(currentUserData); // Passa currentUserData
+els.dossierVoltarBtn.onclick = () => {
+    setUserActivity('Investigação (Bases)');
+    showDossierOrgs(currentUserData);
+};
 els.filtroDossierPeople.addEventListener('input', filterPeople);
 els.addPessoaBtn.onclick = () => {
     const orgName = els.addPessoaBtn.dataset.orgName;
-    if(orgName) { openAddDossierModal(orgName); }
+    if(orgName) { 
+        setUserActivity(`Adicionando Pessoa em ${orgName}`);
+        openAddDossierModal(orgName); 
+    }
 };
 els.dossierPeopleGrid.addEventListener('click', (e) => {
     const editBtn = e.target.closest('.edit-dossier-btn');
@@ -402,21 +447,40 @@ els.dossierPeopleGrid.addEventListener('click', (e) => {
     }
     if (editBtn) {
         openEditDossierModal(editBtn.dataset.org, editBtn.dataset.id);
+        setUserActivity(`Editando Pessoa`);
     }
 });
 
 // Dossiê: Modais de Pessoa (Salvar/Cancelar)
-els.saveDossierBtn.onclick = () => saveDossierChanges(currentUserData);
-els.cancelDossierBtn.onclick = closeEditDossierModal;
+els.saveDossierBtn.onclick = () => {
+    saveDossierChanges(currentUserData);
+    setUserActivity(`Visualizando Base: ${els.editDossierOrg.value}`); 
+};
+els.cancelDossierBtn.onclick = () => {
+    closeEditDossierModal();
+    setUserActivity(`Visualizando Base: ${els.editDossierOrg.value}`); 
+};
 els.editDossierOverlay.onclick = closeEditDossierModal;
-els.saveNewDossierBtn.onclick = () => saveNewDossierEntry(currentUserData);
-els.cancelNewDossierBtn.onclick = closeAddDossierModal;
+els.saveNewDossierBtn.onclick = () => {
+    saveNewDossierEntry(currentUserData);
+    setUserActivity(`Visualizando Base: ${els.addDossierOrganizacao.value}`); 
+};
+els.cancelNewDossierBtn.onclick = () => {
+    closeAddDossierModal();
+    setUserActivity(`Visualizando Base: ${els.addDossierOrganizacao.value}`); 
+};
 els.addDossierOverlay.onclick = closeAddDossierModal;
 
 // Dossiê: Modais de Organização (Salvar/Cancelar)
-els.saveOrgBtn.onclick = () => saveOrg(currentUserData);
+els.saveOrgBtn.onclick = () => {
+    saveOrg(currentUserData);
+    setUserActivity('Investigação (Bases)');
+};
 els.deleteOrgBtn.onclick = () => deleteOrg(currentUserData);
-els.cancelOrgBtn.onclick = closeOrgModal;
+els.cancelOrgBtn.onclick = () => {
+    closeOrgModal();
+    setUserActivity('Investigação (Bases)');
+};
 els.orgModalOverlay.onclick = closeOrgModal;
 
 // Dossiê: Lightbox
@@ -424,7 +488,7 @@ els.imageLightboxOverlay.onclick = closeImageLightbox;
 
 // Dossiê: Sub-Modais de Veículos
 els.addModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('addModal');
-els.editModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('editModal');
+els.editModalAddVeiculoBtn.onclick = () => adicionarOu AtualizarVeiculoTemp('editModal');
 els.addModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('addModal');
 els.editModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('editModal');
 els.addModalListaVeiculos.onclick = (e) => {
