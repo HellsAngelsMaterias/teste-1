@@ -141,3 +141,4 @@ export const els = {
   // historyLoadMoreContainer: document.getElementById('historyLoadMoreContainer'),
   loadMoreHistoryBtn: document.getElementById('loadMoreHistoryBtn')
 };
+
