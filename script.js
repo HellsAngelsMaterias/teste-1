@@ -11,13 +11,13 @@ import {
     onAuthStateChanged, signOut, sendPasswordResetEmail, 
     signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile,
     ref, set, get, onValue, query, orderByChild, equalTo 
-} from '.firebase.js';
+} from 'firebase.js';
 
 // --- 2. Imports de Módulos (Funções)
 import { 
     loadAdminPanel, updateUserActivity, monitorOnlineStatus, 
     updateGlobalLayout, migrateVendasToDossier, migrateVeiculosData 
-} from '.admin.js';
+} from 'admin.js';
 import { 
     autoFillFromDossier, showDossierOrgs, filterOrgs, openAddOrgModal, 
     showDossierPeople, filterPeople, openAddDossierModal, removeDossierEntry, 
@@ -26,19 +26,19 @@ import {
     closeImageLightbox, openEditOrgModal,
     adicionarOuAtualizarVeiculoTemp, cancelarEdicaoVeiculo, 
     removerVeiculoTemp, iniciarEdicaoVeiculo
-} from '.dossier.js';
+} from 'dossier.js';
 import { 
     calculate, registerVenda, editVenda, removeVenda, copyDiscordMessage, 
     displaySalesHistory, filterHistory, exportToCsv, clearHistory, 
     clearAllFields, setVendas, setVendaEmEdicao 
-} from '.sales.js';
+} from 'sales.js';
 
 // --- 3. Imports de Utilidades (Helpers e DOM)
-import { els } from './utils/dom.js';
+import { els } from 'dom.js';
 import { 
     showToast, toggleView, toggleTheme, updateLogoAndThemeButton, 
     showNextTourStep, phoneMask, PREFIX, camposParaCapitalizar 
-} from '.helpers.js';
+} from 'helpers.js';
 
 // --- 4. Estado Global Principal
 let currentUser = null;
@@ -440,3 +440,4 @@ els.editModalListaVeiculos.onclick = (e) => {
 // O listener de botões (editar, deletar) que são criados dinamicamente
 
 // é atribuído DENTRO do módulo `sales.js` (na função `displaySalesHistory`).
+
