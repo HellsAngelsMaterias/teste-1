@@ -301,18 +301,16 @@ body.dark #historyCard td { background: var(--cor-card); opacity: 0.95; }
     text-align: center;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
     /* Habilita o drag-and-drop para bases */
-    /* cursor: grab; */ /* <-- ALTERAÇÃO: REMOVIDO */
+    cursor: grab; 
     overflow: hidden; 
-    position: relative; /* ADICIONADO PARA ÍCONE */
 }
 .dossier-org-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 6px 15px rgba(0,0,0,0.12);
 }
-/* .dossier-org-card:active {
+.dossier-org-card:active {
     cursor: grabbing;
-} */ /* <-- ALTERAÇÃO: REMOVIDO */
-
+}
 .dossier-org-card h4 { /* Nome da Org */
     margin: 12px 10px 12px 10px;
     font-size: 20px;
@@ -405,12 +403,12 @@ body.dark #historyCard td { background: var(--cor-card); opacity: 0.95; }
     gap: 5px;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
     /* --- MUDANÇA: HIERARQUIA --- */
-    /* cursor: grab; */ /* <-- ALTERAÇÃO: REMOVIDO */
-    position: relative; /* ADICIONADO PARA ÍCONE */
+    cursor: grab;
 }
-/* .dossier-entry-card:active {
+.dossier-entry-card:active {
     cursor: grabbing;
-} */ /* <-- ALTERAÇÃO: REMOVIDO */
+}
+/* --- FIM DA MUDANÇA --- */
 
 .dossier-entry-card:hover {
     transform: translateY(-3px);
@@ -549,42 +547,3 @@ body.dark #imageLightboxModal {
     }
 
 }
-
-/* --- INÍCIO: ÍCONE DE ARRASTAR (Drag Handle) --- */
-.drag-handle-icon {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--cor-principal);
-    opacity: 0.3;
-    cursor: grab;
-    transition: opacity 0.2s ease;
-    z-index: 5; /* Garante que fique acima da foto/conteúdo */
-}
-
-/* O ícone do card de pessoa (com foto na borda) precisa ser claro */
-.people-drag-handle {
-     color: var(--cor-btn-texto); /* Branco */
-     text-shadow: 0 0 5px rgba(0,0,0,0.7);
-     opacity: 0.5;
-}
-
-/* O ícone do card da base (com foto contida) pode ser da cor principal */
-.org-drag-handle {
-    color: var(--cor-principal);
-    /* Ajuste para não ficar em cima da foto, mas sim do card */
-    top: 170px; /* (Altura da foto: 160px) + 10px de margem */
-}
-
-.dossier-org-card:hover .drag-handle-icon,
-.dossier-entry-card:hover .drag-handle-icon {
-    opacity: 0.9; /* Mostra o ícone no hover */
-}
-
-.drag-handle-icon:active {
-    cursor: grabbing;
-    opacity: 1;
-}
-/* --- FIM: ÍCONE DE ARRASTAR --- */
