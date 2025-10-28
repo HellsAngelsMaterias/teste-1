@@ -5,6 +5,7 @@
 */
 
 // Importa as funções necessárias dos SDKs
+// (Estou usando as URLs de CDN, pois você não tem um package.json)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import { 
     getAuth, 
@@ -34,13 +35,14 @@ import {
 // (Você encontra isso no Painel do Firebase > Configurações do Projeto)
 // ===============================================
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_AQUI",
-  authDomain: "SEU_AUTH_DOMAIN_AQUI",
-  databaseURL: "SEU_DATABASE_URL_AQUI",
-  projectId: "SEU_PROJECT_ID_AQUI",
-  storageBucket: "SEU_STORAGE_BUCKET_AQUI",
-  messagingSenderId: "SEU_MESSAGING_SENDER_ID_AQUI",
-  appId: "SEU_APP_ID_AQUI"
+ apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs",
+  authDomain: "hells-teste.firebaseapp.com",
+  databaseURL: "https://hells-teste-default-rtdb.firebaseio.com",
+  projectId: "hells-teste",
+  storageBucket: "hells-teste.firebasestorage.app",
+  messagingSenderId: "777418420603",
+  appId: "1:777418420603:web:0e33ad25caa12079564dde",
+  measurementId: "G-1VL7C8FZL0"
 };
 // ===============================================
 
