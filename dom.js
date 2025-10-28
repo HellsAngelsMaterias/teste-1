@@ -139,3 +139,4 @@ export const els = {
   // ⭐️ NOVO ELEMENTO
   topHistoryScrollbar: document.getElementById('topHistoryScrollbar')
 };
+// A CHAVE EXTRA QUE ESTAVA AQUI FOI REMOVIDA.
