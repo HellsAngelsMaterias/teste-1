@@ -171,8 +171,9 @@ updateLogoAndThemeButton(savedTheme === 'dark');
 // Controla a tela de boas-vindas
 if (localStorage.getItem('hasVisited')) {
     els.welcomeScreen.style.display = 'none';
+    els.authScreen.style.display = 'block'; // Mostra auth se já visitou
 } else {
-    els.welcomeScreen.classList.add('show');
+    els.welcomeScreen.style.display = 'block'; // Mostra boas-vindas
     els.authScreen.style.display = 'none';
     els.mainCard.style.display = 'none';
 }
@@ -206,24 +207,62 @@ camposTelefone.forEach(campo => {
 // LÓGICA DE AUTENTICAÇÃO
 // ===============================================
 
-// ... (Funções handleAuthAction, authAction, resetPassword - MANTIDAS)
-const handleAuthAction = (isLogin, creds) => { 
-    /* ATENÇÃO: Esta função está vazia no seu script. 
-       Você precisará implementar a lógica de login/registro aqui,
-       usando signInWithEmailAndPassword ou createUserWithEmailAndPassword
-       que já foram importados.
-    */
-    console.log("Ação de Auth:", isLogin ? "Login" : "Registro", creds);
-    showToast("Função de Autenticação não implementada.", "error");
+// Funções de autenticação (implementação de exemplo)
+const handleAuthAction = async (isLogin, creds) => { 
+    const email = creds.username.includes('@') ? creds.username : `${creds.username}@hells.com`;
+    const password = creds.password;
+    
+    if (!password || !email) {
+        showToast("Por favor, preencha usuário e senha.", "error");
+        return;
+    }
+
+    try {
+        if (isLogin) {
+            await signInWithEmailAndPassword(auth, email, password);
+            showToast("Login bem-sucedido!", "success");
+            // onAuthStateChanged cuidará de esconder a tela de auth
+        } else {
+            // Registro
+            await createUserWithEmailAndPassword(auth, email, password);
+            await updateProfile(auth.currentUser, { displayName: creds.username });
+            
+            // Salva dados no DB (Exemplo)
+            const userRef = ref(db, `usuarios/${auth.currentUser.uid}`);
+            await set(userRef, {
+                displayName: creds.username,
+                email: email,
+                tag: 'Visitante' // Tag padrão
+            });
+            showToast("Registro bem-sucedido! Faça o login.", "success");
+        }
+    } catch (error) {
+        console.error("Erro de autenticação:", error);
+        showToast(`Erro: ${error.message}`, "error");
+    }
 };
-const authAction = (isLogin) => handleAuthAction(isLogin, {username: els.username.value, password: els.password.value});
+
+const authAction = (isLogin) => {
+    handleAuthAction(isLogin, {
+        username: els.username.value, 
+        password: els.password.value
+    });
+};
+
 const resetPassword = async () => { 
-    /* ATENÇÃO: Esta função está vazia no seu script. 
-       Você precisará implementar a lógica de reset de senha aqui,
-       usando sendPasswordResetEmail.
-    */
-    console.log("Reset de senha para:", els.username.value);
-    showToast("Função de Reset de Senha não implementada.", "error");
+    const email = els.username.value.includes('@') ? els.username.value : `${els.username.value}@hells.com`;
+    if (!email) {
+        showToast("Digite seu nome de usuário (ou email) para resetar a senha.", "error");
+        return;
+    }
+    
+    try {
+        await sendPasswordResetEmail(auth, email);
+        showToast(`Email de recuperação enviado para ${email}.`, "success");
+    } catch (error) {
+        console.error("Erro ao resetar senha:", error);
+        showToast(`Erro: ${error.message}`, "error");
+    }
 };
 
 
@@ -246,8 +285,10 @@ onAuthStateChanged(auth, (user) => {
             if (snapshot.exists()) {
                 currentUserData = snapshot.val(); 
             } else {
+                // Se não existir, cria um perfil básico
+                const displayName = user.displayName || user.email.split('@')[0];
                 const newUserProfile = {
-                    displayName: user.displayName, 
+                    displayName: displayName, 
                     email: user.email,
                     tag: 'Visitante' 
                 };
@@ -259,7 +300,6 @@ onAuthStateChanged(auth, (user) => {
             setUserActivity('Calculadora'); 
             
             // 2. Configura a UI baseada na TAG
-            // ⭐️ CONFIGURAR AQUI ESTAVA CAUSANDO A REFERENCE ERROR
             configurarInterfacePorTag(currentUserData.tag);
              
             // 3. Remove listener de vendas antigo (se houver)
@@ -324,8 +364,8 @@ onAuthStateChanged(auth, (user) => {
             els.authScreen.style.display = 'block';
             els.welcomeScreen.style.display = 'none';
         } else {
-            els.authScreen.style.display = 'none';
             els.welcomeScreen.style.display = 'block';
+            els.authScreen.style.display = 'none';
         }
         
         els.mainCard.style.display = 'none';
@@ -342,100 +382,100 @@ onAuthStateChanged(auth, (user) => {
 // ATRIBUIÇÃO DE EVENT LISTENERS (GLUE CODE)
 // ===============================================
 
-// --- NOVO BLOCO INSERIDO para UI Geral e Autenticação ---
-// Esses botões não estavam sendo conectados no seu script original.
+// --- Bloco de UI Geral e Autenticação (CORRIGIDO) ---
+// Estes são os botões que não funcionavam antes
 
-els.themeBtn.onclick = toggleTheme;
+if(els.themeBtn) els.themeBtn.onclick = toggleTheme;
 
-els.tutorialBtn.onclick = () => {
-    // A função 'startTour' não foi importada de 'helpers.js'
-    // Substitua por 'showNextTourStep()' se essa for a função correta.
-    showToast("Função Tutorial não implementada.", "default");
+if(els.tutorialBtn) els.tutorialBtn.onclick = () => {
+    // A função 'showNextTourStep' foi importada de 'helpers.js'
+    showNextTourStep(0); // Inicia o tour
 };
 
-els.enterBtn.onclick = () => {
+if(els.enterBtn) els.enterBtn.onclick = () => {
     // Esconde a tela de boas-vindas e mostra a de autenticação
     els.welcomeScreen.style.display = 'none';
     els.authScreen.style.display = 'block';
     localStorage.setItem('hasVisited', 'true');
 };
 
-els.logoutBtn.onclick = () => {
+if(els.logoutBtn) els.logoutBtn.onclick = () => {
      signOut(auth).catch((error) => {
         console.error("Erro ao sair:", error);
         showToast("Erro ao tentar deslogar.", "error");
     });
 };
 
-els.loginBtn.onclick = () => authAction(true);
-els.registerUserBtn.onclick = () => authAction(false);
-els.forgotPasswordLink.onclick = resetPassword;
+// Botões de Autenticação
+if(els.loginBtn) els.loginBtn.onclick = () => authAction(true);
+if(els.registerUserBtn) els.registerUserBtn.onclick = () => authAction(false);
+if(els.forgotPasswordLink) els.forgotPasswordLink.onclick = resetPassword;
 
-// --- FIM DO NOVO BLOCO ---
+// --- FIM DO BLOCO DE CORREÇÃO ---
 
 
 // --- Calculadora/Vendas (Módulo: sales.js) ---
-els.calcBtn.onclick = () => {
+if(els.calcBtn) els.calcBtn.onclick = () => {
     calculate();
     setUserActivity('Calculando Venda'); 
 };
-els.resetBtn.onclick = clearAllFields;
-els.registerBtn.onclick = () => {
+if(els.resetBtn) els.resetBtn.onclick = clearAllFields;
+if(els.registerBtn) els.registerBtn.onclick = () => {
     registerVenda(currentUser, currentUserData);
     setUserActivity('Registrando/Atualizando Venda'); 
 };
-els.toggleHistoryBtn.onclick = () => {
+if(els.toggleHistoryBtn) els.toggleHistoryBtn.onclick = () => {
     setUserActivity('Visualizando Histórico'); 
     toggleView('history');
     displaySalesHistory(null, currentUser, currentUserData); 
     // A sincronização de scroll é ativada no onValue listener
 };
-els.toggleCalcBtn.onclick = () => {
+if(els.toggleCalcBtn) els.toggleCalcBtn.onclick = () => {
     setUserActivity('Calculadora'); 
     toggleView('main');
     cleanupScroll(); // ⭐️ Limpa o scroll ao sair
 };
-els.clearHistoryBtn.onclick = () => clearHistory(currentUserData);
-els.csvBtn.onclick = exportToCsv;
-els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null, currentUserData);
-els.filtroHistorico.addEventListener('input', () => filterHistory(currentUser, currentUserData));
-els.nomeCliente.addEventListener('change', autoFillFromDossier);
+if(els.clearHistoryBtn) els.clearHistoryBtn.onclick = () => clearHistory(currentUserData);
+if(els.csvBtn) els.csvBtn.onclick = exportToCsv;
+if(els.discordBtnCalc) els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null, currentUserData);
+if(els.filtroHistorico) els.filtroHistorico.addEventListener('input', () => filterHistory(currentUser, currentUserData));
+if(els.nomeCliente) els.nomeCliente.addEventListener('change', autoFillFromDossier);
 
 // --- Painel Admin (Módulo: admin.js) ---
-els.adminPanelBtn.onclick = () => {
+if(els.adminPanelBtn) els.adminPanelBtn.onclick = () => {
     setUserActivity('Painel Admin'); 
     toggleView('admin');
     cleanupScroll(); // ⭐️ Limpa o scroll
     loadAdminPanel(true, currentUser); 
 };
-els.toggleCalcBtnAdmin.onclick = () => {
+if(els.toggleCalcBtnAdmin) els.toggleCalcBtnAdmin.onclick = () => {
     setUserActivity('Calculadora'); 
     toggleView('main');
     cleanupScroll(); // ⭐️ Limpa o scroll
 };
-els.saveBottomPanelTextBtn.onclick = () => {
+if(els.saveBottomPanelTextBtn) els.saveBottomPanelTextBtn.onclick = () => {
     const newText = els.bottomPanelText.value.trim();
     updateGlobalLayout('bottomPanelText', newText);
     showToast("Mensagem do rodapé salva!", "success");
     setUserActivity('Painel Admin (Salvando Configs)'); 
 };
-els.layoutToggleNightMode.onchange = (e) => updateGlobalLayout('enableNightMode', e.target.checked);
-els.layoutToggleBottomPanel.onchange = (e) => updateGlobalLayout('enableBottomPanel', e.target.checked);
-els.migrateDossierBtn.onclick = migrateVendasToDossier;
-els.migrateVeiculosBtn.onclick = migrateVeiculosData;
+if(els.layoutToggleNightMode) els.layoutToggleNightMode.onchange = (e) => updateGlobalLayout('enableNightMode', e.target.checked);
+if(els.layoutToggleBottomPanel) els.layoutToggleBottomPanel.onchange = (e) => updateGlobalLayout('enableBottomPanel', e.target.checked);
+if(els.migrateDossierBtn) els.migrateDossierBtn.onclick = migrateVendasToDossier;
+if(els.migrateVeiculosBtn) els.migrateVeiculosBtn.onclick = migrateVeiculosData;
 
 // --- Dossiê (Módulo: dossier.js) ---
-els.investigacaoBtn.onclick = () => {
+if(els.investigacaoBtn) els.investigacaoBtn.onclick = () => {
     setUserActivity('Investigação (Bases)'); 
     toggleView('dossier');
     cleanupScroll(); // ⭐️ Limpa o scroll
     showDossierOrgs(currentUserData); 
 };
-els.toggleCalcBtnDossier.onclick = () => {
+if(els.toggleCalcBtnDossier) els.toggleCalcBtnDossier.onclick = () => {
     setUserActivity('Calculadora'); 
     toggleView('main');
     cleanupScroll(); // ⭐️ Limpa o scroll
 };
 
-// ... (Restante dos listeners de Dossiê - MANTIDO)
-// (Assume-se que o restante dos listeners de dossiê estão corretos no seu arquivo)
+// ... (Restante dos listeners de Dossiê - Adicione-os aqui se necessário)
+// ...
