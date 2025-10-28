@@ -449,4 +449,3 @@ export const clearHistory = (currentUserData) => {
             .catch(e => showToast(`Erro: ${e.message}`, "error"));
     }
 };
-
