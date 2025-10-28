@@ -4,7 +4,10 @@
   --cor-card: #ffffff; --cor-borda: #ffb3d9; --cor-btn-primario: #e60073;
   --cor-btn-texto: #fff; --cor-btn-secundario: #ffd6eb;
   --cor-btn-secundario-texto: #4a0033; --cor-erro: #cc0000;
-  --cor-glow-pulsante: rgba(230, 0, 115, 0.8);\
+  
+  /* ⭐️ CORREÇÃO: Removida a barra invertida no final */
+  --cor-glow-pulsante: rgba(230, 0, 115, 0.8);
+  
   --cor-tag-admin: #0056b3; --cor-tag-hells: #e60073; --cor-tag-visitante: #008000;
 }
 body.dark {
@@ -300,17 +303,15 @@ body.dark #historyCard td { background: var(--cor-card); opacity: 0.95; }
     box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     text-align: center;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
-    /* Habilita o drag-and-drop para bases */
-    cursor: grab; 
+    /* ⭐️ CORREÇÃO: Removido cursor: grab */
     overflow: hidden; 
+    position: relative; /* Para o ícone de arrastar */
 }
 .dossier-org-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 6px 15px rgba(0,0,0,0.12);
 }
-.dossier-org-card:active {
-    cursor: grabbing;
-}
+/* ⭐️ CORREÇÃO: Removido :active { cursor: grabbing } */
 .dossier-org-card h4 { /* Nome da Org */
     margin: 12px 10px 12px 10px;
     font-size: 20px;
@@ -402,12 +403,10 @@ body.dark #historyCard td { background: var(--cor-card); opacity: 0.95; }
     flex-direction: column;
     gap: 5px;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
-    /* --- MUDANÇA: HIERARQUIA --- */
-    cursor: grab;
+    position: relative; /* Para o ícone de arrastar */
+    /* ⭐️ CORREÇÃO: Removido cursor: grab */
 }
-.dossier-entry-card:active {
-    cursor: grabbing;
-}
+/* ⭐️ CORREÇÃO: Removido :active { cursor: grabbing } */
 /* --- FIM DA MUDANÇA --- */
 
 .dossier-entry-card:hover {
@@ -535,6 +534,43 @@ body.dark #imageLightboxModal {
 }
 /* --- FIM: NOVOS ESTILOS --- */
 
+/* ⭐️ NOVO: MUDANÇA HIERARQUIA (Cursor) ⭐️ */
+.drag-handle-icon {
+    cursor: grab;
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 10;
+    padding: 4px 8px;
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+    font-size: 20px;
+    color: var(--cor-principal);
+}
+.dossier-org-card:hover .drag-handle-icon,
+.dossier-entry-card:hover .drag-handle-icon {
+    opacity: 0.8;
+}
+/* Quando o body está :active (arrastando), muda o cursor */
+body:active .drag-handle-icon {
+    cursor: grabbing;
+}
+/* Ajusta o padding dos cards para não sobrepor o ícone */
+.dossier-org-card h4 {
+    padding-top: 20px; /* Espaço para o ícone */
+}
+.dossier-entry-card .dossier-base-link,
+.dossier-entry-card .dossier-foto {
+     margin-top: 10px; /* Espaço para o ícone */
+}
+.dossier-entry-card .dossier-base-link {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+}
+/* FIM DA MUDANÇA */
+
+
 @media (max-width: 500px) {
     body { padding: 10px; margin: 10px auto; }
     .top-right-controls { top: 10px; right: 10px; }
@@ -547,4 +583,3 @@ body.dark #imageLightboxModal {
     }
 
 }
-
