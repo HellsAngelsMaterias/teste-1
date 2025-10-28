@@ -31,159 +31,176 @@ export const capitalizeText = (text) => {
 };
 
 export const camposParaCapitalizar = [ 
-    els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs, 
-    els.carroVeiculo, 
-    els.addDossierNome, els.addDossierOrganizacao, els.addDossierCargo, 
-    els.editDossierNome, els.editDossierCargo, 
-    els.orgNome,
-    els.addModalCarroNome, els.editModalCarroNome 
+    els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs,
+    els.carroVeiculo, els.placaVeiculo,
+    els.editDossierNome, els.editDossierCargo, els.addDossierNome, els.addDossierCargo,
+    els.orgNome, els.orgInfo,
+    els.editModalCarroNome, els.addModalCarroNome
 ];
 
-// --- Máscara de Telefone ---
-export const PREFIX = "(055) ";
-
-export const phoneMask = (value) => {
-    let digits = value.replace(/\D/g, ""); 
-    if (digits.startsWith("055")) { digits = digits.substring(3); }
-    digits = digits.substring(0, 6); 
-    let formattedNumber = digits.length > 3 ? `${digits.substring(0, 3)}-${digits.substring(3)}` : digits;
-    return PREFIX + formattedNumber;
+export const getQty = (element) => {
+  return parseInt(element.value, 10) || 0;
 };
 
-// --- Helpers de Input ---
-
-export const getQty = (element) => Math.max(0, parseInt(element.value) || 0);
-
-// --- Helpers de UI ---
+// --- Funções da Interface (UI) ---
 
 export const showToast = (message, type = 'default', duration = 3000) => {
-  const toastContainer = document.getElementById('toast-container');
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-  toastContainer.appendChild(toast);
-  setTimeout(() => { toast.classList.add('show'); }, 10);
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
-  }, duration);
-};
-
-export const copyToClipboard = (text) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        showToast("Mensagem copiada para o Discord!", "success");
-      })
-      .catch(err => {
-        showToast("Erro ao copiar.", "error");
-      });
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.prepend(toast); 
+    
+    setTimeout(() => toast.classList.add('show'), 10); 
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        toast.addEventListener('transitionend', () => {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, { once: true });
+    }, duration);
 };
 
 export const toggleView = (viewName) => {
-    els.mainCard.style.display = 'none';
-    els.historyCard.style.display = 'none';
-    els.adminPanel.style.display = 'none';
-    els.dossierCard.style.display = 'none';
-    
-    document.body.classList.remove('history-view-active', 'dossier-view-active');
-
-    if (viewName === 'history') {
-        document.body.classList.add('history-view-active');
-        els.historyCard.style.display = 'block';
-        els.historyImg.src = historyBackgroundSrc;
-        els.filtroHistorico.value = ''; 
-    } else if (viewName === 'admin') {
-        els.adminPanel.style.display = 'block';
-    } else if (viewName === 'dossier') {
-        document.body.classList.add('dossier-view-active');
-        els.dossierCard.style.display = 'block';
-    } else {
-        els.mainCard.style.display = 'block';
-    }
+  const views = {
+    main: els.mainCard,
+    history: els.historyCard,
+    admin: els.adminPanel,
+    dossier: els.dossierCard
+  };
+  
+  // Esconde todas as views
+  Object.values(views).forEach(view => view.style.display = 'none');
+  
+  // Mostra a view correta
+  if (views[viewName]) {
+      views[viewName].style.display = 'block';
+  }
+  
+  // Ajusta o body class
+  document.body.classList.toggle('history-view-active', viewName === 'history');
+  document.body.classList.toggle('dossier-view-active', viewName === 'dossier');
 };
 
-// --- Relógio ---
-const atualizarRelogio = () => {
-    const agora = new Date();
-    const dia = String(agora.getDate()).padStart(2, '0');
-    const mes = String(agora.getMonth() + 1).padStart(2, '0');
-    const ano = agora.getFullYear();
-    const horas = String(agora.getHours()).padStart(2, '0');
-    const minutos = String(agora.getMinutes()).padStart(2, '0');
-    els.dataVenda.value = `${dia}/${mes}/${ano} ${horas}:${minutos}`;
+export const updateLogoAndThemeButton = (isDark) => {
+  const logo = document.getElementById('appLogo');
+  const welcomeLogo = document.getElementById('welcomeLogo');
+  const historyBg = document.getElementById('historyBackground')?.querySelector('img');
+  
+  if (isDark) {
+    if(logo) logo.src = logoDarkModeSrc;
+    if(welcomeLogo) welcomeLogo.src = logoDarkModeSrc;
+    if(historyBg) historyBg.src = logoDarkModeSrc;
+    els.themeBtn.textContent = '☀️ Modo Claro';
+  } else {
+    if(logo) logo.src = logoLightModeSrc;
+    if(welcomeLogo) welcomeLogo.src = welcomeLogoSrc;
+    if(historyBg) historyBg.src = historyBackgroundSrc;
+    els.themeBtn.textContent = '🌙 Modo Noturno';
+  }
 };
-atualizarRelogio();
-setInterval(atualizarRelogio, 30000);
 
-// --- Tema (Claro/Escuro) ---
 export const toggleTheme = () => {
-    const isDarkMode = document.body.classList.toggle('dark');
-    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-    updateLogoAndThemeButton(isDarkMode);
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  updateLogoAndThemeButton(isDark);
 };
 
-export const updateLogoAndThemeButton = (isDarkMode) => {
-    els.themeBtn.textContent = isDarkMode ? '☀️ Modo Claro' : '🌙 Modo Noturno';
-    els.appLogo.src = isDarkMode ? logoDarkModeSrc : logoLightModeSrc;
-    els.welcomeLogo.src = welcomeLogoSrc;
-    els.historyImg.src = historyBackgroundSrc;
+export const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text)
+        .then(() => showToast("Copiado para a área de transferência!", "success"))
+        .catch(() => showToast("Falha ao copiar texto.", "error"));
+};
+
+// --- Máscaras de Input ---
+export const PREFIX = "555-";
+export const phoneMask = (value) => {
+    let x = value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,4})/);
+    return !x[2] ? PREFIX + (x[1] || '') : PREFIX + x[1] + '-' + x[2];
 };
 
 // --- Tutorial ---
-let currentStepIndex = -1; 
-let currentTooltip = null; 
-let tourOverlay = null;
+let currentStepIndex = 0;
+let currentTooltip = null;
 
-export const clearTour = () => { 
-    if(tourOverlay) { 
-        tourOverlay.classList.remove('active'); 
-        setTimeout(() => { if (tourOverlay && tourOverlay.parentNode) tourOverlay.parentNode.removeChild(tourOverlay); tourOverlay = null; }, 300); 
-    } 
-    if (currentTooltip) { 
-        currentTooltip.classList.remove('active'); 
-        setTimeout(() => { if (currentTooltip && currentTooltip.parentNode) currentTooltip.parentNode.removeChild(currentTooltip); currentTooltip = null; }, 300); 
-    } 
-    document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight')); 
-    currentStepIndex = -1; 
+const cleanupTour = () => {
+    const overlay = document.getElementById('tour-overlay');
+    if (overlay) document.body.removeChild(overlay);
+    if (currentTooltip) document.body.removeChild(currentTooltip);
+    document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+    currentTooltip = null;
+    currentStepIndex = 0;
 };
 
-export const showNextTourStep = () => { 
-    if (currentStepIndex >= 0) { 
-        document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight')); 
-        if(currentTooltip) currentTooltip.classList.remove('active'); 
-    } 
-    currentStepIndex++; 
-    if (currentStepIndex >= tourSteps.length) { 
-        showToast("Tutorial concluído!", "success"); 
-        clearTour(); 
-        return; 
-    } 
-    const step = tourSteps[currentStepIndex]; 
-    const targetElement = els[step.element]; 
-    if (!targetElement) { 
-        clearTour(); 
-        return; 
-    } 
-    if (currentStepIndex === 0) { 
+export const showNextTourStep = () => {
+    const step = tourSteps[currentStepIndex];
+    if (!step) {
+        cleanupTour();
+        return;
+    }
+    
+    document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+    
+    const targetElement = document.getElementById(step.element);
+    if (!targetElement) {
+        currentStepIndex++;
+        showNextTourStep();
+        return;
+    }
+    
+    let tourOverlay = document.getElementById('tour-overlay');
+    if (!tourOverlay) {
         tourOverlay = document.createElement('div'); 
         tourOverlay.id = 'tour-overlay'; 
         document.body.appendChild(tourOverlay); 
         setTimeout(() => tourOverlay.classList.add('active'), 10); 
     } 
+    
     targetElement.classList.add('tour-highlight'); 
+    
     if(currentTooltip && currentTooltip.parentNode) document.body.removeChild(currentTooltip); 
+    
     currentTooltip = document.createElement('div'); 
     currentTooltip.className = 'tour-tooltip'; 
-    currentTooltip.innerHTML = `<h4>${step.title}</h4><p>${step.content}</p><div><button class=\"tourNextBtn\">${currentStepIndex === tourSteps.length - 1 ? 'Finalizar' : 'Próximo'}</button><button class=\"tourSkipBtn\">Pular</button></div>`; 
+    currentTooltip.innerHTML = `<h4>${step.title}</h4><p>${step.content}</p><div><button class="tourNextBtn">${currentStepIndex === tourSteps.length - 1 ? 'Finalizar' : 'Próximo'}</button><button class="tourSkipBtn">Pular</button></div>`; 
     document.body.appendChild(currentTooltip); 
+    
     const rect = targetElement.getBoundingClientRect(); 
     let top = rect.top < currentTooltip.offsetHeight + 20 ? rect.bottom + window.scrollY + 10 : rect.top + window.scrollY - currentTooltip.offsetHeight - 10; 
     let left = Math.max(10, Math.min(rect.left + window.scrollX, window.innerWidth - currentTooltip.offsetWidth - 20)); 
+    
     currentTooltip.style.top = `${top}px`; 
     currentTooltip.style.left = `${left}px`; 
+    
     setTimeout(() => currentTooltip.classList.add('active'), 10); 
-    currentTooltip.querySelector('.tourNextBtn').onclick = showNextTourStep; 
-    currentTooltip.querySelector('.tourSkipBtn').onclick = clearTour; 
-    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+    
+    currentTooltip.querySelector('.tourNextBtn').onclick = () => { 
+        currentStepIndex++; 
+        showNextTourStep(); 
+    };
+    currentTooltip.querySelector('.tourSkipBtn').onclick = cleanupTour;
 };
+
+
+/*
+// ===============================================
+// ⭐️ CORREÇÃO: Relógio comentado para evitar o erro
+// ===============================================
+
+function atualizarRelogio() {
+  // O seu index.html não tem um elemento com id 'relogio-digital'
+  // Por isso 'elRelogio' fica 'null' e dá erro na linha 114
+  const elRelogio = document.getElementById('relogio-digital'); 
+  
+  if (elRelogio) { // Adicionar esta verificação também funcionaria
+      const agora = new Date();
+      const horas = String(agora.getHours()).padStart(2, '0');
+      const minutos = String(agora.getMinutes()).padStart(2, '0');
+      elRelogio.value = `${horas}:${minutos}`; // Linha 114
+  }
+}
+
+// Linha 116: Esta chamada imediata é que causa o erro
+// atualizarRelogio(); 
+// setInterval(atualizarRelogio, 60000);
+*/
