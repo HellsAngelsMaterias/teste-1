@@ -1,8 +1,6 @@
 /* ===============================================
   SALES.JS
   Lógica de Vendas, Cálculo, Histórico e Discord.
-  
-  VERSÃO SEM PASTAS (Nomes: helpers.js, sales.js)
 ===============================================
 */
 
