@@ -4,9 +4,9 @@
 ===============================================
 */
 
-import { initializeApp } from "firebase/app";
+// ⭐️ CORREÇÃO: Importar dos links CDN (URLs)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-// Importe todos os módulos do SDK que você precisa
 import { 
     getAuth, 
     onAuthStateChanged, 
@@ -15,7 +15,7 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     updateProfile 
-} from "firebase/auth";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import { 
     getDatabase, 
@@ -29,7 +29,7 @@ import {
     query, 
     orderByChild, 
     equalTo 
-} from "firebase/database";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 // Suas credenciais do Firebase
 const firebaseConfig = {
@@ -51,6 +51,7 @@ export const auth = getAuth(app);
 export const db = getDatabase(app);
 
 // Exporta todas as funções do SDK que você usa nos outros arquivos
+// (Isso funciona porque elas foram importadas acima)
 export { 
     onAuthStateChanged, 
     signOut, 
