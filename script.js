@@ -38,7 +38,8 @@ import { els } from './dom.js';
 
 import { 
     showToast, toggleView, toggleTheme, updateLogoAndThemeButton, 
-    showNextTourStep, phoneMask, PREFIX, camposParaCapitalizar 
+    showNextTourStep, phoneMask, PREFIX, camposParaCapitalizar,
+    capitalizeText // ⭐️ CORREÇÃO: Importar capitalizeText
 } from './helpers.js'; 
 
 // --- 4. Estado Global Principal
@@ -177,13 +178,13 @@ if (localStorage.getItem('hasVisited')) {
     els.mainCard.style.display = 'none';
 }
 
-// Aplica capitalização automática
+// ⭐️ CORREÇÃO: Aplica capitalização automática
 camposParaCapitalizar.forEach(campo => {
   if (campo) {
-    campo.addEventListener('input', (e) => {
-      const { selectionStart, selectionEnd } = e.target;
-      e.target.value = e.target.value; // A lógica de capitalização está no helper
-      e.target.setSelectionRange(selectionStart, selectionEnd);
+    // Mudar de 'input' para 'change' (dispara ao sair do campo)
+    campo.addEventListener('change', (e) => {
+      // Chama a função de capitalização
+      e.target.value = capitalizeText(e.target.value); 
     });
   }
 });
@@ -206,72 +207,78 @@ camposTelefone.forEach(campo => {
 // LÓGICA DE AUTENTICAÇÃO
 // ===============================================
 
-// Funções handleAuthAction, authAction, resetPassword (Conteúdo do arquivo original, mas não essencial para a correção do erro)
+// ⭐️ CORREÇÃO: Funções de autenticação (placeholders)
+// (Adapte esta lógica se você já a tiver em outro lugar)
 const handleAuthAction = async (isLogin, creds) => {
-    const { username: email, password } = creds;
+    const { username, password } = creds;
+    const email = `${username.toLowerCase().trim()}@hells.com`; // Exemplo de formatação de e-mail
     els.authMessage.textContent = '';
     
-    if (!email || !password) {
-        els.authMessage.textContent = 'Preencha todos os campos.';
-        return;
-    }
-
     try {
         if (isLogin) {
             await signInWithEmailAndPassword(auth, email, password);
-            showToast("Login realizado com sucesso!", "success");
+            showToast(`Bem-vindo(a) de volta, ${username}!`, 'success');
         } else {
-            // Lógica de cadastro (cria user com email/senha e atualiza o display name)
-            const emailFromUsername = `${email.toLowerCase().replace(/[^a-z0-9]/g, '')}@hells.com`;
-            const userCredential = await createUserWithEmailAndPassword(auth, emailFromUsername, password);
-            await updateProfile(userCredential.user, { displayName: email });
-            showToast("Usuário cadastrado com sucesso! Use o botão Entrar.", "success");
-            els.username.value = '';
-            els.password.value = '';
+            // Registro
+            if (username.length < 3) {
+                 els.authMessage.textContent = 'Nome de usuário deve ter pelo menos 3 caracteres.';
+                 return;
+            }
+            if (password.length < 6) {
+                 els.authMessage.textContent = 'Senha deve ter pelo menos 6 caracteres.';
+                 return;
+            }
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            await updateProfile(userCredential.user, { displayName: username });
+            
+            // Salva no DB
+            const userRef = ref(db, `usuarios/${userCredential.user.uid}`);
+            await set(userRef, {
+                displayName: username,
+                email: email,
+                tag: 'Visitante' // Tag padrão
+            });
+            showToast('Cadastro realizado com sucesso!', 'success');
         }
     } catch (error) {
-        console.error("Erro de Autenticação:", error.code, error.message);
-        let msg = "Erro desconhecido.";
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-            msg = "Credenciais inválidas.";
-        } else if (error.code === 'auth/weak-password') {
-            msg = "A senha deve ter pelo menos 6 caracteres.";
+        console.error("Erro de autenticação:", error.code, error.message);
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+            els.authMessage.textContent = 'Usuário ou senha inválidos.';
         } else if (error.code === 'auth/email-already-in-use') {
-            msg = "Este nome de usuário já está em uso.";
-        } else if (error.code === 'auth/configuration-not-found') {
-             msg = "Erro: Firebase: Error (auth/configuration-not-found). Verifique suas chaves no firebase.js.";
+            els.authMessage.textContent = 'Este nome de usuário já está cadastrado.';
+        } else if (error.code === 'auth/invalid-email') {
+             els.authMessage.textContent = 'Nome de usuário inválido (não pode conter espaços ou caracteres especiais).';
+        } else {
+            els.authMessage.textContent = 'Erro ao tentar autenticar.';
         }
-        els.authMessage.textContent = msg;
-        showToast(msg, "error");
     }
 };
 
 const authAction = (isLogin) => {
-    const username = els.username.value.trim();
-    const password = els.password.value;
-    
-    // A lógica de cadastro usa um email fictício com o username, vamos replicar isso
-    const email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@hells.com`;
-
-    handleAuthAction(isLogin, { username: email, password: password });
+    handleAuthAction(isLogin, {
+        username: els.username.value, 
+        password: els.password.value
+    });
 };
 
 const resetPassword = async () => {
     const username = els.username.value.trim();
     if (!username) {
-        els.authMessage.textContent = 'Preencha o Nome de Usuário para solicitar a recuperação.';
+        els.authMessage.textContent = 'Digite seu nome de usuário para redefinir a senha.';
         return;
     }
-    const email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@hells.com`;
-
+    const email = `${username.toLowerCase()}@hells.com`;
     try {
         await sendPasswordResetEmail(auth, email);
-        els.authMessage.textContent = `Email de recuperação enviado para ${email}. Verifique sua caixa de entrada.`;
-        showToast("Email de recuperação enviado.", "default", 5000);
+        showToast('E-mail de redefinição de senha enviado!', 'success');
+        els.authMessage.textContent = `Um link para redefinir sua senha foi enviado para o e-mail associado a "${username}".`;
     } catch (error) {
-        console.error("Erro ao enviar reset:", error.code, error.message);
-        els.authMessage.textContent = "Erro ao enviar email. O usuário pode não existir ou o email pode ser inválido.";
-        showToast("Erro ao enviar email de recuperação.", "error");
+        console.error("Erro ao redefinir senha:", error.code);
+         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+             els.authMessage.textContent = 'Usuário não encontrado.';
+         } else {
+             els.authMessage.textContent = 'Erro ao enviar e-mail de redefinição.';
+         }
     }
 };
 
@@ -308,7 +315,6 @@ onAuthStateChanged(auth, (user) => {
             setUserActivity('Calculadora'); 
             
             // 2. Configura a UI baseada na TAG
-            // ⭐️ CONFIGURAR AQUI ESTAVA CAUSANDO A REFERENCE ERROR
             configurarInterfacePorTag(currentUserData.tag);
              
             // 3. Remove listener de vendas antigo (se houver)
@@ -382,33 +388,23 @@ onAuthStateChanged(auth, (user) => {
 // ATRIBUIÇÃO DE EVENT LISTENERS (GLUE CODE)
 // ===============================================
 
-// --- UI Geral
+// --- UI Geral ---
 els.themeBtn.onclick = toggleTheme;
 els.tutorialBtn.onclick = showNextTourStep;
+els.logoLink.onclick = (e) => { e.preventDefault(); toggleView('main'); };
 els.enterBtn.onclick = () => {
-    localStorage.setItem('hasVisited', 'true');
-    els.welcomeScreen.classList.remove('show');
     els.welcomeScreen.classList.add('hidden');
-    setTimeout(() => { els.welcomeScreen.style.display = 'none'; }, 500);
-    
-    // Mostra o AuthScreen se não estiver logado
-    if (!currentUser) {
-        els.authScreen.style.display = 'block';
-    } else {
-        toggleView('main');
-    }
+    localStorage.setItem('hasVisited', 'true');
+    setTimeout(() => {
+        els.welcomeScreen.style.display = 'none';
+    }, 500);
 };
+els.logoutBtn.onclick = () => signOut(auth);
 
-// --- Autenticação
+// --- ⭐️ CORREÇÃO: Listeners de Autenticação ---
 els.loginBtn.onclick = () => authAction(true);
 els.registerUserBtn.onclick = () => authAction(false);
-els.logoutBtn.onclick = () => { 
-    signOut(auth).then(() => showToast("Deslogado com sucesso!", "default")); 
-};
-els.forgotPasswordLink.onclick = (e) => {
-    e.preventDefault();
-    resetPassword();
-};
+els.forgotPasswordLink.onclick = resetPassword;
 
 // --- Calculadora/Vendas (Módulo: sales.js) ---
 els.calcBtn.onclick = () => {
@@ -442,7 +438,8 @@ els.adminPanelBtn.onclick = () => {
     setUserActivity('Painel Admin'); 
     toggleView('admin');
     cleanupScroll(); // ⭐️ Limpa o scroll
-    loadAdminPanel(true, currentUser); 
+    // ⭐️ CORREÇÃO: Passar currentUserData
+    loadAdminPanel(true, currentUser, currentUserData); 
 };
 els.toggleCalcBtnAdmin.onclick = () => {
     setUserActivity('Calculadora'); 
@@ -472,90 +469,103 @@ els.toggleCalcBtnDossier.onclick = () => {
     toggleView('main');
     cleanupScroll(); // ⭐️ Limpa o scroll
 };
-
-// Nível 1: Bases (Organizações)
-if (els.dossierOrgGrid) {
-    els.dossierOrgGrid.addEventListener('click', (e) => {
-        if (e.target.closest('.dossier-org-card')) {
-            const orgName = e.target.closest('.dossier-org-card').dataset.orgName;
-            if (orgName) {
-                setUserActivity(`Investigação (${orgName})`);
-                showDossierPeople(orgName, currentUserData);
-            }
-        } else if (e.target.classList.contains('edit-org-btn')) {
-             openEditOrgModal(e.target.dataset.orgId);
-        }
-    });
-}
-
-// Nível 2: Pessoas (Membros)
 els.dossierVoltarBtn.onclick = () => {
-    setUserActivity('Investigação (Bases)'); 
-    showDossierOrgs(currentUserData);
+     setUserActivity('Investigação (Bases)'); 
+     showDossierOrgs(currentUserData);
 };
-els.filtroDossierOrgs.addEventListener('input', () => filterOrgs(currentUserData));
-els.filtroDossierPeople.addEventListener('input', filterPeople);
 els.addOrgBtn.onclick = openAddOrgModal;
-els.addPessoaBtn.onclick = (e) => openAddDossierModal(e.target.dataset.orgName);
+els.addPessoaBtn.onclick = (e) => {
+    const orgName = e.target.dataset.orgName;
+    if(orgName) openAddDossierModal(orgName);
+};
 
-if (els.dossierPeopleGrid) {
-    els.dossierPeopleGrid.addEventListener('click', (e) => {
-        if (e.target.classList.contains('edit-dossier-btn')) {
-            const { org, id } = e.target.dataset;
-            openEditDossierModal(org, id);
-        } else if (e.target.classList.contains('delete-dossier-btn')) {
-            const { org, id } = e.target.dataset;
-            removeDossierEntry(org, id, currentUserData);
-        } else if (e.target.classList.contains('veiculo-foto-link')) {
-             e.preventDefault();
-             showImageLightbox(e.target.dataset.url);
+// --- ⭐️ CORREÇÃO: Listener do Filtro do Dossiê ---
+els.filtroDossierOrgs.addEventListener('input', () => {
+    filterOrgs(currentUserData); // Passar currentUserData
+});
+els.filtroDossierPeople.addEventListener('input', filterPeople);
+
+// Listeners de Evento (Delegação)
+document.body.addEventListener('click', (e) => {
+    // Modais Dossiê
+    if (e.target.classList.contains('edit-org-btn')) {
+        openEditOrgModal(e.target.dataset.orgId);
+    }
+    if (e.target.classList.contains('edit-dossier-btn')) {
+        openEditDossierModal(e.target.dataset.org, e.target.dataset.id);
+    }
+    if (e.target.classList.contains('delete-dossier-btn')) {
+        removeDossierEntry(e.target.dataset.org, e.target.dataset.id, currentUserData);
+    }
+    if (e.target.id === 'cancelDossierBtn' || e.target.id === 'editDossierOverlay') {
+        closeEditDossierModal();
+    }
+    if (e.target.id === 'cancelNewDossierBtn' || e.target.id === 'addDossierOverlay') {
+        closeAddDossierModal();
+    }
+    if (e.target.id === 'cancelOrgBtn' || e.target.id === 'orgModalOverlay') {
+        closeOrgModal();
+    }
+    if (e.target.id === 'imageLightboxOverlay' || e.target.id === 'imageLightboxModal') {
+        closeImageLightbox();
+    }
+    if (e.target.classList.contains('veiculo-foto-link')) {
+        e.preventDefault();
+        showImageLightbox(e.target.dataset.url);
+    }
+    
+    // Gerenciador de Veículos (Modal de Edição)
+    if (e.target.id === 'editModalAddVeiculoBtn') {
+        adicionarOuAtualizarVeiculoTemp('editModal');
+    }
+    if (e.target.id === 'editModalCancelVeiculoBtn') {
+        cancelarEdicaoVeiculo('editModal');
+    }
+    if (e.target.classList.contains('edit-veiculo-btn') && e.closest('#editModalListaVeiculos')) {
+        iniciarEdicaoVeiculo(e.target.dataset.key, 'editModal');
+    }
+    if (e.target.classList.contains('remove-veiculo-btn') && e.closest('#editModalListaVeiculos')) {
+        removerVeiculoTemp(e.target.dataset.key, els.editModalListaVeiculos);
+    }
+
+    // Gerenciador de Veículos (Modal de Adição)
+    if (e.target.id === 'addModalAddVeiculoBtn') {
+        adicionarOuAtualizarVeiculoTemp('addModal');
+    }
+    if (e.target.id === 'addModalCancelVeiculoBtn') {
+        cancelarEdicaoVeiculo('addModal');
+    }
+    if (e.target.classList.contains('edit-veiculo-btn') && e.closest('#addModalListaVeiculos')) {
+        iniciarEdicaoVeiculo(e.target.dataset.key, 'addModal');
+    }
+    if (e.target.classList.contains('remove-veiculo-btn') && e.closest('#addModalListaVeiculos')) {
+        removerVeiculoTemp(e.target.dataset.key, els.addModalListaVeiculos);
+    }
+    
+    // Botões de Salvar Modais
+    if (e.target.id === 'saveDossierBtn') {
+        saveDossierChanges(currentUserData);
+    }
+    if (e.target.id === 'saveNewDossierBtn') {
+        saveNewDossierEntry(currentUserData);
+    }
+    if (e.target.id === 'saveOrgBtn') {
+        saveOrg(currentUserData);
+    }
+    if (e.target.id === 'deleteOrgBtn') {
+        deleteOrg(currentUserData);
+    }
+
+    // Clique na Base (Organização)
+    if (e.target.closest('.dossier-org-card')) {
+        // Assegura que o clique não foi num botão ou link
+        if (!e.target.closest('button') && !e.target.closest('a') && !e.target.closest('.drag-handle-icon')) {
+             const card = e.target.closest('.dossier-org-card');
+             const orgName = card.dataset.orgName;
+             if(orgName) {
+                setUserActivity(`Investigação (Membros ${orgName})`); 
+                showDossierPeople(orgName, currentUserData);
+             }
         }
-    });
-}
-if (els.imageLightboxOverlay) els.imageLightboxOverlay.onclick = closeImageLightbox;
-if (els.imageLightboxModal) els.imageLightboxModal.onclick = closeImageLightbox; 
-
-// Modais Dossiê (Pessoa)
-els.saveNewDossierBtn.onclick = () => saveNewDossierEntry(currentUserData);
-els.cancelNewDossierBtn.onclick = closeAddDossierModal;
-els.saveDossierBtn.onclick = () => saveDossierChanges(currentUserData);
-els.cancelDossierBtn.onclick = closeEditDossierModal;
-
-// Modais Dossiê (Organização)
-els.saveOrgBtn.onclick = () => saveOrg(currentUserData);
-els.cancelOrgBtn.onclick = closeOrgModal;
-els.deleteOrgBtn.onclick = () => deleteOrg(currentUserData);
-
-// Modais Veículos (ADD)
-if (els.addModalAddVeiculoBtn) {
-    els.addModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('addModal');
-}
-if (els.addModalCancelVeiculoBtn) {
-    els.addModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('addModal');
-}
-if (els.addModalListaVeiculos) {
-    els.addModalListaVeiculos.addEventListener('click', (e) => {
-        if (e.target.classList.contains('edit-veiculo-btn')) {
-            iniciarEdicaoVeiculo(e.target.dataset.key, 'addModal');
-        } else if (e.target.classList.contains('remove-veiculo-btn')) {
-            removerVeiculoTemp(e.target.dataset.key, els.addModalListaVeiculos);
-        }
-    });
-}
-
-// Modais Veículos (EDIT)
-if (els.editModalAddVeiculoBtn) {
-    els.editModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('editModal');
-}
-if (els.editModalCancelVeiculoBtn) {
-    els.editModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('editModal');
-}
-if (els.editModalListaVeiculos) {
-    els.editModalListaVeiculos.addEventListener('click', (e) => {
-        if (e.target.classList.contains('edit-veiculo-btn')) {
-            iniciarEdicaoVeiculo(e.target.dataset.key, 'editModal');
-        } else if (e.target.classList.contains('remove-veiculo-btn')) {
-            removerVeiculoTemp(e.target.dataset.key, els.editModalListaVeiculos);
-        }
-    });
-}
+    }
+});
