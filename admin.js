@@ -2,8 +2,6 @@
   ADMIN.JS
   Lógica do Painel Admin, Status Online,
   Controles Globais e Migrações.
-  
-  VERSÃO SEM PASTAS (Nomes: helpers.js, sales.js)
 ===============================================
 */
 
@@ -187,7 +185,7 @@ export const monitorOnlineStatus = () => {
         els.onlineUsersCount.textContent = activeCount.toString();
         
         if (els.adminPanel.style.display !== 'none') {
-            loadAdminPanel(false);
+            loadAdminPanel(false); // ⭐️ NOTA: Esta chamada não passa currentUser/Data, mas é só para refresh
         }
 
     }, (error) => {
@@ -203,17 +201,18 @@ const deleteUser = (uid, displayName) => {
             .then(() => {
                 remove(ref(db, `onlineStatus/${uid}`)); 
                 showToast(`Usuário "${displayName}" apagado do banco de dados.`, 'success');
-                loadAdminPanel(true);
+                loadAdminPanel(true); // ⭐️ NOTA: Esta chamada não passa currentUser/Data, mas é só para refresh
             })
             .catch((error) => showToast(`Erro ao apagar usuário: ${error.message}`, 'error'));
     }
 };
 
-// ⭐️ ATUALIZADA: Ajustada para exibir a nova coluna
-export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
+// ⭐️ ATUALIZADA: Assinatura e lógica de verificação
+export const loadAdminPanel = async (fetchStatus = true, currentUser, currentUserData) => {
     
     // 1. Verifica Acesso (Admin)
-    if (!currentUser || !currentUser.uid || (currentUser.userData && currentUser.userData.tag.toUpperCase() !== 'ADMIN')) {
+    // ⭐️ CORREÇÃO: Usa currentUserData para verificar a tag
+    if (!currentUserData || currentUserData.tag.toUpperCase() !== 'ADMIN') {
          els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Acesso negado. Apenas Administradores podem visualizar este painel.</td></tr>';
          return;
     }
@@ -274,6 +273,10 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
 
         els.adminUserListBody.innerHTML = '';
         
+        // ⭐️ NOTA: currentUser pode ser nulo em refreshes internos, 
+        // mas currentUserData (que vem da chamada principal) deve existir.
+        const currentUid = currentUser ? currentUser.uid : (currentUserData ? currentUserData.uid : null); 
+
         usersList.forEach(user => {
             const uid = user.uid;
             const userData = user;
@@ -299,18 +302,17 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
             const activitySpan = document.createElement('span');
             activitySpan.style.cssText = 'font-size: 13px; display: block; margin-left: 20px; margin-bottom: 8px;';
             const statusText = status.isOnline ? `Ativo (agora)` : `Inativo há ${formatInactivityTime(status.inactivity)}`;
+            activitySpan.textContent = statusText;
             activitySpan.style.color = status.isOnline ? '#00b33c' : 'var(--cor-erro)';
             if (!status.isOnline && status.inactivity > 60000 * 60 * 24) {
                  activitySpan.textContent = 'Inativo há muito tempo';
                  activitySpan.style.color = '#888';
-            } else {
-                 activitySpan.textContent = statusText;
             }
             mainCell.appendChild(activitySpan);
             
             const tagContainer = document.createElement('div');
             tagContainer.style.marginLeft = '20px';
-            if (currentUser && uid === currentUser.uid) {
+            if (currentUid && uid === currentUid) {
                 tagContainer.textContent = `👑 ${userData.tag} (Você)`;
                 tagContainer.style.fontWeight = '600';
             } else {
@@ -346,7 +348,7 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
             const actionsCell = row.insertCell();
             actionsCell.style.textAlign = 'center';
             actionsCell.style.verticalAlign = 'middle';
-            if (currentUser && uid === currentUser.uid) {
+            if (currentUid && uid === currentUid) {
                 actionsCell.textContent = '---';
             } else {
                 const deleteBtn = document.createElement('button');
