@@ -1,10 +1,13 @@
 /* ===============================================
   DOM.JS
   Mapeamento de todos os IDs do DOM.
+  
+  VERIFIQUE SEMPRE AS VÍRGULAS NO FINAL!
 ===============================================
 */
 
 export const els = {
+  // --- Calculadora Principal ---
   qtyTickets: document.getElementById('qtyTickets'),
   qtyTablets: document.getElementById('qtyTablets'),
   qtyNitro: document.getElementById('qtyNitro'),
@@ -23,6 +26,8 @@ export const els = {
   valuesBody: document.getElementById('valuesBody'),
   valorTotalGeral: document.getElementById('valorTotalGeral'),
   results: document.getElementById('results'),
+  
+  // --- Telas e Botões Principais ---
   mainCard: document.getElementById('mainCard'),
   historyCard: document.getElementById('historyCard'),
   salesHistory: document.getElementById('salesHistory'),
@@ -31,71 +36,64 @@ export const els = {
   registerBtn: document.getElementById('registerBtn'),
   toggleHistoryBtn: document.getElementById('toggleHistoryBtn'),
   toggleCalcBtn: document.getElementById('toggleCalcBtn'),
+  discordBtnCalc: document.getElementById('discordBtnCalc'),
   clearHistoryBtn: document.getElementById('clearHistoryBtn'),
   csvBtn: document.getElementById('csvBtn'),
-  discordBtnCalc: document.getElementById('discordBtnCalc'),
-  themeBtn: document.getElementById('themeBtn'),
-  tutorialBtn: document.getElementById('tutorialBtn'),
-  logoLink: document.getElementById('logoLink'),
-  appLogo: document.getElementById('appLogo'),
-  historyImg: document.getElementById('historyImg'),
+  
+  // --- Autenticação / Geral ---
   welcomeScreen: document.getElementById('welcomeScreen'),
+  welcomeLogo: document.getElementById('welcomeLogo'), 
   enterBtn: document.getElementById('enterBtn'),
-  welcomeLogo: document.getElementById('welcomeLogo'),
-  authScreen: document.getElementById('authScreen'),
+  authScreen: document.getElementById('authScreen'), 
   username: document.getElementById('username'),
   password: document.getElementById('password'),
   loginBtn: document.getElementById('loginBtn'),
   registerUserBtn: document.getElementById('registerUserBtn'),
-  authMessage: document.getElementById('authMessage'),
-  logoutBtn: document.getElementById('logoutBtn'),
-  mainTitle: document.getElementById('mainTitle'),
   forgotPasswordLink: document.getElementById('forgotPasswordLink'),
+  logoutBtn: document.getElementById('logoutBtn'),
+  userStatus: document.getElementById('userStatus'), 
+  appLogo: document.getElementById('appLogo'), 
+  logoLink: document.getElementById('logoLink'),
+  themeBtn: document.getElementById('themeBtn'),
+  tutorialBtn: document.getElementById('tutorialBtn'),
   
+  // --- Admin Panel ---
   adminPanelBtn: document.getElementById('adminPanelBtn'),
   adminPanel: document.getElementById('adminPanel'),
-  adminUserListBody: document.getElementById('adminUserListBody'),
   toggleCalcBtnAdmin: document.getElementById('toggleCalcBtnAdmin'), 
-  
-  onlineUsersCount: document.getElementById('onlineUsersCount'),
+  onlineUsersList: document.getElementById('onlineUsersList'),
   layoutToggleNightMode: document.getElementById('layoutToggleNightMode'),
   layoutToggleBottomPanel: document.getElementById('layoutToggleBottomPanel'),
   bottomPanelText: document.getElementById('bottomPanelText'),
   saveBottomPanelTextBtn: document.getElementById('saveBottomPanelTextBtn'),
-  bottomPanelDisplay: document.getElementById('bottomPanelDisplay'), 
-  bottomPanel: document.getElementById('bottomPanel'),
-  userStatus: document.getElementById('userStatus'),
-  
+  migrateDossierBtn: document.getElementById('migrateDossierBtn'), 
+  migrateVeiculosBtn: document.getElementById('migrateVeiculosBtn'), 
+
+  // --- Dossier / Investigação ---
   investigacaoBtn: document.getElementById('investigacaoBtn'),
   dossierCard: document.getElementById('dossierCard'),
   toggleCalcBtnDossier: document.getElementById('toggleCalcBtnDossier'),
-  
-  dossierOrgContainer: document.getElementById('dossierOrgContainer'),
-  filtroDossierOrgs: document.getElementById('filtroDossierOrgs'),
+  dossierContent: document.getElementById('dossierContent'),
+  filterOrgsInput: document.getElementById('filterOrgsInput'), 
+  orgsList: document.getElementById('orgsList'),
+  orgsTitle: document.getElementById('orgsTitle'),
   addOrgBtn: document.getElementById('addOrgBtn'),
-  dossierOrgGrid: document.getElementById('dossierOrgGrid'),
   
-  dossierPeopleContainer: document.getElementById('dossierPeopleContainer'),
+  // --- Dossier Pessoas / Edit ---
+  dossierPeopleList: document.getElementById('dossierPeopleList'),
   dossierPeopleTitle: document.getElementById('dossierPeopleTitle'),
-  dossierVoltarBtn: document.getElementById('dossierVoltarBtn'),
-  filtroDossierPeople: document.getElementById('filtroDossierPeople'),
-  addPessoaBtn: document.getElementById('addPessoaBtn'),
-  dossierPeopleGrid: document.getElementById('dossierPeopleGrid'),
+  addDossierBtn: document.getElementById('addDossierBtn'),
+  filterPeopleInput: document.getElementById('filterPeopleInput'),
   
-  migrateDossierBtn: document.getElementById('migrateDossierBtn'),
-  migrateVeiculosBtn: document.getElementById('migrateVeiculosBtn'), 
-  
-  editDossierOverlay: document.getElementById('editDossierOverlay'),
+  editDossierModalOverlay: document.getElementById('editDossierModalOverlay'),
   editDossierModal: document.getElementById('editDossierModal'),
-  editDossierOrg: document.getElementById('editDossierOrg'),
   editDossierId: document.getElementById('editDossierId'),
+  editDossierOrg: document.getElementById('editDossierOrg'),
   editDossierNome: document.getElementById('editDossierNome'),
   editDossierNumero: document.getElementById('editDossierNumero'),
   editDossierCargo: document.getElementById('editDossierCargo'),
   editDossierFotoUrl: document.getElementById('editDossierFotoUrl'),
   editDossierInstagram: document.getElementById('editDossierInstagram'), 
-  saveDossierBtn: document.getElementById('saveDossierBtn'),
-  cancelDossierBtn: document.getElementById('cancelDossierBtn'),
   
   editModalCarroNome: document.getElementById('editModalCarroNome'),
   editModalCarroPlaca: document.getElementById('editModalCarroPlaca'),
@@ -104,9 +102,14 @@ export const els = {
   editModalCancelVeiculoBtn: document.getElementById('editModalCancelVeiculoBtn'), 
   editModalListaVeiculos: document.getElementById('editModalListaVeiculos'),
   
-  addDossierOverlay: document.getElementById('addDossierOverlay'),
+  saveDossierChangesBtn: document.getElementById('saveDossierChangesBtn'),
+  cancelEditDossierBtn: document.getElementById('cancelEditDossierBtn'),
+  removeDossierEntryBtn: document.getElementById('removeDossierEntryBtn'),
+  
+  // --- Dossier Adicionar Nova Pessoa ---
+  addDossierModalOverlay: document.getElementById('addDossierModalOverlay'),
   addDossierModal: document.getElementById('addDossierModal'),
-  addDossierOrganizacao: document.getElementById('addDossierOrganizacao'),
+  addDossierOrg: document.getElementById('addDossierOrg'),
   addDossierNome: document.getElementById('addDossierNome'),
   addDossierNumero: document.getElementById('addDossierNumero'),
   addDossierCargo: document.getElementById('addDossierCargo'),
@@ -121,6 +124,7 @@ export const els = {
   addModalCancelVeiculoBtn: document.getElementById('addModalCancelVeiculoBtn'), 
   addModalListaVeiculos: document.getElementById('addModalListaVeiculos'),
   
+  // --- Org Modal ---
   orgModalOverlay: document.getElementById('orgModalOverlay'),
   orgModal: document.getElementById('orgModal'),
   orgModalTitle: document.getElementById('orgModalTitle'),
@@ -132,11 +136,13 @@ export const els = {
   cancelOrgBtn: document.getElementById('cancelOrgBtn'),
   deleteOrgBtn: document.getElementById('deleteOrgBtn'),
   
+  // --- Lightbox de Imagem ---
   imageLightboxOverlay: document.getElementById('imageLightboxOverlay'),
   imageLightboxModal: document.getElementById('imageLightboxModal'),
   lightboxImg: document.getElementById('lightboxImg'),
   
-  // ⭐️ NOVO ELEMENTO
-  topHistoryScrollbar: document.getElementById('topHistoryScrollbar')
+  // --- Scrollbar do Histórico ---
+  topHistoryScrollbar: document.getElementById('topHistoryScrollbar'), 
+
+  // Fim do objeto
 };
-// A CHAVE EXTRA QUE ESTAVA AQUI FOI REMOVIDA.
