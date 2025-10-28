@@ -1,12 +1,12 @@
 /* ===============================================
-  FIREBASE.JS (Com a inicialização correta)
-  
-  VERSÃO SEM PASTAS
+  FIREBASE.JS
+  Configuração e inicialização do Firebase.
 ===============================================
 */
 
-// --- 1. Importações do SDK do Firebase ---
 import { initializeApp } from "firebase/app";
+
+// Importe todos os módulos do SDK que você precisa
 import { 
     getAuth, 
     onAuthStateChanged, 
@@ -16,6 +16,7 @@ import {
     createUserWithEmailAndPassword, 
     updateProfile 
 } from "firebase/auth";
+
 import { 
     getDatabase, 
     ref, 
@@ -24,16 +25,15 @@ import {
     onValue, 
     push, 
     remove, 
+    update, 
     query, 
     orderByChild, 
-    equalTo, 
-    update 
+    equalTo 
 } from "firebase/database";
 
-// --- 2. Sua Configuração do Projeto (CORRIGIDA) ---
-// Estas são as suas credenciais que resolvem o erro "auth/configuration-not-found"
+// TODO: ADICIONE SUAS CREDENCIAIS DO FIREBASE AQUI
 const firebaseConfig = {
-    apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs",
+ apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs",
     authDomain: "hells-teste.firebaseapp.com",
     databaseURL: "https://hells-teste-default-rtdb.firebaseio.com",
     projectId: "hells-teste",
@@ -43,17 +43,15 @@ const firebaseConfig = {
     measurementId: "G-1VL7C8FZL0"
 };
 
-// --- 3. Inicialização e Exportação de Serviços ---
-
 // Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
 
-// Obtém e exporta os serviços
+// Exporta os serviços que você precisa
 export const auth = getAuth(app);
 export const db = getDatabase(app);
 
-// Exporta todas as funções de autenticação e Realtime Database necessárias
-export {
+// Exporta todas as funções do SDK que você usa nos outros arquivos
+export { 
     onAuthStateChanged, 
     signOut, 
     sendPasswordResetEmail, 
@@ -66,8 +64,8 @@ export {
     onValue, 
     push, 
     remove, 
+    update, 
     query, 
     orderByChild, 
-    equalTo,
-    update
+    equalTo 
 };
