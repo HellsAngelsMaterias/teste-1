@@ -1,8 +1,6 @@
 /* ===============================================
   HELPERS.JS
   Funções utilitárias (formatação, UI, etc).
-  
-  VERSÃO SEM PASTAS
 ===============================================
 */
 
@@ -181,12 +179,11 @@ export const showNextTourStep = () => {
     currentTooltip.querySelector('.tourSkipBtn').onclick = cleanupTour;
 };
 
-
-/*
 // ===============================================
 // ⭐️ CORREÇÃO: Relógio comentado para evitar o erro
 // ===============================================
 
+/*
 function atualizarRelogio() {
   // O seu index.html não tem um elemento com id 'relogio-digital'
   // Por isso 'elRelogio' fica 'null' e dá erro na linha 114
@@ -196,11 +193,11 @@ function atualizarRelogio() {
       const agora = new Date();
       const horas = String(agora.getHours()).padStart(2, '0');
       const minutos = String(agora.getMinutes()).padStart(2, '0');
-      elRelogio.value = `${horas}:${minutos}`; // Linha 114
+      elRelogio.value = `${horas}:${minutos}`; // Linha 114 (a linha do erro)
   }
 }
 
 // Linha 116: Esta chamada imediata é que causa o erro
-// atualizarRelogio(); 
-// setInterval(atualizarRelogio, 60000);
+atualizarRelogio(); 
+setInterval(atualizarRelogio, 60000);
 */
