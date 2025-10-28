@@ -299,11 +299,12 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
             const activitySpan = document.createElement('span');
             activitySpan.style.cssText = 'font-size: 13px; display: block; margin-left: 20px; margin-bottom: 8px;';
             const statusText = status.isOnline ? `Ativo (agora)` : `Inativo há ${formatInactivityTime(status.inactivity)}`;
-            activitySpan.textContent = statusText;
             activitySpan.style.color = status.isOnline ? '#00b33c' : 'var(--cor-erro)';
             if (!status.isOnline && status.inactivity > 60000 * 60 * 24) {
                  activitySpan.textContent = 'Inativo há muito tempo';
                  activitySpan.style.color = '#888';
+            } else {
+                 activitySpan.textContent = statusText;
             }
             mainCell.appendChild(activitySpan);
             
@@ -522,4 +523,3 @@ export const migrateVeiculosData = async () => {
         updateMigrationUI();
     }
 };
-
