@@ -31,9 +31,9 @@ import {
     equalTo 
 } from "firebase/database";
 
-// TODO: ADICIONE SUAS CREDENCIAIS DO FIREBASE AQUI
+// Suas credenciais do Firebase
 const firebaseConfig = {
- apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs",
+  apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs",
     authDomain: "hells-teste.firebaseapp.com",
     databaseURL: "https://hells-teste-default-rtdb.firebaseio.com",
     projectId: "hells-teste",
