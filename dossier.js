@@ -984,4 +984,3 @@ export const removeDossierEntry = (orgName, entryId, currentUserData) => {
             .catch((error) => showToast(`Erro ao remover: ${error.message}`, "error"));
     }
 };
-
