@@ -171,9 +171,8 @@ updateLogoAndThemeButton(savedTheme === 'dark');
 // Controla a tela de boas-vindas
 if (localStorage.getItem('hasVisited')) {
     els.welcomeScreen.style.display = 'none';
-    els.authScreen.style.display = 'block'; // Mostra auth se já visitou
 } else {
-    els.welcomeScreen.style.display = 'block'; // Mostra boas-vindas
+    els.welcomeScreen.classList.add('show');
     els.authScreen.style.display = 'none';
     els.mainCard.style.display = 'none';
 }
@@ -207,61 +206,72 @@ camposTelefone.forEach(campo => {
 // LÓGICA DE AUTENTICAÇÃO
 // ===============================================
 
-// Funções de autenticação (implementação de exemplo)
-const handleAuthAction = async (isLogin, creds) => { 
-    const email = creds.username.includes('@') ? creds.username : `${creds.username}@hells.com`;
-    const password = creds.password;
+// Funções handleAuthAction, authAction, resetPassword (Conteúdo do arquivo original, mas não essencial para a correção do erro)
+const handleAuthAction = async (isLogin, creds) => {
+    const { username: email, password } = creds;
+    els.authMessage.textContent = '';
     
-    if (!password || !email) {
-        showToast("Por favor, preencha usuário e senha.", "error");
+    if (!email || !password) {
+        els.authMessage.textContent = 'Preencha todos os campos.';
         return;
     }
 
     try {
         if (isLogin) {
             await signInWithEmailAndPassword(auth, email, password);
-            showToast("Login bem-sucedido!", "success");
-            // onAuthStateChanged cuidará de esconder a tela de auth
+            showToast("Login realizado com sucesso!", "success");
         } else {
-            // Registro
-            await createUserWithEmailAndPassword(auth, email, password);
-            await updateProfile(auth.currentUser, { displayName: creds.username });
-            
-            // Salva dados no DB (Exemplo)
-            const userRef = ref(db, `usuarios/${auth.currentUser.uid}`);
-            await set(userRef, {
-                displayName: creds.username,
-                email: email,
-                tag: 'Visitante' // Tag padrão
-            });
-            showToast("Registro bem-sucedido! Faça o login.", "success");
+            // Lógica de cadastro (cria user com email/senha e atualiza o display name)
+            const emailFromUsername = `${email.toLowerCase().replace(/[^a-z0-9]/g, '')}@hells.com`;
+            const userCredential = await createUserWithEmailAndPassword(auth, emailFromUsername, password);
+            await updateProfile(userCredential.user, { displayName: email });
+            showToast("Usuário cadastrado com sucesso! Use o botão Entrar.", "success");
+            els.username.value = '';
+            els.password.value = '';
         }
     } catch (error) {
-        console.error("Erro de autenticação:", error);
-        showToast(`Erro: ${error.message}`, "error");
+        console.error("Erro de Autenticação:", error.code, error.message);
+        let msg = "Erro desconhecido.";
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+            msg = "Credenciais inválidas.";
+        } else if (error.code === 'auth/weak-password') {
+            msg = "A senha deve ter pelo menos 6 caracteres.";
+        } else if (error.code === 'auth/email-already-in-use') {
+            msg = "Este nome de usuário já está em uso.";
+        } else if (error.code === 'auth/configuration-not-found') {
+             msg = "Erro: Firebase: Error (auth/configuration-not-found). Verifique suas chaves no firebase.js.";
+        }
+        els.authMessage.textContent = msg;
+        showToast(msg, "error");
     }
 };
 
 const authAction = (isLogin) => {
-    handleAuthAction(isLogin, {
-        username: els.username.value, 
-        password: els.password.value
-    });
+    const username = els.username.value.trim();
+    const password = els.password.value;
+    
+    // A lógica de cadastro usa um email fictício com o username, vamos replicar isso
+    const email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@hells.com`;
+
+    handleAuthAction(isLogin, { username: email, password: password });
 };
 
-const resetPassword = async () => { 
-    const email = els.username.value.includes('@') ? els.username.value : `${els.username.value}@hells.com`;
-    if (!email) {
-        showToast("Digite seu nome de usuário (ou email) para resetar a senha.", "error");
+const resetPassword = async () => {
+    const username = els.username.value.trim();
+    if (!username) {
+        els.authMessage.textContent = 'Preencha o Nome de Usuário para solicitar a recuperação.';
         return;
     }
-    
+    const email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@hells.com`;
+
     try {
         await sendPasswordResetEmail(auth, email);
-        showToast(`Email de recuperação enviado para ${email}.`, "success");
+        els.authMessage.textContent = `Email de recuperação enviado para ${email}. Verifique sua caixa de entrada.`;
+        showToast("Email de recuperação enviado.", "default", 5000);
     } catch (error) {
-        console.error("Erro ao resetar senha:", error);
-        showToast(`Erro: ${error.message}`, "error");
+        console.error("Erro ao enviar reset:", error.code, error.message);
+        els.authMessage.textContent = "Erro ao enviar email. O usuário pode não existir ou o email pode ser inválido.";
+        showToast("Erro ao enviar email de recuperação.", "error");
     }
 };
 
@@ -285,10 +295,8 @@ onAuthStateChanged(auth, (user) => {
             if (snapshot.exists()) {
                 currentUserData = snapshot.val(); 
             } else {
-                // Se não existir, cria um perfil básico
-                const displayName = user.displayName || user.email.split('@')[0];
                 const newUserProfile = {
-                    displayName: displayName, 
+                    displayName: user.displayName, 
                     email: user.email,
                     tag: 'Visitante' 
                 };
@@ -300,6 +308,7 @@ onAuthStateChanged(auth, (user) => {
             setUserActivity('Calculadora'); 
             
             // 2. Configura a UI baseada na TAG
+            // ⭐️ CONFIGURAR AQUI ESTAVA CAUSANDO A REFERENCE ERROR
             configurarInterfacePorTag(currentUserData.tag);
              
             // 3. Remove listener de vendas antigo (se houver)
@@ -347,7 +356,6 @@ onAuthStateChanged(auth, (user) => {
 
         // 6. Libera a UI principal
         els.authScreen.style.display = 'none';
-        els.welcomeScreen.style.display = 'none'; // Garante que a tela de boas vindas suma
         toggleView('main');
 
     } else {
@@ -359,15 +367,7 @@ onAuthStateChanged(auth, (user) => {
         setVendaEmEdicao(null); // Reseta a edição
         cleanupScroll(); // Limpa o scroll
         
-        // Mostra a tela de autenticação se já visitou, ou a de boas-vindas se for a primeira vez
-        if (localStorage.getItem('hasVisited')) {
-            els.authScreen.style.display = 'block';
-            els.welcomeScreen.style.display = 'none';
-        } else {
-            els.welcomeScreen.style.display = 'block';
-            els.authScreen.style.display = 'none';
-        }
-        
+        els.authScreen.style.display = 'block';
         els.mainCard.style.display = 'none';
         els.historyCard.style.display = 'none';
         els.adminPanel.style.display = 'none'; 
@@ -382,100 +382,180 @@ onAuthStateChanged(auth, (user) => {
 // ATRIBUIÇÃO DE EVENT LISTENERS (GLUE CODE)
 // ===============================================
 
-// --- Bloco de UI Geral e Autenticação (CORRIGIDO) ---
-// Estes são os botões que não funcionavam antes
-
-if(els.themeBtn) els.themeBtn.onclick = toggleTheme;
-
-if(els.tutorialBtn) els.tutorialBtn.onclick = () => {
-    // A função 'showNextTourStep' foi importada de 'helpers.js'
-    showNextTourStep(0); // Inicia o tour
-};
-
-if(els.enterBtn) els.enterBtn.onclick = () => {
-    // Esconde a tela de boas-vindas e mostra a de autenticação
-    els.welcomeScreen.style.display = 'none';
-    els.authScreen.style.display = 'block';
+// --- UI Geral
+els.themeBtn.onclick = toggleTheme;
+els.tutorialBtn.onclick = showNextTourStep;
+els.enterBtn.onclick = () => {
     localStorage.setItem('hasVisited', 'true');
+    els.welcomeScreen.classList.remove('show');
+    els.welcomeScreen.classList.add('hidden');
+    setTimeout(() => { els.welcomeScreen.style.display = 'none'; }, 500);
+    
+    // Mostra o AuthScreen se não estiver logado
+    if (!currentUser) {
+        els.authScreen.style.display = 'block';
+    } else {
+        toggleView('main');
+    }
 };
 
-if(els.logoutBtn) els.logoutBtn.onclick = () => {
-     signOut(auth).catch((error) => {
-        console.error("Erro ao sair:", error);
-        showToast("Erro ao tentar deslogar.", "error");
-    });
+// --- Autenticação
+els.loginBtn.onclick = () => authAction(true);
+els.registerUserBtn.onclick = () => authAction(false);
+els.logoutBtn.onclick = () => { 
+    signOut(auth).then(() => showToast("Deslogado com sucesso!", "default")); 
 };
-
-// Botões de Autenticação
-if(els.loginBtn) els.loginBtn.onclick = () => authAction(true);
-if(els.registerUserBtn) els.registerUserBtn.onclick = () => authAction(false);
-if(els.forgotPasswordLink) els.forgotPasswordLink.onclick = resetPassword;
-
-// --- FIM DO BLOCO DE CORREÇÃO ---
-
+els.forgotPasswordLink.onclick = (e) => {
+    e.preventDefault();
+    resetPassword();
+};
 
 // --- Calculadora/Vendas (Módulo: sales.js) ---
-if(els.calcBtn) els.calcBtn.onclick = () => {
+els.calcBtn.onclick = () => {
     calculate();
     setUserActivity('Calculando Venda'); 
 };
-if(els.resetBtn) els.resetBtn.onclick = clearAllFields;
-if(els.registerBtn) els.registerBtn.onclick = () => {
+els.resetBtn.onclick = clearAllFields;
+els.registerBtn.onclick = () => {
     registerVenda(currentUser, currentUserData);
     setUserActivity('Registrando/Atualizando Venda'); 
 };
-if(els.toggleHistoryBtn) els.toggleHistoryBtn.onclick = () => {
+els.toggleHistoryBtn.onclick = () => {
     setUserActivity('Visualizando Histórico'); 
     toggleView('history');
     displaySalesHistory(null, currentUser, currentUserData); 
     // A sincronização de scroll é ativada no onValue listener
 };
-if(els.toggleCalcBtn) els.toggleCalcBtn.onclick = () => {
+els.toggleCalcBtn.onclick = () => {
     setUserActivity('Calculadora'); 
     toggleView('main');
     cleanupScroll(); // ⭐️ Limpa o scroll ao sair
 };
-if(els.clearHistoryBtn) els.clearHistoryBtn.onclick = () => clearHistory(currentUserData);
-if(els.csvBtn) els.csvBtn.onclick = exportToCsv;
-if(els.discordBtnCalc) els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null, currentUserData);
-if(els.filtroHistorico) els.filtroHistorico.addEventListener('input', () => filterHistory(currentUser, currentUserData));
-if(els.nomeCliente) els.nomeCliente.addEventListener('change', autoFillFromDossier);
+els.clearHistoryBtn.onclick = () => clearHistory(currentUserData);
+els.csvBtn.onclick = exportToCsv;
+els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null, currentUserData);
+els.filtroHistorico.addEventListener('input', () => filterHistory(currentUser, currentUserData));
+els.nomeCliente.addEventListener('change', autoFillFromDossier);
 
 // --- Painel Admin (Módulo: admin.js) ---
-if(els.adminPanelBtn) els.adminPanelBtn.onclick = () => {
+els.adminPanelBtn.onclick = () => {
     setUserActivity('Painel Admin'); 
     toggleView('admin');
     cleanupScroll(); // ⭐️ Limpa o scroll
     loadAdminPanel(true, currentUser); 
 };
-if(els.toggleCalcBtnAdmin) els.toggleCalcBtnAdmin.onclick = () => {
+els.toggleCalcBtnAdmin.onclick = () => {
     setUserActivity('Calculadora'); 
     toggleView('main');
     cleanupScroll(); // ⭐️ Limpa o scroll
 };
-if(els.saveBottomPanelTextBtn) els.saveBottomPanelTextBtn.onclick = () => {
+els.saveBottomPanelTextBtn.onclick = () => {
     const newText = els.bottomPanelText.value.trim();
     updateGlobalLayout('bottomPanelText', newText);
     showToast("Mensagem do rodapé salva!", "success");
     setUserActivity('Painel Admin (Salvando Configs)'); 
 };
-if(els.layoutToggleNightMode) els.layoutToggleNightMode.onchange = (e) => updateGlobalLayout('enableNightMode', e.target.checked);
-if(els.layoutToggleBottomPanel) els.layoutToggleBottomPanel.onchange = (e) => updateGlobalLayout('enableBottomPanel', e.target.checked);
-if(els.migrateDossierBtn) els.migrateDossierBtn.onclick = migrateVendasToDossier;
-if(els.migrateVeiculosBtn) els.migrateVeiculosBtn.onclick = migrateVeiculosData;
+els.layoutToggleNightMode.onchange = (e) => updateGlobalLayout('enableNightMode', e.target.checked);
+els.layoutToggleBottomPanel.onchange = (e) => updateGlobalLayout('enableBottomPanel', e.target.checked);
+els.migrateDossierBtn.onclick = migrateVendasToDossier;
+els.migrateVeiculosBtn.onclick = migrateVeiculosData;
 
 // --- Dossiê (Módulo: dossier.js) ---
-if(els.investigacaoBtn) els.investigacaoBtn.onclick = () => {
+els.investigacaoBtn.onclick = () => {
     setUserActivity('Investigação (Bases)'); 
     toggleView('dossier');
     cleanupScroll(); // ⭐️ Limpa o scroll
     showDossierOrgs(currentUserData); 
 };
-if(els.toggleCalcBtnDossier) els.toggleCalcBtnDossier.onclick = () => {
+els.toggleCalcBtnDossier.onclick = () => {
     setUserActivity('Calculadora'); 
     toggleView('main');
     cleanupScroll(); // ⭐️ Limpa o scroll
 };
 
-// ... (Restante dos listeners de Dossiê - Adicione-os aqui se necessário)
-// ...
+// Nível 1: Bases (Organizações)
+if (els.dossierOrgGrid) {
+    els.dossierOrgGrid.addEventListener('click', (e) => {
+        if (e.target.closest('.dossier-org-card')) {
+            const orgName = e.target.closest('.dossier-org-card').dataset.orgName;
+            if (orgName) {
+                setUserActivity(`Investigação (${orgName})`);
+                showDossierPeople(orgName, currentUserData);
+            }
+        } else if (e.target.classList.contains('edit-org-btn')) {
+             openEditOrgModal(e.target.dataset.orgId);
+        }
+    });
+}
+
+// Nível 2: Pessoas (Membros)
+els.dossierVoltarBtn.onclick = () => {
+    setUserActivity('Investigação (Bases)'); 
+    showDossierOrgs(currentUserData);
+};
+els.filtroDossierOrgs.addEventListener('input', () => filterOrgs(currentUserData));
+els.filtroDossierPeople.addEventListener('input', filterPeople);
+els.addOrgBtn.onclick = openAddOrgModal;
+els.addPessoaBtn.onclick = (e) => openAddDossierModal(e.target.dataset.orgName);
+
+if (els.dossierPeopleGrid) {
+    els.dossierPeopleGrid.addEventListener('click', (e) => {
+        if (e.target.classList.contains('edit-dossier-btn')) {
+            const { org, id } = e.target.dataset;
+            openEditDossierModal(org, id);
+        } else if (e.target.classList.contains('delete-dossier-btn')) {
+            const { org, id } = e.target.dataset;
+            removeDossierEntry(org, id, currentUserData);
+        } else if (e.target.classList.contains('veiculo-foto-link')) {
+             e.preventDefault();
+             showImageLightbox(e.target.dataset.url);
+        }
+    });
+}
+if (els.imageLightboxOverlay) els.imageLightboxOverlay.onclick = closeImageLightbox;
+if (els.imageLightboxModal) els.imageLightboxModal.onclick = closeImageLightbox; 
+
+// Modais Dossiê (Pessoa)
+els.saveNewDossierBtn.onclick = () => saveNewDossierEntry(currentUserData);
+els.cancelNewDossierBtn.onclick = closeAddDossierModal;
+els.saveDossierBtn.onclick = () => saveDossierChanges(currentUserData);
+els.cancelDossierBtn.onclick = closeEditDossierModal;
+
+// Modais Dossiê (Organização)
+els.saveOrgBtn.onclick = () => saveOrg(currentUserData);
+els.cancelOrgBtn.onclick = closeOrgModal;
+els.deleteOrgBtn.onclick = () => deleteOrg(currentUserData);
+
+// Modais Veículos (ADD)
+if (els.addModalAddVeiculoBtn) {
+    els.addModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('addModal');
+}
+if (els.addModalCancelVeiculoBtn) {
+    els.addModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('addModal');
+}
+if (els.addModalListaVeiculos) {
+    els.addModalListaVeiculos.addEventListener('click', (e) => {
+        if (e.target.classList.contains('edit-veiculo-btn')) {
+            iniciarEdicaoVeiculo(e.target.dataset.key, 'addModal');
+        } else if (e.target.classList.contains('remove-veiculo-btn')) {
+            removerVeiculoTemp(e.target.dataset.key, els.addModalListaVeiculos);
+        }
+    });
+}
+
+// Modais Veículos (EDIT)
+if (els.editModalAddVeiculoBtn) {
+    els.editModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('editModal');
+}
+if (els.editModalCancelVeiculoBtn) {
+    els.editModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('editModal');
+}
+if (els.editModalListaVeiculos) {
+    els.editModalListaVeiculos.addEventListener('click', (e) => {
+        if (e.target.classList.contains('edit-veiculo-btn')) {
+            iniciarEdicaoVeiculo(e.target.dataset.key, 'editModal');
+        } else if (e.target.classList.contains('remove-veiculo-btn')) {
+            removerVeiculoTemp(e.target.dataset.key, els.editModalListaVeiculos);
+        }
+    });
+}
