@@ -1,12 +1,12 @@
 /* ===============================================
-  FIREBASE.JS
-  Inicialização e exportação dos módulos do Firebase.
+  FIREBASE.JS (Com a inicialização correta)
+  
+  VERSÃO SEM PASTAS
 ===============================================
 */
 
-// Importa as funções necessárias dos SDKs
-// (Versão 9.6.10 para compatibilidade com o formato de importação atual)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+// --- 1. Importações do SDK do Firebase ---
+import { initializeApp } from "firebase/app";
 import { 
     getAuth, 
     onAuthStateChanged, 
@@ -15,47 +15,45 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     updateProfile 
-} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+} from "firebase/auth";
 import { 
     getDatabase, 
     ref, 
     set, 
     get, 
     onValue, 
+    push, 
+    remove, 
     query, 
     orderByChild, 
     equalTo, 
-    remove, 
-    push, 
     update 
-} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+} from "firebase/database";
 
-// ===============================================
-// ⬇️ SUAS CONFIGURAÇÕES DO FIREBASE INSERIDAS ⬇️
-// ===============================================
+// --- 2. Sua Configuração do Projeto (CORRIGIDA) ---
+// Estas são as suas credenciais que resolvem o erro "auth/configuration-not-found"
 const firebaseConfig = {
-  apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs",
-  authDomain: "hells-teste.firebaseapp.com",
-  databaseURL: "https://hells-teste-default-rtdb.firebaseio.com",
-  projectId: "hells-teste",
-  storageBucket: "hells-teste.firebasestorage.app",
-  messagingSenderId: "777418420603",
-  appId: "1:777418420603:web:0e33ad25caa12079564dde",
-  // measurementId é opcional para este propósito e pode ser omitido
+    apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs",
+    authDomain: "hells-teste.firebaseapp.com",
+    databaseURL: "https://hells-teste-default-rtdb.firebaseio.com",
+    projectId: "hells-teste",
+    storageBucket: "hells-teste.firebasestorage.app",
+    messagingSenderId: "777418420603",
+    appId: "1:777418420603:web:0e33ad25caa12079564dde",
+    measurementId: "G-1VL7C8FZL0"
 };
-// ===============================================
+
+// --- 3. Inicialização e Exportação de Serviços ---
 
 // Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializa e exporta os serviços do Firebase
-const auth = getAuth(app);
-const db = getDatabase(app);
+// Obtém e exporta os serviços
+export const auth = getAuth(app);
+export const db = getDatabase(app);
 
-// Exporta tudo que seus outros scripts precisam
-export { 
-    auth, 
-    db,
+// Exporta todas as funções de autenticação e Realtime Database necessárias
+export {
     onAuthStateChanged, 
     signOut, 
     sendPasswordResetEmail, 
@@ -66,10 +64,10 @@ export {
     set, 
     get, 
     onValue, 
+    push, 
+    remove, 
     query, 
     orderByChild, 
-    equalTo, 
-    remove, 
-    push, 
+    equalTo,
     update
 };
