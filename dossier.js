@@ -5,6 +5,9 @@
 ===============================================
 */
 
+// ⭐️ CORREÇÃO: Importar a biblioteca SortableJS (Drag-and-Drop)
+import Sortable from 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/modular/sortable.esm.js';
+
 // --- Imports (CAMINHOS CORRIGIDOS)
 import { els } from './dom.js';
 import { db, ref, set, push, onValue, remove, get, query, orderByChild, equalTo, update } from './firebase.js';
@@ -278,7 +281,7 @@ const initSortable = (orgName, currentUserData) => {
     
     sortableInstance = new Sortable(els.dossierPeopleGrid, {
         animation: 150,
-        handle: '.drag-handle-icon', // <-- CORREÇÃO: Mantido
+        handle: '.drag-handle-icon', 
         disabled: !canDrag, 
         ghostClass: 'sortable-ghost', 
         onEnd: () => saveHierarchyOrder(orgName)
@@ -315,7 +318,7 @@ const initOrgSortable = (currentUserData) => {
     
     orgSortableInstance = new Sortable(els.dossierOrgGrid, {
         animation: 150,
-        handle: '.drag-handle-icon', // <-- CORREÇÃO: Mantido
+        handle: '.drag-handle-icon', 
         group: 'orgs', 
         disabled: !canDrag, 
         ghostClass: 'sortable-ghost',
@@ -374,7 +377,6 @@ const displayOrgs = (orgs) => {
         card.className = 'dossier-org-card';
         card.dataset.orgName = org.nome;
         
-        // ⭐️ CORREÇÃO: Adiciona o ícone via DOM
         card.appendChild(createDragHandle('org-drag-handle'));
         
         const fotoDiv = document.createElement('div');
@@ -389,10 +391,8 @@ const displayOrgs = (orgs) => {
             fotoDiv.textContent = 'Sem Foto da Base';
         }
         
-        // ⭐️ CORREÇÃO: Adiciona a foto via DOM
         card.appendChild(fotoDiv);
         
-        // ⭐️ CORREÇÃO: Usa innerHTML apenas para o conteúdo restante
         card.innerHTML += `
             <h4>${org.nome}</h4>
             <p>${org.info || '(Sem informações da base)'}</p>
@@ -405,7 +405,6 @@ const displayOrgs = (orgs) => {
     });
 };
 
-// ⭐️ CORREÇÃO: Aceita currentUserData
 const displayGlobalSearchResults = (orgs, people, currentUserData) => {
     els.dossierOrgGrid.innerHTML = ''; 
     if (orgs.length === 0 && people.length === 0) {
@@ -421,7 +420,6 @@ const displayGlobalSearchResults = (orgs, people, currentUserData) => {
             card.dataset.orgName = org.nome;
             card.style.cursor = 'pointer'; 
             
-            // ⭐️ CORREÇÃO: Adiciona o ícone via DOM
             card.appendChild(createDragHandle('org-drag-handle'));
             
             const fotoDiv = document.createElement('div');
@@ -435,10 +433,8 @@ const displayGlobalSearchResults = (orgs, people, currentUserData) => {
             } else {
                 fotoDiv.textContent = 'Sem Foto da Base';
             }
-            // ⭐️ CORREÇÃO: Adiciona a foto via DOM
             card.appendChild(fotoDiv);
             
-            // ⭐️ CORREÇÃO: Usa innerHTML apenas para o conteúdo restante
             card.innerHTML += `
                 <h4>${org.nome}</h4>
                 <p>${org.info || '(Sem informações da base)'}</p>
@@ -458,14 +454,12 @@ const displayGlobalSearchResults = (orgs, people, currentUserData) => {
             card.dataset.id = entry.id; 
             card.style.cursor = 'default'; 
             
-            // ⭐️ CORREÇÃO: Adiciona o ícone via DOM
             card.appendChild(createDragHandle('people-drag-handle'));
             
             const baseLink = document.createElement('a'); 
             baseLink.href = '#';
             baseLink.textContent = `Base: ${entry.org}`;
             baseLink.className = 'dossier-base-link'; 
-            // ⭐️ CORREÇÃO: Passa currentUserData para o listener
             baseLink.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); showDossierPeople(entry.org, currentUserData); });
             card.appendChild(baseLink); 
 
@@ -482,7 +476,6 @@ const displayGlobalSearchResults = (orgs, people, currentUserData) => {
             }
             card.appendChild(fotoDiv);
 
-            // ⭐️ CORREÇÃO: Usa innerHTML para o conteúdo restante
             card.innerHTML += `
                 <h4>${entry.nome || '(Sem Nome)'}</h4>
                 <p>${entry.numero || '(Sem Número)'}</p>
@@ -507,7 +500,6 @@ const displayGlobalSearchResults = (orgs, people, currentUserData) => {
     }
 };
 
-// ⭐️ CORREÇÃO: Aceita currentUserData
 export const filterOrgs = async (currentUserData) => {
     const query = els.filtroDossierOrgs.value.toLowerCase().trim();
     if (!query) {
@@ -520,7 +512,6 @@ export const filterOrgs = async (currentUserData) => {
     const filteredOrgs = globalAllOrgs.filter(org => org.nome.toLowerCase().includes(query));
     const filteredPeople = await searchAllPeopleGlobal(query);
     
-    // ⭐️ CORREÇÃO: Passa currentUserData
     displayGlobalSearchResults(filteredOrgs, filteredPeople, currentUserData);
     
     if (orgSortableInstance) {
@@ -611,7 +602,6 @@ const displayPeople = (people) => {
         card.className = 'dossier-entry-card';
         card.dataset.id = entry.id; 
         
-        // ⭐️ CORREÇÃO: Adiciona o ícone via DOM
         card.appendChild(createDragHandle('people-drag-handle'));
         
         const fotoDiv = document.createElement('div');
@@ -627,7 +617,6 @@ const displayPeople = (people) => {
         }
         card.appendChild(fotoDiv);
         
-        // ⭐️ CORREÇÃO: Usa innerHTML para o conteúdo restante
         card.innerHTML += `
             <h4>${entry.nome || '(Sem Nome)'}</h4>
             <p>${entry.numero || '(Sem Número)'}</p>
