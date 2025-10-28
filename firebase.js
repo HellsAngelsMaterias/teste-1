@@ -51,7 +51,6 @@ export const auth = getAuth(app);
 export const db = getDatabase(app);
 
 // Exporta todas as funções do SDK que você usa nos outros arquivos
-// (Isso funciona porque elas foram importadas acima)
 export { 
     onAuthStateChanged, 
     signOut, 
