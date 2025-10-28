@@ -5,7 +5,7 @@
 */
 
 // Importa as funções necessárias dos SDKs
-// (Estou usando as URLs de CDN, pois você não tem um package.json)
+// (Versão 9.6.10 para compatibilidade com o formato de importação atual)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import { 
     getAuth, 
@@ -31,18 +31,17 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 
 // ===============================================
-// ⬇️ COLE SUAS CONFIGURAÇÕES DO FIREBASE AQUI ⬇️
-// (Você encontra isso no Painel do Firebase > Configurações do Projeto)
+// ⬇️ SUAS CONFIGURAÇÕES DO FIREBASE INSERIDAS ⬇️
 // ===============================================
 const firebaseConfig = {
- apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs",
+  apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs",
   authDomain: "hells-teste.firebaseapp.com",
   databaseURL: "https://hells-teste-default-rtdb.firebaseio.com",
   projectId: "hells-teste",
   storageBucket: "hells-teste.firebasestorage.app",
   messagingSenderId: "777418420603",
   appId: "1:777418420603:web:0e33ad25caa12079564dde",
-  measurementId: "G-1VL7C8FZL0"
+  // measurementId é opcional para este propósito e pode ser omitido
 };
 // ===============================================
 
@@ -53,7 +52,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-// Exporta tudo que seus outros scripts (script.js, admin.js, sales.js, etc.) precisam
+// Exporta tudo que seus outros scripts precisam
 export { 
     auth, 
     db,
