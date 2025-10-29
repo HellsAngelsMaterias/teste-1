@@ -4,14 +4,15 @@
 ===============================================
 */
 
-// --- Imports (CAMINHOS CORRIGIDOS)
+// --- Imports
 import { els } from './dom.js';
 import { db, ref, set, push, remove } from './firebase.js';
 import { perUnit, valores, valorDescricao } from './constantes.js';
 import { getQty, formatCurrency, capitalizeText, showToast, toggleView, copyToClipboard } from './helpers.js';
 import { addDossierEntry, updateDossierEntryOnEdit, findDossierEntryGlobal } from './dossier.js';
 
-// --- Estado Interno do Módulo
+// --- Estado Interno do Módulo (Gerenciado pelo script.js)
+// Estas variáveis são definidas no script.js e passadas para as funções
 let vendas = [];
 let vendaEmEdicaoId = null;
 let vendaOriginalRegistradoPor = null;
@@ -26,9 +27,36 @@ let vendaOriginalOrganizacao = null;
 export const setVendas = (newVendas) => {
     vendas = newVendas;
 };
-
 export const setVendaEmEdicao = (id) => {
     vendaEmEdicaoId = id;
+};
+export const setVendaOriginal = (data) => {
+    if (!data) {
+        vendaEmEdicaoId = null;
+        vendaOriginalRegistradoPor = null;
+        vendaOriginalRegistradoPorId = null;
+        vendaOriginalTimestamp = null;
+        vendaOriginalDataHora = null;
+        vendaOriginalDossierOrg = null; 
+        vendaOriginalCliente = null;
+        vendaOriginalOrganizacao = null;
+    } else {
+        vendaEmEdicaoId = data.id;
+        vendaOriginalRegistradoPor = data.registradoPor;
+        vendaOriginalRegistradoPorId = data.registradoPorId;
+        vendaOriginalTimestamp = data.timestamp;
+        vendaOriginalDataHora = data.dataHora;
+        vendaOriginalCliente = data.cliente;
+        vendaOriginalOrganizacao = data.organizacao;
+        
+        if (data.organizacaoTipo === 'CPF') {
+            vendaOriginalDossierOrg = 'CPF';
+        } else if (data.organizacaoTipo === 'OUTROS') {
+            vendaOriginalDossierOrg = 'Outros';
+        } else {
+            vendaOriginalDossierOrg = data.organizacao;
+        }
+    }
 };
 
 // --- Funções Principais
@@ -98,14 +126,7 @@ export const clearAllFields = () => {
   document.querySelectorAll('.input-invalido').forEach(input => input.classList.remove('input-invalido'));
   
   if (vendaEmEdicaoId) {
-    vendaEmEdicaoId = null;
-    vendaOriginalRegistradoPor = null;
-    vendaOriginalRegistradoPorId = null;
-    vendaOriginalTimestamp = null;
-    vendaOriginalDataHora = null;
-    vendaOriginalCliente = null; 
-    vendaOriginalOrganizacao = null; 
-    vendaOriginalDossierOrg = null; 
+    setVendaOriginal(null); // Limpa o estado de edição
     els.registerBtn.textContent = 'Registrar Venda';
   }
 };
@@ -138,7 +159,7 @@ const validateFields = () => {
     return isValid;
 };
 
-export const registerVenda = async (currentUser, currentUserData) => {
+export const registerVenda = async (currentUser) => {
   const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
   if (!hasQuantities) {
     showToast("É necessário calcular a venda antes de registrar.", "error");
@@ -174,28 +195,38 @@ export const registerVenda = async (currentUser, currentUserData) => {
     registradoPorId: vendaEmEdicaoId ? vendaOriginalRegistradoPorId : currentUser.uid 
   };
   
+  
   let dossierOrgDestino = '';
-  if (newVenda.organizacaoTipo === 'CPF') dossierOrgDestino = 'CPF';
-  else if (newVenda.organizacaoTipo === 'OUTROS') dossierOrgDestino = 'Outros';
-  else dossierOrgDestino = newVenda.organizacao.trim();
+  if (newVenda.organizacaoTipo === 'CPF') {
+      dossierOrgDestino = 'CPF';
+  } else if (newVenda.organizacaoTipo === 'OUTROS') {
+      dossierOrgDestino = 'Outros';
+  } else { 
+      dossierOrgDestino = newVenda.organizacao.trim();
+  }
   
   let dadosAntigosParaMover = null;
   
-  // Sincronização com Dossiê (Lógica de movimentação)
   if (!vendaEmEdicaoId && dossierOrgDestino !== '' && newVenda.cliente !== '') {
       try {
           const existingEntry = await findDossierEntryGlobal(newVenda.cliente);
+          
           if (existingEntry && existingEntry.oldOrg !== dossierOrgDestino) {
+              
               dadosAntigosParaMover = { ...existingEntry.personData };
+              
               await remove(ref(db, `dossies/${existingEntry.oldOrg}/${existingEntry.personId}`));
+              
               showToast(`"${newVenda.cliente}" movido de "${existingEntry.oldOrg}" para "${dossierOrgDestino}".`, "default", 4000);
           }
       } catch (e) {
-          if (e.code !== "PERMISSION_DENIED") showToast(`Erro ao verificar dossiê global: ${e.message}`, "error");
+          if (e.code !== "PERMISSION_DENIED") {
+              showToast(`Erro ao verificar dossiê global: ${e.message}`, "error");
+          }
       }
   }
+  
 
-  // Salva a Venda
   const operation = vendaEmEdicaoId ? set(ref(db, `vendas/${vendaEmEdicaoId}`), newVenda) : push(ref(db, 'vendas'), newVenda);
   
   operation
@@ -205,7 +236,6 @@ export const registerVenda = async (currentUser, currentUserData) => {
           const dossierVendaData = { ...newVenda }; 
           dossierVendaData.organizacao = dossierOrgDestino;
 
-          // Atualiza o Dossiê
           if (dossierOrgDestino !== '') {
               if (vendaEmEdicaoId) {
                   updateDossierEntryOnEdit(vendaOriginalCliente, vendaOriginalDossierOrg, dossierVendaData);
@@ -232,26 +262,17 @@ export const editVenda = (id) => {
     els.negociadoras.value = venda.negociadoras || '';
     els.vendaValorObs.value = venda.vendaValorObs || '';
     els.tipoValor.value = venda.tipoValor || 'limpo';
+    
     els.carroVeiculo.value = venda.carro || ''; 
     els.placaVeiculo.value = venda.placas || ''; 
+    
     els.qtyTickets.value = venda.qtyTickets || 0;
     els.qtyTablets.value = venda.qtyTablets || 0;
     els.qtyNitro.value = venda.qtyNitro || 0;
     
     calculate(); 
     
-    // Define o estado interno de edição
-    vendaEmEdicaoId = id;
-    vendaOriginalRegistradoPor = venda.registradoPor;
-    vendaOriginalRegistradoPorId = venda.registradoPorId;
-    vendaOriginalTimestamp = venda.timestamp;
-    vendaOriginalDataHora = venda.dataHora;
-    vendaOriginalCliente = venda.cliente;
-    vendaOriginalOrganizacao = venda.organizacao; 
-    
-    if (venda.organizacaoTipo === 'CPF') vendaOriginalDossierOrg = 'CPF';
-    else if (venda.organizacaoTipo === 'OUTROS') vendaOriginalDossierOrg = 'Outros';
-    else vendaOriginalDossierOrg = venda.organizacao;
+    setVendaOriginal({ id, ...venda }); // Configura o estado de edição
     
     els.registerBtn.textContent = 'Atualizar Venda';
     toggleView('main'); 
@@ -261,12 +282,14 @@ export const editVenda = (id) => {
 export const removeVenda = (id) => {
     if (confirm("Tem certeza que deseja remover esta venda?")) {
         remove(ref(db, `vendas/${id}`))
-            .then(() => showToast("Venda removida.", "success"))
-            .catch((error) => showToast(`Erro ao remover: ${error.message}`, "error"));
+            .then(() => {
+                showToast("Venda removida.", "success");
+            })
+            .catch((error) => {
+                showToast(`Erro ao remover: ${error.message}`, "error");
+            });
     }
 };
-
-// --- Funções de Histórico e Exportação ---
 
 const buildDiscordMessage = (vendaData) => {
     const { cliente, data, orgTipo, org, tel, produtos, valor, obs, negociadoras, cargo } = vendaData;
@@ -284,7 +307,7 @@ Negociadoras: ${negociadoras}
     `.trim();
 };
 
-export const copyDiscordMessage = (isFromHistory = false, venda = null, currentUserData) => {
+export const copyDiscordMessage = (isFromHistory = false, venda = null) => {
     let messageData;
     if (isFromHistory) {
         let produtos = [];
@@ -333,18 +356,16 @@ export const copyDiscordMessage = (isFromHistory = false, venda = null, currentU
 };
 
 export const displaySalesHistory = (history, currentUser, currentUserData) => {
-    const historyData = history || vendas;
-    
     els.salesHistory.innerHTML = '';
     if (!currentUserData) { 
          return;
     }
 
-    let vendasFiltradas = historyData;
+    let vendasFiltradas = history;
     const userTagUpper = currentUserData.tag.toUpperCase();
     
     if (userTagUpper === 'VISITANTE') {
-        vendasFiltradas = historyData.filter(v => v.registradoPorId === currentUser.uid);
+        vendasFiltradas = history.filter(v => v.registradoPorId === currentUser.uid);
     }
 
     if (vendasFiltradas.length === 0) {
@@ -401,12 +422,11 @@ export const displaySalesHistory = (history, currentUser, currentUserData) => {
             <button class="action-btn danger delete-btn" ${!podeModificar ? 'disabled' : ''}>Deletar</button>
             <button class="action-btn muted discord-btn">Discord</button>
         `;
-        
         if(podeModificar){
             actionsCell.querySelector('.edit-btn').onclick = () => editVenda(venda.id);
             actionsCell.querySelector('.delete-btn').onclick = () => removeVenda(venda.id);
         }
-        actionsCell.querySelector('.discord-btn').onclick = () => copyDiscordMessage(true, venda, currentUserData);
+        actionsCell.querySelector('.discord-btn').onclick = () => copyDiscordMessage(true, venda);
     });
 };
 
