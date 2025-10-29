@@ -5,7 +5,7 @@
 ===============================================
 */
 
-// --- 1. Imports (CAMINHOS CORRIGIDOS)
+// --- 1. Imports
 import { 
     auth, db, 
     onAuthStateChanged, signOut, sendPasswordResetEmail, 
@@ -38,25 +38,23 @@ import { els } from './dom.js';
 
 import { 
     showToast, toggleView, toggleTheme, updateLogoAndThemeButton, 
-    showNextTourStep, phoneMask, PREFIX, camposParaCapitalizar,
-    capitalizeText // ⭐️ CORREÇÃO: Importar capitalizeText
+    showNextTourStep, phoneMask, PREFIX, camposParaCapitalizar, clearTour
 } from './helpers.js'; 
 
 // --- 4. Estado Global Principal
 let currentUser = null;
 let currentUserData = null;
 let vendasListener = null;
-let scrollCleanup = null; // ⭐️ NOVO: Para gerenciar a limpeza do listener de scroll
+let scrollCleanup = null;
 
 // --- FUNÇÃO GLOBAL DE ATIVIDADE
 const setUserActivity = (activity) => {
-    // Verifica se currentUserData está definido para evitar crash
     if (currentUser && currentUserData) {
         updateUserActivity(currentUser, currentUserData, activity);
     }
 };
 
-// ⭐️ CORREÇÃO DE ESCOPO: Movida para o topo para garantir que esteja definida antes do onAuthStateChanged
+// --- FUNÇÕES DE INTERFACE
 const configurarInterfacePorTag = (tag) => {
   const tagUpper = tag ? tag.toUpperCase() : 'VISITANTE';
   
@@ -74,22 +72,20 @@ const configurarInterfacePorTag = (tag) => {
       }
   }
 
-  els.clearHistoryBtn.style.display = (tagUpper === 'ADMIN') ? 'inline-block' : 'none';
-  els.adminPanelBtn.style.display = (tagUpper === 'ADMIN') ? 'inline-block' : 'none';
-  els.investigacaoBtn.style.display = (tagUpper === 'ADMIN' || tagUpper === 'HELLS') ? 'block' : 'none';
+  if (els.clearHistoryBtn) els.clearHistoryBtn.style.display = (tagUpper === 'ADMIN') ? 'inline-block' : 'none';
+  if (els.adminPanelBtn) els.adminPanelBtn.style.display = (tagUpper === 'ADMIN') ? 'inline-block' : 'none';
+  if (els.investigacaoBtn) els.investigacaoBtn.style.display = (tagUpper === 'ADMIN' || tagUpper === 'HELLS') ? 'block' : 'none';
   
-  // ⭐️ Adicionando Toggle nos Checkboxes Admin (estavam faltando no script.js)
-  if(els.layoutToggleNightMode) els.layoutToggleNightMode.disabled = tagUpper !== 'ADMIN';
-  if(els.layoutToggleBottomPanel) els.layoutToggleBottomPanel.disabled = tagUpper !== 'ADMIN';
-  if(els.bottomPanelText) els.bottomPanelText.disabled = tagUpper !== 'ADMIN';
-  if(els.saveBottomPanelTextBtn) els.saveBottomPanelTextBtn.disabled = tagUpper !== 'ADMIN';
+  if (els.layoutToggleNightMode) els.layoutToggleNightMode.disabled = tagUpper !== 'ADMIN';
+  if (els.layoutToggleBottomPanel) els.layoutToggleBottomPanel.disabled = tagUpper !== 'ADMIN';
+  if (els.bottomPanelText) els.bottomPanelText.disabled = tagUpper !== 'ADMIN';
+  if (els.saveBottomPanelTextBtn) els.saveBottomPanelTextBtn.disabled = tagUpper !== 'ADMIN';
   
   if (tagUpper !== 'ADMIN') {
-      els.adminPanel.style.display = 'none';
+      if (els.adminPanel) els.adminPanel.style.display = 'none';
   }
 };
 
-// ⭐️ NOVO: Função para Sincronização de Scroll
 const setupHistoryScrollSync = () => {
     const scrollContainer = els.historyCard.querySelector('.history-table-wrapper');
     const topBar = els.topHistoryScrollbar;
@@ -104,13 +100,10 @@ const setupHistoryScrollSync = () => {
     let isScrolling = false;
 
     const syncScroll = (source, target) => {
-        if (!isScrolling) {
-            isScrolling = true;
-            target.scrollLeft = source.scrollLeft;
-            requestAnimationFrame(() => {
-                isScrolling = false;
-            });
-        }
+        if (isScrolling) return;
+        isScrolling = true;
+        target.scrollLeft = source.scrollLeft;
+        requestAnimationFrame(() => { isScrolling = false; });
     };
 
     const topScrollHandler = () => syncScroll(topBar, scrollContainer);
@@ -122,24 +115,18 @@ const setupHistoryScrollSync = () => {
     const recalculateWidth = () => {
         if (els.historyCard.style.display !== 'none') {
             const contentWidth = scrollContainer.scrollWidth; 
-            // A largura do conteúdo interno da barra de rolagem superior deve ser igual à largura do conteúdo da tabela
             innerContent.style.width = contentWidth + 'px'; 
-            // A largura visível da barra de rolagem deve ser igual à largura do wrapper da tabela
             topBar.style.width = scrollContainer.offsetWidth + 'px';
-            topBar.scrollLeft = scrollContainer.scrollLeft; // Sincroniza a posição inicial
+            topBar.scrollLeft = scrollContainer.scrollLeft; 
         }
     };
     
     recalculateWidth();
     
-    // 2. Re-sincronização no redimensionamento da janela
     window.addEventListener('resize', recalculateWidth);
-    
-    // 3. MutationObserver para pegar alterações no DOM (e.g., carregar dados)
     const observer = new MutationObserver(recalculateWidth);
     observer.observe(scrollContainer, { childList: true, subtree: true, attributes: true });
 
-    // Função de limpeza (cleanup)
     return () => {
         window.removeEventListener('resize', recalculateWidth);
         topBar.removeEventListener('scroll', topScrollHandler);
@@ -149,7 +136,6 @@ const setupHistoryScrollSync = () => {
     };
 };
 
-// Função de limpeza de scroll
 const cleanupScroll = () => {
     if (scrollCleanup) {
         scrollCleanup();
@@ -157,12 +143,11 @@ const cleanupScroll = () => {
     }
 };
 
-
 // ===============================================
 // INICIALIZAÇÃO E UI
 // ===============================================
 
-// Aplica o tema salvo no localStorage
+// Aplica o tema salvo
 const savedTheme = localStorage.getItem('theme') || 'light';
 if (savedTheme === 'dark') {
     document.body.classList.add('dark');
@@ -172,19 +157,20 @@ updateLogoAndThemeButton(savedTheme === 'dark');
 // Controla a tela de boas-vindas
 if (localStorage.getItem('hasVisited')) {
     els.welcomeScreen.style.display = 'none';
+    els.authScreen.style.display = 'block'; // Mostra o login
 } else {
     els.welcomeScreen.classList.add('show');
     els.authScreen.style.display = 'none';
     els.mainCard.style.display = 'none';
 }
 
-// ⭐️ CORREÇÃO: Aplica capitalização automática
+// Aplica capitalização automática
 camposParaCapitalizar.forEach(campo => {
   if (campo) {
-    // Mudar de 'input' para 'change' (dispara ao sair do campo)
-    campo.addEventListener('change', (e) => {
-      // Chama a função de capitalização
+    campo.addEventListener('input', (e) => {
+      const { selectionStart, selectionEnd } = e.target;
       e.target.value = capitalizeText(e.target.value); 
+      e.target.setSelectionRange(selectionStart, selectionEnd);
     });
   }
 });
@@ -204,52 +190,72 @@ camposTelefone.forEach(campo => {
 
 
 // ===============================================
-// LÓGICA DE AUTENTICAÇÃO
+// LÓGICA DE AUTENTICAÇÃO (CORRIGIDA)
 // ===============================================
 
-// ⭐️ CORREÇÃO: Funções de autenticação (placeholders)
-// (Adapte esta lógica se você já a tiver em outro lugar)
+// DOMÍNIO FICTÍCIO para permitir login por nome de usuário
+const AUTH_DOMAIN = '@hells.app';
+
+/**
+ * Lida com o login ou registro.
+ * Converte o nome de usuário em um email fictício.
+ */
 const handleAuthAction = async (isLogin, creds) => {
     const { username, password } = creds;
-    const email = `${username.toLowerCase().trim()}@hells.com`; // Exemplo de formatação de e-mail
-    els.authMessage.textContent = '';
+    if (!username || !password) {
+        els.authMessage.textContent = 'Preencha usuário e senha.';
+        return;
+    }
     
-    try {
-        if (isLogin) {
-            await signInWithEmailAndPassword(auth, email, password);
-            showToast(`Bem-vindo(a) de volta, ${username}!`, 'success');
-        } else {
-            // Registro
-            if (username.length < 3) {
-                 els.authMessage.textContent = 'Nome de usuário deve ter pelo menos 3 caracteres.';
-                 return;
-            }
+    const displayName = username.trim();
+    const email = `${displayName.toLowerCase()}${AUTH_DOMAIN}`;
+    els.authMessage.textContent = isLogin ? 'Autenticando...' : 'Registrando...';
+
+    // --- 1. Lógica de REGISTRO ---
+    if (!isLogin) {
+        try {
             if (password.length < 6) {
-                 els.authMessage.textContent = 'Senha deve ter pelo menos 6 caracteres.';
+                 els.authMessage.textContent = 'Senha muito fraca (mínimo 6 caracteres).';
                  return;
             }
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            await updateProfile(userCredential.user, { displayName: username });
             
-            // Salva no DB
+            // Atualiza o profile do Firebase Auth
+            await updateProfile(userCredential.user, { displayName: displayName });
+            
+            // Salva os dados no Realtime Database
             const userRef = ref(db, `usuarios/${userCredential.user.uid}`);
             await set(userRef, {
-                displayName: username,
-                email: email,
+                displayName: displayName,
+                email: email, // O email fictício
                 tag: 'Visitante' // Tag padrão
             });
-            showToast('Cadastro realizado com sucesso!', 'success');
+            
+            els.authMessage.textContent = 'Usuário registrado com sucesso! A fazer login...';
+            // O onAuthStateChanged vai tratar do login
+        } catch (error) {
+            if (error.code === 'auth/email-already-in-use') {
+                els.authMessage.textContent = 'Este nome de usuário já está em uso.';
+            } else {
+                console.error("Erro ao registrar:", error);
+                els.authMessage.textContent = `Erro ao registrar.`;
+            }
         }
+        return;
+    }
+
+    // --- 2. Lógica de LOGIN ---
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // Sucesso! O onAuthStateChanged vai tratar o resto.
+        els.authMessage.textContent = 'Sucesso! A entrar...';
     } catch (error) {
-        console.error("Erro de autenticação:", error.code, error.message);
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-            els.authMessage.textContent = 'Usuário ou senha inválidos.';
-        } else if (error.code === 'auth/email-already-in-use') {
-            els.authMessage.textContent = 'Este nome de usuário já está cadastrado.';
-        } else if (error.code === 'auth/invalid-email') {
-             els.authMessage.textContent = 'Nome de usuário inválido (não pode conter espaços ou caracteres especiais).';
+        console.error("Erro no login:", error.code);
+        // Esta é a mensagem que você vê na imagem
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            els.authMessage.textContent = 'Erro ao tentar autenticar.'; 
         } else {
-            els.authMessage.textContent = 'Erro ao tentar autenticar.';
+            els.authMessage.textContent = `Erro: ${error.code}`;
         }
     }
 };
@@ -262,23 +268,21 @@ const authAction = (isLogin) => {
 };
 
 const resetPassword = async () => {
-    const username = els.username.value.trim();
-    if (!username) {
-        els.authMessage.textContent = 'Digite seu nome de usuário para redefinir a senha.';
-        return;
-    }
-    const email = `${username.toLowerCase()}@hells.com`;
+    const username = prompt("Digite o seu NOME DE USUÁRIO (não o email) para redefinir a senha:");
+    if (!username) return;
+    
+    const email = `${username.toLowerCase().trim()}${AUTH_DOMAIN}`;
+    
     try {
         await sendPasswordResetEmail(auth, email);
-        showToast('E-mail de redefinição de senha enviado!', 'success');
-        els.authMessage.textContent = `Um link para redefinir sua senha foi enviado para o e-mail associado a "${username}".`;
+        showToast(`Email de redefinição enviado para ${email}. (Verifique seu Spam)`, "success", 5000);
     } catch (error) {
-        console.error("Erro ao redefinir senha:", error.code);
-         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
-             els.authMessage.textContent = 'Usuário não encontrado.';
-         } else {
-             els.authMessage.textContent = 'Erro ao enviar e-mail de redefinição.';
-         }
+        console.error("Erro ao redefinir senha:", error);
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+            showToast("Usuário não encontrado.", "error");
+        } else {
+            showToast("Erro ao tentar redefinir a senha.", "error");
+        }
     }
 };
 
@@ -292,18 +296,17 @@ onAuthStateChanged(auth, (user) => {
         // --- USUÁRIO LOGADO ---
         currentUser = user; 
         
-        // Inicia o rastreamento de atividade
         monitorOnlineStatus();
         
         const userRef = ref(db, `usuarios/${user.uid}`);
         
         onValue(userRef, (snapshot) => {
-            // 1. Define os dados do usuário
             if (snapshot.exists()) {
                 currentUserData = snapshot.val(); 
             } else {
+                // Caso raro: usuário autenticado mas sem registro no DB
                 const newUserProfile = {
-                    displayName: user.displayName, 
+                    displayName: user.displayName || 'Usuário', 
                     email: user.email,
                     tag: 'Visitante' 
                 };
@@ -311,39 +314,32 @@ onAuthStateChanged(auth, (user) => {
                 currentUserData = newUserProfile; 
             }
             
-            // 1a. Atualiza atividade com dados completos
             setUserActivity('Calculadora'); 
-            
-            // 2. Configura a UI baseada na TAG
             configurarInterfacePorTag(currentUserData.tag);
              
-            // 3. Remove listener de vendas antigo (se houver)
             if(vendasListener) vendasListener(); 
             
-            // 4. Define a query de vendas baseada na TAG
             let vendasRef;
             const userTagUpper = currentUserData.tag.toUpperCase();
+            
+            // Define a query de vendas
             if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
-                vendasRef = query(ref(db, 'vendas'), orderByChild('timestamp')); // ⭐️ ORDENADO PARA EVITAR ERRO DE INDEX
+                vendasRef = query(ref(db, 'vendas'), orderByChild('timestamp'));
             } else {
                 vendasRef = query(ref(db, 'vendas'), orderByChild('registradoPorId'), equalTo(currentUser.uid));
             }
 
-            // 5. Cria o novo listener de vendas
+            // Cria o novo listener de vendas
             vendasListener = onValue(vendasRef, (vendasSnapshot) => {
                 let vendas = [];
                 vendasSnapshot.forEach((child) => {
                     vendas.push({ id: child.key, ...child.val() });
                 });
                 
-                // Atualiza o módulo de Vendas com os novos dados
                 setVendas(vendas); 
                 
-                // Se a tela de histórico estiver aberta, atualiza ela
                 if (els.historyCard.style.display !== 'none') {
                     displaySalesHistory(vendas, currentUser, currentUserData);
-                    
-                    // ⭐️ NOVO: Re-sincroniza após o carregamento da tabela
                     if (scrollCleanup) scrollCleanup();
                     scrollCleanup = setupHistoryScrollSync();
                 }
@@ -360,7 +356,7 @@ onAuthStateChanged(auth, (user) => {
             configurarInterfacePorTag('Visitante'); 
         });
 
-        // 6. Libera a UI principal
+        // Libera a UI principal
         els.authScreen.style.display = 'none';
         toggleView('main');
 
@@ -369,9 +365,9 @@ onAuthStateChanged(auth, (user) => {
         currentUser = null;
         currentUserData = null;
         if (vendasListener) vendasListener(); 
-        setVendas([]); // Limpa as vendas no módulo
-        setVendaEmEdicao(null); // Reseta a edição
-        cleanupScroll(); // Limpa o scroll
+        setVendas([]); 
+        setVendaEmEdicao(null); 
+        cleanupScroll(); 
         
         els.authScreen.style.display = 'block';
         els.mainCard.style.display = 'none';
@@ -380,6 +376,10 @@ onAuthStateChanged(auth, (user) => {
         els.dossierCard.style.display = 'none';
         if(els.userStatus) els.userStatus.style.display = 'none';
         if(els.investigacaoBtn) els.investigacaoBtn.style.display = 'none';
+        
+        // Garante que a tela de boas-vindas não reapareça
+        localStorage.setItem('hasVisited', 'true');
+        els.welcomeScreen.style.display = 'none';
     }
 });
 
@@ -389,22 +389,22 @@ onAuthStateChanged(auth, (user) => {
 // ===============================================
 
 // --- UI Geral ---
+els.enterBtn.onclick = () => {
+    els.welcomeScreen.classList.add('hidden');
+    els.authScreen.style.display = 'block';
+    localStorage.setItem('hasVisited', 'true');
+    // Espera a transição CSS terminar antes de remover
+    setTimeout(() => { els.welcomeScreen.style.display = 'none'; }, 500); 
+};
 els.themeBtn.onclick = toggleTheme;
 els.tutorialBtn.onclick = showNextTourStep;
 els.logoLink.onclick = (e) => { e.preventDefault(); toggleView('main'); };
-els.enterBtn.onclick = () => {
-    els.welcomeScreen.classList.add('hidden');
-    localStorage.setItem('hasVisited', 'true');
-    setTimeout(() => {
-        els.welcomeScreen.style.display = 'none';
-    }, 500);
-};
-els.logoutBtn.onclick = () => signOut(auth);
 
-// --- ⭐️ CORREÇÃO: Listeners de Autenticação ---
+// --- Autenticação ---
 els.loginBtn.onclick = () => authAction(true);
 els.registerUserBtn.onclick = () => authAction(false);
-els.forgotPasswordLink.onclick = resetPassword;
+els.logoutBtn.onclick = () => signOut(auth);
+els.forgotPasswordLink.onclick = (e) => { e.preventDefault(); resetPassword(); };
 
 // --- Calculadora/Vendas (Módulo: sales.js) ---
 els.calcBtn.onclick = () => {
@@ -420,12 +420,11 @@ els.toggleHistoryBtn.onclick = () => {
     setUserActivity('Visualizando Histórico'); 
     toggleView('history');
     displaySalesHistory(null, currentUser, currentUserData); 
-    // A sincronização de scroll é ativada no onValue listener
 };
 els.toggleCalcBtn.onclick = () => {
     setUserActivity('Calculadora'); 
     toggleView('main');
-    cleanupScroll(); // ⭐️ Limpa o scroll ao sair
+    cleanupScroll(); 
 };
 els.clearHistoryBtn.onclick = () => clearHistory(currentUserData);
 els.csvBtn.onclick = exportToCsv;
@@ -437,14 +436,13 @@ els.nomeCliente.addEventListener('change', autoFillFromDossier);
 els.adminPanelBtn.onclick = () => {
     setUserActivity('Painel Admin'); 
     toggleView('admin');
-    cleanupScroll(); // ⭐️ Limpa o scroll
-    // ⭐️ CORREÇÃO: Passar currentUserData
-    loadAdminPanel(true, currentUser, currentUserData); 
+    cleanupScroll(); 
+    loadAdminPanel(true, {uid: currentUser.uid, userData: currentUserData}); 
 };
 els.toggleCalcBtnAdmin.onclick = () => {
     setUserActivity('Calculadora'); 
     toggleView('main');
-    cleanupScroll(); // ⭐️ Limpa o scroll
+    cleanupScroll(); 
 };
 els.saveBottomPanelTextBtn.onclick = () => {
     const newText = els.bottomPanelText.value.trim();
@@ -461,111 +459,83 @@ els.migrateVeiculosBtn.onclick = migrateVeiculosData;
 els.investigacaoBtn.onclick = () => {
     setUserActivity('Investigação (Bases)'); 
     toggleView('dossier');
-    cleanupScroll(); // ⭐️ Limpa o scroll
+    cleanupScroll(); 
     showDossierOrgs(currentUserData); 
 };
 els.toggleCalcBtnDossier.onclick = () => {
     setUserActivity('Calculadora'); 
     toggleView('main');
-    cleanupScroll(); // ⭐️ Limpa o scroll
+    cleanupScroll(); 
 };
 els.dossierVoltarBtn.onclick = () => {
-     setUserActivity('Investigação (Bases)'); 
-     showDossierOrgs(currentUserData);
+    setUserActivity('Investigação (Bases)');
+    showDossierOrgs(currentUserData);
 };
-els.addOrgBtn.onclick = openAddOrgModal;
-els.addPessoaBtn.onclick = (e) => {
-    const orgName = e.target.dataset.orgName;
-    if(orgName) openAddDossierModal(orgName);
-};
-
-// --- ⭐️ CORREÇÃO: Listener do Filtro do Dossiê ---
-els.filtroDossierOrgs.addEventListener('input', () => {
-    filterOrgs(currentUserData); // Passar currentUserData
-});
+els.filtroDossierOrgs.addEventListener('input', () => filterOrgs(currentUserData));
 els.filtroDossierPeople.addEventListener('input', filterPeople);
 
-// Listeners de Evento (Delegação)
-document.body.addEventListener('click', (e) => {
-    // Modais Dossiê
-    if (e.target.classList.contains('edit-org-btn')) {
-        openEditOrgModal(e.target.dataset.orgId);
-    }
-    if (e.target.classList.contains('edit-dossier-btn')) {
-        openEditDossierModal(e.target.dataset.org, e.target.dataset.id);
-    }
-    if (e.target.classList.contains('delete-dossier-btn')) {
-        removeDossierEntry(e.target.dataset.org, e.target.dataset.id, currentUserData);
-    }
-    if (e.target.id === 'cancelDossierBtn' || e.target.id === 'editDossierOverlay') {
-        closeEditDossierModal();
-    }
-    if (e.target.id === 'cancelNewDossierBtn' || e.target.id === 'addDossierOverlay') {
-        closeAddDossierModal();
-    }
-    if (e.target.id === 'cancelOrgBtn' || e.target.id === 'orgModalOverlay') {
-        closeOrgModal();
-    }
-    if (e.target.id === 'imageLightboxOverlay' || e.target.id === 'imageLightboxModal') {
-        closeImageLightbox();
-    }
-    if (e.target.classList.contains('veiculo-foto-link')) {
-        e.preventDefault();
-        showImageLightbox(e.target.dataset.url);
-    }
-    
-    // Gerenciador de Veículos (Modal de Edição)
-    if (e.target.id === 'editModalAddVeiculoBtn') {
-        adicionarOuAtualizarVeiculoTemp('editModal');
-    }
-    if (e.target.id === 'editModalCancelVeiculoBtn') {
-        cancelarEdicaoVeiculo('editModal');
-    }
-    if (e.target.classList.contains('edit-veiculo-btn') && e.closest('#editModalListaVeiculos')) {
-        iniciarEdicaoVeiculo(e.target.dataset.key, 'editModal');
-    }
-    if (e.target.classList.contains('remove-veiculo-btn') && e.closest('#editModalListaVeiculos')) {
-        removerVeiculoTemp(e.target.dataset.key, els.editModalListaVeiculos);
-    }
+// Modais Dossiê (Pessoas)
+els.addPessoaBtn.onclick = (e) => openAddDossierModal(e.target.dataset.orgName);
+els.saveNewDossierBtn.onclick = () => saveNewDossierEntry(currentUserData);
+els.cancelNewDossierBtn.onclick = closeAddDossierModal;
+els.addDossierOverlay.onclick = closeAddDossierModal;
+els.saveDossierBtn.onclick = () => saveDossierChanges(currentUserData);
+els.cancelDossierBtn.onclick = closeEditDossierModal;
+els.editDossierOverlay.onclick = closeEditDossierModal;
 
-    // Gerenciador de Veículos (Modal de Adição)
+// Modais Dossiê (Organizações)
+els.addOrgBtn.onclick = openAddOrgModal;
+els.saveOrgBtn.onclick = () => saveOrg(currentUserData);
+els.deleteOrgBtn.onclick = () => deleteOrg(currentUserData);
+els.cancelOrgBtn.onclick = closeOrgModal;
+els.orgModalOverlay.onclick = closeOrgModal;
+
+// Lightbox
+els.imageLightboxOverlay.onclick = closeImageLightbox;
+els.imageLightboxModal.onclick = closeImageLightbox;
+
+// Handlers de clique (para botões dinâmicos)
+document.addEventListener('click', (e) => {
+    // Botões de Veículo (Modal Adicionar)
     if (e.target.id === 'addModalAddVeiculoBtn') {
         adicionarOuAtualizarVeiculoTemp('addModal');
-    }
-    if (e.target.id === 'addModalCancelVeiculoBtn') {
+    } else if (e.target.id === 'addModalCancelVeiculoBtn') {
         cancelarEdicaoVeiculo('addModal');
-    }
-    if (e.target.classList.contains('edit-veiculo-btn') && e.closest('#addModalListaVeiculos')) {
+    } else if (e.target.matches('#addModalListaVeiculos .edit-veiculo-btn')) {
         iniciarEdicaoVeiculo(e.target.dataset.key, 'addModal');
-    }
-    if (e.target.classList.contains('remove-veiculo-btn') && e.closest('#addModalListaVeiculos')) {
+    } else if (e.target.matches('#addModalListaVeiculos .remove-veiculo-btn')) {
         removerVeiculoTemp(e.target.dataset.key, els.addModalListaVeiculos);
     }
     
-    // Botões de Salvar Modais
-    if (e.target.id === 'saveDossierBtn') {
-        saveDossierChanges(currentUserData);
-    }
-    if (e.target.id === 'saveNewDossierBtn') {
-        saveNewDossierEntry(currentUserData);
-    }
-    if (e.target.id === 'saveOrgBtn') {
-        saveOrg(currentUserData);
-    }
-    if (e.target.id === 'deleteOrgBtn') {
-        deleteOrg(currentUserData);
+    // Botões de Veículo (Modal Editar)
+    else if (e.target.id === 'editModalAddVeiculoBtn') {
+        adicionarOuAtualizarVeiculoTemp('editModal');
+    } else if (e.target.id === 'editModalCancelVeiculoBtn') {
+        cancelarEdicaoVeiculo('editModal');
+    } else if (e.target.matches('#editModalListaVeiculos .edit-veiculo-btn')) {
+        iniciarEdicaoVeiculo(e.target.dataset.key, 'editModal');
+    } else if (e.target.matches('#editModalListaVeiculos .remove-veiculo-btn')) {
+        removerVeiculoTemp(e.target.dataset.key, els.editModalListaVeiculos);
     }
 
-    // Clique na Base (Organização)
-    if (e.target.closest('.dossier-org-card')) {
-        // Assegura que o clique não foi num botão ou link
-        if (!e.target.closest('button') && !e.target.closest('a') && !e.target.closest('.drag-handle-icon')) {
-             const card = e.target.closest('.dossier-org-card');
-             const orgName = card.dataset.orgName;
-             if(orgName) {
-                setUserActivity(`Investigação (Membros ${orgName})`); 
-                showDossierPeople(orgName, currentUserData);
-             }
+    // Botões dos Cards (Pessoas)
+    else if (e.target.matches('.edit-dossier-btn')) {
+        openEditDossierModal(e.target.dataset.org, e.target.dataset.id);
+    } else if (e.target.matches('.delete-dossier-btn')) {
+        removeDossierEntry(e.target.dataset.org, e.target.dataset.id, currentUserData);
+    } else if (e.target.matches('.veiculo-foto-link')) {
+        e.preventDefault();
+        closeImageLightbox(e.target.dataset.url); // Note: Esta função não usa o argumento, mas chama a global
+    }
+    
+    // Botões dos Cards (Organizações)
+    else if (e.target.matches('.dossier-org-card h4') || e.target.matches('.dossier-org-card p')) {
+        const orgName = e.target.closest('.dossier-org-card').dataset.orgName;
+        if(orgName) {
+            setUserActivity(`Investigação (${orgName})`);
+            showDossierPeople(orgName, currentUserData);
         }
+    } else if (e.target.matches('.edit-org-btn')) {
+        openEditOrgModal(e.target.dataset.orgId);
     }
 });
