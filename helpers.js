@@ -1,12 +1,9 @@
 /* ===============================================
   HELPERS.JS
   Funções utilitárias (formatação, UI, etc).
-  
-  VERSÃO SEM PASTAS
 ===============================================
 */
 
-// --- Imports (CAMINHOS CORRIGIDOS)
 import { els } from './dom.js';
 import { 
     logoLightModeSrc, logoDarkModeSrc, welcomeLogoSrc, 
@@ -14,7 +11,6 @@ import {
 } from './constantes.js';
 
 // --- Formatação de Texto e Números ---
-
 export const formatCurrency = (value) => {
   if (typeof value !== 'number' || isNaN(value)) { return 'R$ 0'; }
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -30,6 +26,18 @@ export const capitalizeText = (text) => {
     return text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 };
 
+// --- Máscara de Telefone ---
+export const PREFIX = "(055) ";
+export const phoneMask = (value) => {
+    let digits = value.replace(/\D/g, ""); 
+    if (digits.startsWith("055")) { digits = digits.substring(3); }
+    digits = digits.substring(0, 6); 
+    let formattedNumber = digits.length > 3 ? `${digits.substring(0, 3)}-${digits.substring(3)}` : digits;
+    return PREFIX + formattedNumber;
+};
+
+// Exporta os campos para o script.js principal adicionar os listeners
+export const camposTelefone = [els.telefone, els.editDossierNumero, els.addDossierNumero];
 export const camposParaCapitalizar = [ 
     els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs, 
     els.carroVeiculo, 
@@ -39,23 +47,23 @@ export const camposParaCapitalizar = [
     els.addModalCarroNome, els.editModalCarroNome 
 ];
 
-// --- Máscara de Telefone ---
-export const PREFIX = "(055) ";
 
-export const phoneMask = (value) => {
-    let digits = value.replace(/\D/g, ""); 
-    if (digits.startsWith("055")) { digits = digits.substring(3); }
-    digits = digits.substring(0, 6); 
-    let formattedNumber = digits.length > 3 ? `${digits.substring(0, 3)}-${digits.substring(3)}` : digits;
-    return PREFIX + formattedNumber;
+// --- Relógio ---
+export const atualizarRelogio = () => {
+    if (!els.dataVenda) return;
+    const agora = new Date();
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const ano = agora.getFullYear();
+    const horas = String(agora.getHours()).padStart(2, '0');
+    const minutos = String(agora.getMinutes()).padStart(2, '0');
+    els.dataVenda.value = `${dia}/${mes}/${ano} ${horas}:${minutos}`;
 };
 
 // --- Helpers de Input ---
-
 export const getQty = (element) => Math.max(0, parseInt(element.value) || 0);
 
 // --- Helpers de UI ---
-
 export const showToast = (message, type = 'default', duration = 3000) => {
   const toastContainer = document.getElementById('toast-container');
   const toast = document.createElement('div');
@@ -93,6 +101,7 @@ export const toggleView = (viewName) => {
         els.historyCard.style.display = 'block';
         els.historyImg.src = historyBackgroundSrc;
         els.filtroHistorico.value = ''; 
+        // A exibição do histórico é chamada pelo onValue em script.js
     } else if (viewName === 'admin') {
         els.adminPanel.style.display = 'block';
     } else if (viewName === 'dossier') {
@@ -102,23 +111,6 @@ export const toggleView = (viewName) => {
         els.mainCard.style.display = 'block';
     }
 };
-
-// --- Relógio ---
-const atualizarRelogio = () => {
-    const agora = new Date();
-    const dia = String(agora.getDate()).padStart(2, '0');
-    const mes = String(agora.getMonth() + 1).padStart(2, '0');
-    const ano = agora.getFullYear();
-    const horas = String(agora.getHours()).padStart(2, '0');
-    const minutos = String(agora.getMinutes()).padStart(2, '0');
-    els.dataVenda.value = `${dia}/${mes}/${ano} ${horas}:${minutos}`;
-};
-// Garante que o elemento existe antes de rodar
-if(els.dataVenda) {
-    atualizarRelogio();
-    setInterval(atualizarRelogio, 30000);
-}
-
 
 // --- Tema (Claro/Escuro) ---
 export const toggleTheme = () => {
@@ -179,7 +171,7 @@ export const showNextTourStep = () => {
     if(currentTooltip && currentTooltip.parentNode) document.body.removeChild(currentTooltip); 
     currentTooltip = document.createElement('div'); 
     currentTooltip.className = 'tour-tooltip'; 
-    currentTooltip.innerHTML = `<h4>${step.title}</h4><p>${step.content}</p><div><button class=\"tourNextBtn\">${currentStepIndex === tourSteps.length - 1 ? 'Finalizar' : 'Próximo'}</button><button class=\"tourSkipBtn\">Pular</button></div>`; 
+    currentTooltip.innerHTML = `<h4>${step.title}</h4><p>${step.content}</p><div><button class="tourNextBtn">${currentStepIndex === tourSteps.length - 1 ? 'Finalizar' : 'Próximo'}</button><button class="tourSkipBtn">Pular</button></div>`; 
     document.body.appendChild(currentTooltip); 
     const rect = targetElement.getBoundingClientRect(); 
     let top = rect.top < currentTooltip.offsetHeight + 20 ? rect.bottom + window.scrollY + 10 : rect.top + window.scrollY - currentTooltip.offsetHeight - 10; 
