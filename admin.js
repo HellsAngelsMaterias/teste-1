@@ -2,12 +2,15 @@
   ADMIN.JS
   Lógica do Painel Admin, Status Online,
   Controles Globais e Migrações.
+  
+  VERSÃO ADAPTADA
 ===============================================
 */
 
 // --- Imports (CAMINHOS CORRIGIDOS)
 import { els } from './dom.js';
-import { db, ref, set, onValue, remove, get, update } from './firebase.js';
+// ADICIONADO: Imports de funções do Firebase
+import { ref, set, onValue, remove, get, update } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 import { showToast } from './helpers.js';
 import { addDossierEntry } from './dossier.js'; // Dependência para migração
 
@@ -20,11 +23,8 @@ let globalUserList = [];
 // CONTROLES DE LAYOUT GLOBAL E MIGRAÇÃO
 // ===============================================
 
-const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
-const globalMigrationRef = ref(db, 'configuracoesGlobais/migracao');
-
-// Função para atualizar a UI dos botões de migração
-const updateMigrationUI = () => {
+// MODIFICADO: Aceita 'db'
+const updateMigrationUI = (db) => {
     const { migrateDossierBtn, migrateVeiculosBtn } = els;
     if (!migrateDossierBtn || !migrateVeiculosBtn) return;
     
@@ -43,6 +43,8 @@ const updateMigrationUI = () => {
         migrateDossierBtn.style.animation = 'pulse-glow 2s infinite ease-in-out';
         migrateDossierBtn.style.cursor = 'pointer';
         migrateDossierBtn.style.color = '#fff';
+        // Adiciona o listener que faltava
+        migrateDossierBtn.onclick = () => migrateVendasToDossier(db);
     }
 
     // Migração de Carros/Placas para Veículos
@@ -60,10 +62,14 @@ const updateMigrationUI = () => {
         migrateVeiculosBtn.style.animation = 'pulse-glow 2s infinite ease-in-out';
         migrateVeiculosBtn.style.cursor = 'pointer';
         migrateVeiculosBtn.style.color = '#fff';
+        // Adiciona o listener que faltava
+        migrateVeiculosBtn.onclick = () => migrateVeiculosData(db);
     }
 };
 
-const monitorMigrationStatus = () => {
+// MODIFICADO: Aceita 'db'
+export const monitorMigrationStatus = (db) => {
+    const globalMigrationRef = ref(db, 'configuracoesGlobais/migracao');
     onValue(globalMigrationRef, (snapshot) => {
         if (snapshot.exists()) {
             migrationStatus = { 
@@ -72,48 +78,52 @@ const monitorMigrationStatus = () => {
             };
         }
         if (els.migrateDossierBtn && els.migrateVeiculosBtn) { 
-            updateMigrationUI(); 
+            updateMigrationUI(db); // Passa 'db'
         }
     }, (error) => {
         if(error.code !== "PERMISSION_DENIED") console.error("Erro ao monitorar status de migração:", error);
     });
 };
-monitorMigrationStatus(); 
 
-// Listener de Layout
-onValue(globalLayoutRef, (snapshot) => {
-    if (!snapshot.exists()) {
-        console.warn("Nó /configuracoesGlobais/layout não encontrado.");
-        return;
-    }
-    const settings = snapshot.val();
-    
-    if (els.themeBtn) {
-        els.themeBtn.style.display = settings.enableNightMode ? 'block' : 'none';
-        if (!settings.enableNightMode && document.body.classList.contains('dark')) {
-            document.body.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
+// MODIFICADO: Aceita 'db'
+export const monitorGlobalLayout = (db) => {
+    const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
+    // Listener de Layout
+    onValue(globalLayoutRef, (snapshot) => {
+        if (!snapshot.exists()) {
+            console.warn("Nó /configuracoesGlobais/layout não encontrado.");
+            return;
         }
-    }
-    
-    if (els.bottomPanel) {
-        els.bottomPanel.style.display = settings.enableBottomPanel ? 'flex' : 'none';
-        els.bottomPanelDisplay.textContent = settings.bottomPanelText || 'Este é o painel inferior.'; 
-    }
-    
-    if (els.adminPanel.style.display !== 'none') {
-         if (els.bottomPanelText) els.bottomPanelText.value = settings.bottomPanelText || '';
-         if (els.layoutToggleNightMode) els.layoutToggleNightMode.checked = settings.enableNightMode;
-         if (els.layoutToggleBottomPanel) els.layoutToggleBottomPanel.checked = settings.enableBottomPanel;
-    }
+        const settings = snapshot.val();
+        
+        if (els.themeBtn) {
+            els.themeBtn.style.display = settings.enableNightMode ? 'block' : 'none';
+            if (!settings.enableNightMode && document.body.classList.contains('dark')) {
+                document.body.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        if (els.bottomPanel) {
+            els.bottomPanel.style.display = settings.enableBottomPanel ? 'flex' : 'none';
+            els.bottomPanelDisplay.textContent = settings.bottomPanelText || 'Este é o painel inferior.'; 
+        }
+        
+        if (els.adminPanel.style.display !== 'none') {
+             if (els.bottomPanelText) els.bottomPanelText.value = settings.bottomPanelText || '';
+             if (els.layoutToggleNightMode) els.layoutToggleNightMode.checked = settings.enableNightMode;
+             if (els.layoutToggleBottomPanel) els.layoutToggleBottomPanel.checked = settings.enableBottomPanel;
+        }
 
-}, (error) => {
-    if(error.code !== "PERMISSION_DENIED") {
-        showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
-    }
-});
+    }, (error) => {
+        if(error.code !== "PERMISSION_DENIED") {
+            showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
+        }
+    });
+};
 
-export const updateGlobalLayout = (key, value) => {
+// MODIFICADO: Aceita 'db'
+export const updateGlobalLayout = (key, value, db) => {
     const layoutRef = ref(db, `configuracoesGlobais/layout/${key}`);
     set(layoutRef, value)
         .catch((error) => {
@@ -125,18 +135,18 @@ export const updateGlobalLayout = (key, value) => {
 // STATUS ONLINE E GERENCIAMENTO DE USUÁRIOS
 // ===============================================
 
-// ⭐️ ATUALIZADA: Adicionado currentActivity
-export const updateUserActivity = (currentUser, currentUserData, currentActivity = 'Calculadora') => {
+// MODIFICADO: Aceita 'db'
+export const updateUserActivity = (currentUser, currentUserData, db, currentActivity = 'Calculadora') => {
     if (currentUser) {
         const activityRef = ref(db, `onlineStatus/${currentUser.uid}`);
         set(activityRef, {
             lastActive: Date.now(),
             displayName: currentUser.displayName,
             tag: currentUserData ? currentUserData.tag : 'N/A',
-            currentActivity: currentActivity // ⭐️ NOVO CAMPO
+            currentActivity: currentActivity
         }).catch(e => console.warn("Erro ao registrar atividade online:", e.message));
         
-        setTimeout(() => updateUserActivity(currentUser, currentUserData, currentActivity), 30000); 
+        // Removido o setTimeout recursivo, pois o script.js já faz isso
     }
 };
 
@@ -152,12 +162,14 @@ const formatInactivityTime = (inactivityMs) => {
     return `${hours} Horas e ${remainingMinutes} Minutos`;
 };
 
-// ⭐️ ATUALIZADA: Busca o campo currentActivity
-export const monitorOnlineStatus = () => {
+// MODIFICADO: Aceita 'db'
+export const monitorOnlineStatus = (db, currentUser) => {
     const statusRef = ref(db, 'onlineStatus');
     
     if (monitorOnlineStatus.listener) {
-        monitorOnlineStatus.listener();
+         // Esta é uma maneira simples de remover o listener antigo. 
+         // Uma abordagem mais robusta usaria a função 'off' do Firebase.
+         monitorOnlineStatus.listener = null; 
     }
     
     const listener = onValue(statusRef, (snapshot) => {
@@ -185,7 +197,7 @@ export const monitorOnlineStatus = () => {
         els.onlineUsersCount.textContent = activeCount.toString();
         
         if (els.adminPanel.style.display !== 'none') {
-            loadAdminPanel(false); // ⭐️ NOTA: Esta chamada não passa currentUser/Data, mas é só para refresh
+            loadAdminPanel(false, currentUser, db); // Passa 'db'
         }
 
     }, (error) => {
@@ -195,24 +207,24 @@ export const monitorOnlineStatus = () => {
     monitorOnlineStatus.listener = listener;
 };
 
-const deleteUser = (uid, displayName) => {
+// MODIFICADO: Aceita 'db'
+const deleteUser = (uid, displayName, db, currentUser) => {
     if (confirm(`ATENÇÃO:\n\nTem certeza que deseja apagar o usuário "${displayName}"?\n\nIsso removerá o registro dele do banco de dados (e suas permissões).\n\nIMPORTANTE: Para apagar o LOGIN dele permanentemente, você ainda precisará ir ao painel "Authentication" do Firebase.`)) {
         remove(ref(db, `usuarios/${uid}`))
             .then(() => {
                 remove(ref(db, `onlineStatus/${uid}`)); 
                 showToast(`Usuário "${displayName}" apagado do banco de dados.`, 'success');
-                loadAdminPanel(true); // ⭐️ NOTA: Esta chamada não passa currentUser/Data, mas é só para refresh
+                loadAdminPanel(true, currentUser, db); // Passa 'db' e 'currentUser'
             })
             .catch((error) => showToast(`Erro ao apagar usuário: ${error.message}`, 'error'));
     }
 };
 
-// ⭐️ ATUALIZADA: Assinatura e lógica de verificação
-export const loadAdminPanel = async (fetchStatus = true, currentUser, currentUserData) => {
+// MODIFICADO: Aceita 'db' e 'currentUser'
+export const loadAdminPanel = async (fetchStatus = true, currentUser, db) => {
     
     // 1. Verifica Acesso (Admin)
-    // ⭐️ CORREÇÃO: Usa currentUserData para verificar a tag
-    if (!currentUserData || currentUserData.tag.toUpperCase() !== 'ADMIN') {
+    if (!currentUser || !currentUser.uid || (currentUser.userData && currentUser.userData.tag.toUpperCase() !== 'ADMIN')) {
          els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Acesso negado. Apenas Administradores podem visualizar este painel.</td></tr>';
          return;
     }
@@ -273,10 +285,6 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser, currentUse
 
         els.adminUserListBody.innerHTML = '';
         
-        // ⭐️ NOTA: currentUser pode ser nulo em refreshes internos, 
-        // mas currentUserData (que vem da chamada principal) deve existir.
-        const currentUid = currentUser ? currentUser.uid : (currentUserData ? currentUserData.uid : null); 
-
         usersList.forEach(user => {
             const uid = user.uid;
             const userData = user;
@@ -312,7 +320,7 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser, currentUse
             
             const tagContainer = document.createElement('div');
             tagContainer.style.marginLeft = '20px';
-            if (currentUid && uid === currentUid) {
+            if (currentUser && uid === currentUser.uid) {
                 tagContainer.textContent = `👑 ${userData.tag} (Você)`;
                 tagContainer.style.fontWeight = '600';
             } else {
@@ -325,7 +333,7 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser, currentUse
                 `;
                 const select = tagContainer.querySelector('select');
                 select.value = userData.tag.toUpperCase() === 'HELLS' ? 'HELLS' : (userData.tag.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'Visitante');
-                select.onchange = (e) => updateUserTag(e.target.dataset.uid, e.target.value);
+                select.onchange = (e) => updateUserTag(e.target.dataset.uid, e.target.value, db); // Passa 'db'
             }
             mainCell.appendChild(tagContainer);
 
@@ -348,14 +356,14 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser, currentUse
             const actionsCell = row.insertCell();
             actionsCell.style.textAlign = 'center';
             actionsCell.style.verticalAlign = 'middle';
-            if (currentUid && uid === currentUid) {
+            if (currentUser && uid === currentUser.uid) {
                 actionsCell.textContent = '---';
             } else {
                 const deleteBtn = document.createElement('button');
                 deleteBtn.textContent = '❌';
                 deleteBtn.className = 'danger action-btn'; 
                 deleteBtn.style.cssText = 'padding: 5px 8px; font-size: 14px; line-height: 1;';
-                deleteBtn.onclick = () => deleteUser(uid, userData.displayName);
+                deleteBtn.onclick = () => deleteUser(uid, userData.displayName, db, currentUser); // Passa 'db' e 'currentUser'
                 actionsCell.appendChild(deleteBtn);
             }
         });
@@ -379,10 +387,11 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser, currentUse
         if(error.code !== "PERMISSION_DENIED") showToast(`Erro ao carregar configs de layout: ${error.message}`, 'error');
     }
     
-    updateMigrationUI();
+    updateMigrationUI(db); // Passa 'db'
 };
 
-const updateUserTag = (uid, newTag) => {
+// MODIFICADO: Aceita 'db'
+const updateUserTag = (uid, newTag, db) => {
     set(ref(db, `usuarios/${uid}/tag`), newTag)
         .then(() => showToast("Permissão do usuário atualizada!", 'success'))
         .catch((error) => showToast(`Erro ao atualizar tag: ${error.message}`, 'error'));
@@ -392,7 +401,8 @@ const updateUserTag = (uid, newTag) => {
 // AÇÕES DE MIGRAÇÃO
 // ===============================================
 
-export const migrateVendasToDossier = async () => {
+// MODIFICADO: Aceita 'db'
+export const migrateVendasToDossier = async (db) => {
     if (migrationStatus.dossierConcluida) {
          showToast("Migração de Dossiê já concluída!", "default");
          return;
@@ -434,7 +444,7 @@ export const migrateVendasToDossier = async () => {
                     carro: venda.carro,
                     placas: venda.placas
                 };
-                await addDossierEntry(vendaData, null); 
+                await addDossierEntry(vendaData, null, db); // Passa 'db'
                 count++;
             }
         }
@@ -450,11 +460,12 @@ export const migrateVendasToDossier = async () => {
         showToast(`Erro na migração de dossiê: ${error.message}`, "error");
         isSuccess = false;
     } finally {
-        updateMigrationUI();
+        updateMigrationUI(db); // Passa 'db'
     }
 };
 
-export const migrateVeiculosData = async () => {
+// MODIFICADO: Aceita 'db'
+export const migrateVeiculosData = async (db) => {
     if (migrationStatus.veiculosConcluida) {
          showToast("Migração de Veículos já concluída!", "default");
          return;
@@ -522,6 +533,6 @@ export const migrateVeiculosData = async () => {
         showToast(`Erro na migração de veículos: ${error.message}`, "error");
         isSuccess = false;
     } finally {
-        updateMigrationUI();
+        updateMigrationUI(db); // Passa 'db'
     }
 };
