@@ -1,71 +1,71 @@
 /* ===============================================
   FIREBASE.JS
-  Configuração e inicialização do Firebase.
+  Inicializa e exporta o Firebase.
 ===============================================
 */
 
-// Importar dos links CDN (URLs)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
 import { 
-    getAuth, 
-    onAuthStateChanged, 
-    signOut, 
-    sendPasswordResetEmail, 
-    signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword, 
-    updateProfile 
+  getAuth, 
+  sendPasswordResetEmail, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  updateProfile, 
+  onAuthStateChanged, 
+  signOut 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
 import { 
-    getDatabase, 
-    ref, 
-    set, 
-    get, 
-    onValue, 
-    push, 
-    remove, 
-    update, 
-    query, 
-    orderByChild, 
-    equalTo 
+  getDatabase, 
+  ref, 
+  set, 
+  push, 
+  onValue, 
+  remove, 
+  get, 
+  query, 
+  orderByChild, 
+  equalTo, 
+  update 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// Suas credenciais do Firebase
+// Sua configuração (extraída do seu script.js)
 const firebaseConfig = {
-  apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs", // ⚠️ Lembre-se de trocar esta chave se a tiver mudado!
-  authDomain: "hells-teste.firebaseapp.com",
-  databaseURL: "https://hells-teste-default-rtdb.firebaseio.com",
-  projectId: "hells-teste",
-  storageBucket: "hells-teste.firebasestorage.app",
-  messagingSenderId: "777418420603",
-  appId: "1:777418420603:web:0e33ad25caa12079564dde",
-  measurementId: "G-1VL7C8FZL0"
+  apiKey: "AIzaSyCPNd9INqIfqG1-rjaYAlz988RLDZvL528", 
+  authDomain: "hells-angels-438c2.firebaseapp.com",
+  databaseURL: "https://hells-angels-438c2-default-rtdb.firebaseio.com/",
+  projectId: "hells-angels-438c2",
+  storageBucket: "hells-angels-438c2.firebasestorage.app",
+  messagingSenderId: "429406215315",
+  appId: "1:429406215315:web:96b68b172247824b308166",
+  measurementId: "G-CR415MEY32"
 };
 
-// Inicializa o Firebase
+// Inicializa e exporta os serviços
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 
-// Exporta os serviços que você precisa
-export const auth = getAuth(app);
-export const db = getDatabase(app);
-
-// Exporta todas as funções do SDK
+// Exporta os serviços e todas as funções que os módulos usarão
 export { 
-    onAuthStateChanged, 
-    signOut, 
-    sendPasswordResetEmail, 
-    signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword, 
-    updateProfile,
-    ref, 
-    set, 
-    get, 
-    onValue, 
-    push, 
-    remove, 
-    update, 
-    query, 
-    orderByChild, 
-    equalTo 
+  app, 
+  auth, 
+  db,
+  // Funções de Autenticação
+  sendPasswordResetEmail, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  updateProfile, 
+  onAuthStateChanged, 
+  signOut,
+  // Funções do Realtime Database
+  ref, 
+  set, 
+  push, 
+  onValue, 
+  remove, 
+  get, 
+  query, 
+  orderByChild, 
+  equalTo, 
+  update 
 };
