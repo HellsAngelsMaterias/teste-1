@@ -6,7 +6,6 @@
 */
 
 // --- 1. Imports
-// ⭐️ CORREÇÃO: Removido 'orderByValue' e 'orderByChild' duplicado.
 import { 
     auth, db, 
     onAuthStateChanged, signOut, sendPasswordResetEmail, 
@@ -14,6 +13,7 @@ import {
     ref, set, get, onValue, query, orderByChild, equalTo 
 } from './firebase.js'; 
 
+import { els } from './dom.js';
 import { 
     logoLightModeSrc, logoDarkModeSrc, welcomeLogoSrc, 
     historyBackgroundSrc 
@@ -44,7 +44,7 @@ import {
 import { 
     showToast, toggleView, toggleTheme, updateLogoAndThemeButton, 
     showNextTourStep, clearTour, phoneMask, PREFIX, camposTelefone, 
-    camposParaCapitalizar, capitalizeText, atualizarRelogio, els
+    camposParaCapitalizar, capitalizeText, atualizarRelogio
 } from './helpers.js';
 
 // --- 2. Estado Global do Aplicativo
@@ -82,7 +82,7 @@ const handleAuthAction = (isLogin, creds) => {
                         const newUserProfile = { 
                             displayName: displayName,
                             email: user.email,
-                            tag: 'Visitante' 
+                            tag: 'Visitante'
                         };
                         return set(userRef, newUserProfile); 
                     });
@@ -170,18 +170,13 @@ onAuthStateChanged(auth, (user) => {
             if (snapshot.exists()) {
                 currentUserData = snapshot.val(); 
             } else {
-                // Cria o perfil inicial se não existir (primeiro login)
-                const newUserProfile = { 
-                    displayName: user.displayName, 
-                    email: user.email, 
-                    tag: 'Visitante' 
-                };
+                const newUserProfile = { displayName: user.displayName, email: user.email, tag: 'Visitante' };
                 set(userRef, newUserProfile);
                 currentUserData = newUserProfile; 
             }
             
             configurarInterfacePorTag(currentUserData.tag);
-            updateUserActivity(currentUser, currentUserData, currentActivity); 
+            updateUserActivity(currentUser, currentUserData, currentActivity); // Atualiza imediatamente com a tag
              
             if(vendasListener) vendasListener(); // Remove o listener antigo
             
@@ -193,21 +188,19 @@ onAuthStateChanged(auth, (user) => {
             } else {
                 vendasRef = query(ref(db, 'vendas'), orderByChild('registradoPorId'), equalTo(currentUser.uid));
             }
-            
+
             vendasListener = onValue(vendasRef, (vendasSnapshot) => {
                 vendas = [];
                 vendasSnapshot.forEach((child) => {
                     vendas.push({ id: child.key, ...child.val() });
                 });
-                setVendas(vendas); 
-                
+                setVendas(vendas); // Envia os dados para o módulo sales.js
                 if (els.historyCard.style.display !== 'none') {
                     displaySalesHistory(vendas, currentUser, currentUserData);
                 }
             }, (error) => {
-                if(error.code !== "PERMISSION_DENIED") showToast("Erro de permissão ao carregar histórico. Verifique as regras.", "error");
+                if(error.code !== "PERMISSION_DENIED") showToast("Erro de permissão ao carregar histórico.", "error");
             });
-            
         }, (error) => {
             showToast("Erro fatal ao ler permissões do usuário.", "error");
             configurarInterfacePorTag('Visitante'); 
@@ -220,7 +213,6 @@ onAuthStateChanged(auth, (user) => {
         // --- Logout ---
         currentUser = null;
         currentUserData = null;
-        setVendaOriginal(null);
         if (vendasListener) vendasListener(); 
         vendas = []; 
         setVendas(vendas);
@@ -301,9 +293,9 @@ els.addOrgBtn.onclick = openAddOrgModal;
 els.dossierOrgGrid.addEventListener('click', (e) => {
     const orgCard = e.target.closest('.dossier-org-card');
     const editOrgBtn = e.target.closest('.edit-org-btn');
-    const editBtn = e.target.closest('.edit-dossier-btn'); 
-    const deleteBtn = e.target.closest('.delete-dossier-btn'); 
-    const fotoLinkBtn = e.target.closest('.veiculo-foto-link'); 
+    const editBtn = e.target.closest('.edit-dossier-btn'); // Para resultados de busca
+    const deleteBtn = e.target.closest('.delete-dossier-btn'); // Para resultados de busca
+    const fotoLinkBtn = e.target.closest('.veiculo-foto-link'); // Para resultados de busca
 
     if (editOrgBtn) { e.stopPropagation(); openEditOrgModal(editOrgBtn.dataset.orgId); }
     else if (editBtn) { e.stopPropagation(); openEditDossierModal(editBtn.dataset.org, editBtn.dataset.id); }
@@ -313,7 +305,7 @@ els.dossierOrgGrid.addEventListener('click', (e) => {
 });
 
 // Nível 2 (Pessoas)
-els.dossierVoltarBtn.onclick = () => { setUserActivity('Investigação (Bases)'); toggleView('dossier'); showDossierOrgs(currentUserData); };
+els.dossierVoltarBtn.onclick = () => { setUserActivity('Investigação (Bases)'); showDossierOrgs(currentUserData); };
 els.filtroDossierPeople.addEventListener('input', filterPeople);
 els.addPessoaBtn.onclick = () => { const orgName = els.addPessoaBtn.dataset.orgName; if(orgName) { openAddDossierModal(orgName); } };
 els.dossierPeopleGrid.addEventListener('click', (e) => {
@@ -360,7 +352,7 @@ els.editModalListaVeiculos.onclick = (e) => {
 
 // Lightbox
 els.imageLightboxOverlay.onclick = closeImageLightbox;
-els.imageLightboxModal.onclick = closeImageLightbox; 
+els.imageLightboxModal.onclick = closeImageLightbox; // Permite fechar clicando na imagem/modal
 
 // --- Inicialização (Welcome Screen e Tema)
 const savedTheme = localStorage.getItem('theme') || 'light';
