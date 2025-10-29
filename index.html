@@ -213,22 +213,30 @@
               <button id="clearHistoryBtn" class="muted">Limpar Histórico</button>
               <button id="toggleCalcBtn" class="muted">Voltar à Calculadora</button>
           </div>
-          <div class="history-table-wrapper"><table id="historicoVendas">
-              <thead>
-                  <tr>
-                      <th>Data/Hora</th>
-                      <th>Cliente</th>
-                      <th>Organização/Tipo</th>
-                      <th>Telefone</th>
-                      <th>Produtos (Unidade)</th>
-                      <th>Valor Total</th>
-                      <th>Negociadoras</th>
-                      <th>Registrado Por</th>
-                      <th>Ações</th>
-                  </tr>
-              </thead>
-              <tbody id="salesHistory"></tbody>
-          </table></div>
+          
+          <div id="top-scrollbar-container">
+              <div id="top-scrollbar-content"></div>
+          </div>
+          
+          <div class="history-table-wrapper" id="historyTableWrapper">
+              <table id="historicoVendas">
+                  <thead>
+                      <tr>
+                          <th>Data/Hora</th>
+                          <th>Cliente</th>
+                          <th>Organização/Tipo</th>
+                          <th>Telefone</th>
+                          <th>Produtos (Unidade)</th>
+                          <th>Valor Total</th>
+                          <th>Negociadoras</th>
+                          <th>Registrado Por</th>
+                          <th>Ações</th>
+                      </tr>
+                  </thead>
+                  <tbody id="salesHistory"></tbody>
+              </table>
+          </div>
+          
       </div>
   </div>
   
@@ -392,5 +400,3 @@
   
 </body>
 </html>
-
-
