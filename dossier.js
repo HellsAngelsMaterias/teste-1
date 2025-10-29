@@ -48,12 +48,45 @@ export const findDossierEntryGlobal = async (nome) => {
     }
 };
 
-export const addDossierEntry = (venda, dadosAntigosParaMover = null) => {
+// ======================================================
+// --- INÍCIO DA CORREÇÃO ---
+// A função agora é 'async' para poder usar 'await'
+export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
     if (!venda || !venda.organizacao || !venda.cliente || venda.organizacao.trim() === '') return;
     
-    const orgRef = ref(db, `dossies/${venda.organizacao}`);
-    const q = query(orgRef, orderByChild('nome'), equalTo(venda.cliente));
+    const orgNome = venda.organizacao.trim();
+    const nomeCliente = venda.cliente.trim();
+
+    // --- NOVO: Bloco para verificar e criar a Organização (Base) ---
+    try {
+        // Só cria a base se ela for do tipo 'CNPJ' (ou seja, não for CPF/Outros)
+        if (orgNome !== 'CPF' && orgNome !== 'Outros') {
+            const orgsRef = ref(db, 'organizacoesDossier');
+            const orgQuery = query(orgsRef, orderByChild('nome'), equalTo(orgNome));
+            const orgSnapshot = await get(orgQuery);
+            
+            if (!orgSnapshot.exists()) {
+                // A Base não existe, vamos criá-la
+                const newOrgRef = push(orgsRef);
+                await set(newOrgRef, {
+                    nome: orgNome,
+                    fotoUrl: '', // Default
+                    info: 'Base criada automaticamente via Registro de Venda.', // Default
+                    hierarquiaIndex: 9999 // Coloca no final da lista
+                });
+                showToast(`Nova Base "${orgNome}" foi criada no Dossiê.`, "success");
+            }
+        }
+    } catch (e) {
+        // Se falhar (ex: permissão), pelo menos avisa e tenta salvar a pessoa mesmo assim
+        showToast(`Erro ao verificar/criar a Base: ${e.message}`, "error");
+    }
+    // --- FIM DO NOVO BLOCO ---
+
+    const orgRef = ref(db, `dossies/${orgNome}`);
+    const q = query(orgRef, orderByChild('nome'), equalTo(nomeCliente));
     
+    // O resto da função continua dentro do .then()
     get(q).then(snapshot => {
         let entryKey = null;
         let entryData = null;
@@ -65,13 +98,8 @@ export const addDossierEntry = (venda, dadosAntigosParaMover = null) => {
             });
         }
         
-        // ======================================================
-        // --- INÍCIO DA CORREÇÃO ---
         // Lógica de veículos robusta
-        
         const veiculosParaAdicionar = {};
-        
-        // 1. Divide os campos de carro e placa de forma segura, tratando valores vazios/nulos
         const carros = (venda.carro && venda.carro.trim())
                        ? venda.carro.split(',').map(c => c.trim())
                        : [];
@@ -79,17 +107,13 @@ export const addDossierEntry = (venda, dadosAntigosParaMover = null) => {
                        ? venda.placas.split(',').map(p => p.trim())
                        : [];
         
-        // 2. Usa o array mais longo para garantir que todos os dados sejam lidos
         const maxLen = Math.max(carros.length, placas.length);
 
         if (maxLen > 0) {
             for (let i = 0; i < maxLen; i++) {
-                const carroNome = carros[i] || ''; // Pega o carro ou usa string vazia
-                const placa = placas[i] || '';     // Pega a placa ou usa string vazia
-
-                // 3. Só adiciona se pelo menos um dos campos (carro ou placa) existir
+                const carroNome = carros[i] || '';
+                const placa = placas[i] || '';
                 if (carroNome || placa) {
-                    // A placa é a chave principal. Se não houver, gera uma chave temporária.
                     const key = placa || `carro_${Date.now()}_${i}`;
                     veiculosParaAdicionar[key] = {
                         carro: carroNome,
@@ -99,15 +123,13 @@ export const addDossierEntry = (venda, dadosAntigosParaMover = null) => {
                 }
             }
         }
-        // --- FIM DA CORREÇÃO ---
-        // ======================================================
 
         if (entryKey && entryData) {
             // --- ATUALIZA ENTRADA EXISTENTE ---
             const existingVeiculos = entryData.veiculos || {};
             const mergedVeiculos = {...existingVeiculos, ...veiculosParaAdicionar};
             
-            update(ref(db, `dossies/${venda.organizacao}/${entryKey}`), {
+            update(ref(db, `dossies/${orgNome}/${entryKey}`), {
                 telefone: entryData.telefone || venda.telefone || '',
                 cargo: entryData.cargo || venda.vendaValorObs || '',
                 veiculos: mergedVeiculos,
@@ -123,27 +145,27 @@ export const addDossierEntry = (venda, dadosAntigosParaMover = null) => {
             const mergedVeiculos = {...existingVeiculos, ...veiculosParaAdicionar};
 
             push(orgRef, {
-                nome: venda.cliente,
+                nome: nomeCliente,
                 telefone: newEntry.telefone || venda.telefone || '',
                 cargo: newEntry.cargo || venda.vendaValorObs || '',
                 fotoUrl: newEntry.fotoUrl || '',
                 instagram: newEntry.instagram || '',
                 veiculos: mergedVeiculos,
-                organizacao: venda.organizacao, 
+                organizacao: orgNome, 
                 data: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
                 hierarquiaIndex: newEntry.hierarquiaIndex || 9999 
             }).catch(e => showToast(`Erro ao criar dossiê: ${e.message}`, "error"));
         }
     }).catch(error => {
-        // --- CORREÇÃO 2: Mensagem de erro melhorada ---
         if (error.code === "PERMISSION_DENIED") {
             showToast(`Erro de permissão no dossiê.`, "error");
         } else {
-            // Mostra o erro real (Ex: TypeError)
             showToast(`Erro ao salvar no dossiê: ${error.message}`, "error"); 
         }
     });
 };
+// --- FIM DA CORREÇÃO ---
+// ======================================================
 
 export const updateDossierEntryOnEdit = (oldCliente, oldOrg, newVenda) => {
     if (!newVenda || !newVenda.cliente) return;
@@ -170,8 +192,6 @@ export const updateDossierEntryOnEdit = (oldCliente, oldOrg, newVenda) => {
                     personData.cargo = newVenda.vendaValorObs || personData.cargo || '';
                     personData.organizacao = newOrg;
                     
-                    // (Esta lógica de veículos é usada na *migração* de um usuário, não em uma nova venda)
-                    // (A lógica de *nova venda* foi corrigida em addDossierEntry)
                     const veiculosParaAdicionar = {};
                     if (newVenda.carro && newVenda.carro.trim()) {
                         const carros = newVenda.carro.split(',').map(c => c.trim());
