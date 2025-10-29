@@ -4,7 +4,9 @@
 ===============================================
 */
 
+// Importar dos links CDN (URLs)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
 import { 
     getAuth, 
     onAuthStateChanged, 
@@ -14,6 +16,7 @@ import {
     createUserWithEmailAndPassword, 
     updateProfile 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 import { 
     getDatabase, 
     ref, 
@@ -28,9 +31,9 @@ import {
     equalTo 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// TODO: ADICIONE SUAS CREDENCIAIS DO FIREBASE AQUI
+// Suas credenciais do Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs", // ⚠️ Lembre-se de trocar esta chave!
+  apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs", // ⚠️ Lembre-se de trocar esta chave se a tiver mudado!
   authDomain: "hells-teste.firebaseapp.com",
   databaseURL: "https://hells-teste-default-rtdb.firebaseio.com",
   projectId: "hells-teste",
@@ -66,4 +69,3 @@ export {
     orderByChild, 
     equalTo 
 };
-
