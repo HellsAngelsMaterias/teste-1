@@ -44,6 +44,10 @@ export const getQty = (element) => {
 
 export const showToast = (message, type = 'default', duration = 3000) => {
     const container = document.getElementById('toast-container');
+    if (!container) {
+        console.error("Elemento 'toast-container' não encontrado.");
+        return;
+    }
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.textContent = message;
@@ -68,7 +72,9 @@ export const toggleView = (viewName) => {
   };
   
   // Esconde todas as views
-  Object.values(views).forEach(view => view.style.display = 'none');
+  Object.values(views).forEach(view => {
+      if(view) view.style.display = 'none';
+  });
   
   // Mostra a view correta
   if (views[viewName]) {
@@ -89,12 +95,12 @@ export const updateLogoAndThemeButton = (isDark) => {
     if(logo) logo.src = logoDarkModeSrc;
     if(welcomeLogo) welcomeLogo.src = logoDarkModeSrc;
     if(historyBg) historyBg.src = logoDarkModeSrc;
-    els.themeBtn.textContent = '☀️ Modo Claro';
+    if(els.themeBtn) els.themeBtn.textContent = '☀️ Modo Claro';
   } else {
     if(logo) logo.src = logoLightModeSrc;
     if(welcomeLogo) welcomeLogo.src = welcomeLogoSrc;
     if(historyBg) historyBg.src = historyBackgroundSrc;
-    els.themeBtn.textContent = '🌙 Modo Noturno';
+    if(els.themeBtn) els.themeBtn.textContent = '🌙 Modo Noturno';
   }
 };
 
@@ -105,6 +111,10 @@ export const toggleTheme = () => {
 };
 
 export const copyToClipboard = (text) => {
+    if (!navigator.clipboard) {
+        showToast("Clipboard API não disponível.", "error");
+        return;
+    }
     navigator.clipboard.writeText(text)
         .then(() => showToast("Copiado para a área de transferência!", "success"))
         .catch(() => showToast("Falha ao copiar texto.", "error"));
@@ -113,8 +123,14 @@ export const copyToClipboard = (text) => {
 // --- Máscaras de Input ---
 export const PREFIX = "555-";
 export const phoneMask = (value) => {
+    if (!value) return PREFIX;
     let x = value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,4})/);
-    return !x[2] ? PREFIX + (x[1] || '') : PREFIX + x[1] + '-' + x[2];
+    // Garante que o prefixo 555 esteja sempre lá
+    let num = x[1] || '';
+    if (x[0].length > 3) {
+        num = x[1] + '-' + x[2];
+    }
+    return PREFIX + num;
 };
 
 // --- Tutorial ---
@@ -123,8 +139,8 @@ let currentTooltip = null;
 
 const cleanupTour = () => {
     const overlay = document.getElementById('tour-overlay');
-    if (overlay) document.body.removeChild(overlay);
-    if (currentTooltip) document.body.removeChild(currentTooltip);
+    if (overlay && overlay.parentNode) document.body.removeChild(overlay);
+    if (currentTooltip && currentTooltip.parentNode) document.body.removeChild(currentTooltip);
     document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
     currentTooltip = null;
     currentStepIndex = 0;
@@ -141,6 +157,7 @@ export const showNextTourStep = () => {
     
     const targetElement = document.getElementById(step.element);
     if (!targetElement) {
+        console.warn(`Elemento do tour não encontrado: ${step.element}`);
         currentStepIndex++;
         showNextTourStep();
         return;
@@ -164,7 +181,7 @@ export const showNextTourStep = () => {
     document.body.appendChild(currentTooltip); 
     
     const rect = targetElement.getBoundingClientRect(); 
-    let top = rect.top < currentTooltip.offsetHeight + 20 ? rect.bottom + window.scrollY + 10 : rect.top + window.scrollY - currentTooltip.offsetHeight - 10; 
+    let top = rect.top < (currentTooltip.offsetHeight + 20) ? (rect.bottom + window.scrollY + 10) : (rect.top + window.scrollY - currentTooltip.offsetHeight - 10); 
     let left = Math.max(10, Math.min(rect.left + window.scrollX, window.innerWidth - currentTooltip.offsetWidth - 20)); 
     
     currentTooltip.style.top = `${top}px`; 
@@ -179,25 +196,4 @@ export const showNextTourStep = () => {
     currentTooltip.querySelector('.tourSkipBtn').onclick = cleanupTour;
 };
 
-// ===============================================
-// ⭐️ CORREÇÃO: Relógio comentado para evitar o erro
-// ===============================================
-
-/*
-function atualizarRelogio() {
-  // O seu index.html não tem um elemento com id 'relogio-digital'
-  // Por isso 'elRelogio' fica 'null' e dá erro na linha 114
-  const elRelogio = document.getElementById('relogio-digital'); 
-  
-  if (elRelogio) { // Adicionar esta verificação também funcionaria
-      const agora = new Date();
-      const horas = String(agora.getHours()).padStart(2, '0');
-      const minutos = String(agora.getMinutes()).padStart(2, '0');
-      elRelogio.value = `${horas}:${minutos}`; // Linha 114 (a linha do erro)
-  }
-}
-
-// Linha 116: Esta chamada imediata é que causa o erro
-atualizarRelogio(); 
-setInterval(atualizarRelogio, 60000);
-*/
+// ⭐️ O CÓDIGO DO RELÓGIO FOI REMOVIDO DAQUI
