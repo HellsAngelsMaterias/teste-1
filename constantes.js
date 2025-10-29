@@ -1,8 +1,6 @@
 /* ===============================================
   CONSTANTES.JS
   Valores estáticos, custos, preços e URLs.
-  
-  VERSÃO SEM PASTAS
 ===============================================
 */
 
@@ -28,7 +26,7 @@ export const valorDescricao = {
     'sujo_alianca': 'Sujo (Aliança)'
 };
 
-// --- URLs de Imagens (Corrigido para usar o nome do seu arquivo)
+// --- URLs de Imagens
 export const logoLightModeSrc = "logo-dark.png";
 export const logoDarkModeSrc = "logo-dark.png";
 export const historyBackgroundSrc = "logo-dark.png";
