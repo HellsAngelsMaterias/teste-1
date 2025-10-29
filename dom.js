@@ -62,7 +62,8 @@ export const els = {
   layoutToggleBottomPanel: document.getElementById('layoutToggleBottomPanel'),
   bottomPanelText: document.getElementById('bottomPanelText'),
   saveBottomPanelTextBtn: document.getElementById('saveBottomPanelTextBtn'),
-  bottomPanelDisplay: document.getElementById('bottomPanelDisplay'), 
+  bottomPanelDisplay: document.getElementById('bottomPanelDisplay'),
+  
   bottomPanel: document.getElementById('bottomPanel'),
   userStatus: document.getElementById('userStatus'),
   
@@ -111,7 +112,7 @@ export const els = {
   addDossierNumero: document.getElementById('addDossierNumero'),
   addDossierCargo: document.getElementById('addDossierCargo'),
   addDossierFotoUrl: document.getElementById('addDossierFotoUrl'),
-  addDossierInstagram: document.getElementById('addDossierInstagram'), // Adicionado
+  addDossierInstagram: document.getElementById('addDossierInstagram'),
   saveNewDossierBtn: document.getElementById('saveNewDossierBtn'),
   cancelNewDossierBtn: document.getElementById('cancelNewDossierBtn'),
 
@@ -135,7 +136,5 @@ export const els = {
   
   imageLightboxOverlay: document.getElementById('imageLightboxOverlay'),
   imageLightboxModal: document.getElementById('imageLightboxModal'),
-  lightboxImg: document.getElementById('lightboxImg'),
-  
-  topHistoryScrollbar: document.getElementById('topHistoryScrollbar')
+  lightboxImg: document.getElementById('lightboxImg')
 };
