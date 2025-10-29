@@ -2,15 +2,12 @@
   DOSSIER.JS
   Lógica de Investigação, Dossiês, Modais e
   Sincronização de Vendas.
-  
-  VERSÃO ADAPTADA
 ===============================================
 */
 
-// --- Imports (CAMINHOS CORRIGIDOS)
+// --- Imports
 import { els } from './dom.js';
-// ADICIONADO: Imports de funções do Firebase
-import { ref, set, push, onValue, remove, get, query, orderByChild, equalTo, update } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+import { db, ref, set, push, onValue, remove, get, query, orderByChild, equalTo, update } from './firebase.js';
 import { showToast, capitalizeText } from './helpers.js';
 
 // --- Estado Interno do Módulo
@@ -25,8 +22,7 @@ let veiculoEmEdicaoKey = null;
 // LÓGICA DE SINCRONIZAÇÃO (Usada por sales.js)
 // ===============================================
 
-// MODIFICADO: Aceita 'db'
-export const findDossierEntryGlobal = async (nome, db) => {
+export const findDossierEntryGlobal = async (nome) => {
     if (!nome) return null;
     try {
         const snapshot = await get(ref(db, 'dossies'));
@@ -50,8 +46,7 @@ export const findDossierEntryGlobal = async (nome, db) => {
     return null; 
 };
 
-// MODIFICADO: Aceita 'db'
-export const searchAllPeopleGlobal = async (query, db) => {
+export const searchAllPeopleGlobal = async (query) => {
     if (!query) return [];
     const results = [];
     const queryLower = query.toLowerCase();
@@ -97,13 +92,11 @@ const parseAndMergeVeiculos = (vendaData, existingVeiculos = {}) => {
     return merged;
 };
 
-// MODIFICADO: Aceita 'db'
-export const addDossierEntry = async (vendaData, dadosAntigos = null, db) => {
+export const addDossierEntry = async (vendaData, dadosAntigos = null) => {
     const org = vendaData.organizacao.trim();
     const nome = vendaData.cliente.trim();
     if (!org || !nome) return;
 
-    // Garante que a Organização exista
     const orgRef = ref(db, `organizacoes/${org}`);
     get(orgRef).then(snapshot => {
         if (!snapshot.exists()) {
@@ -116,7 +109,6 @@ export const addDossierEntry = async (vendaData, dadosAntigos = null, db) => {
     try {
         const snapshot = await get(dossierQuery);
         if (snapshot.exists()) {
-            // Atualiza existente
             let existingEntryId, existingEntryData;
             snapshot.forEach(child => { existingEntryId = child.key; existingEntryData = child.val(); });
             const updates = {
@@ -132,7 +124,6 @@ export const addDossierEntry = async (vendaData, dadosAntigos = null, db) => {
             }
             await update(ref(db, `dossies/${org}/${existingEntryId}`), updates);
         } else {
-            // Cria novo
             const dossierEntry = { ...dadosAntigos };
             dossierEntry.nome = vendaData.cliente;
             dossierEntry.numero = vendaData.telefone;
@@ -150,8 +141,7 @@ export const addDossierEntry = async (vendaData, dadosAntigos = null, db) => {
     }
 };
 
-// MODIFICADO: Aceita 'db'
-export const updateDossierEntryOnEdit = async (oldNome, oldOrg, newVendaData, db) => {
+export const updateDossierEntryOnEdit = async (oldNome, oldOrg, newVendaData) => {
     const newOrg = newVendaData.organizacao.trim();
     const newNome = newVendaData.cliente.trim();
     if (!oldOrg || !oldNome || !newOrg || !newNome) return;
@@ -161,14 +151,14 @@ export const updateDossierEntryOnEdit = async (oldNome, oldOrg, newVendaData, db
     try {
         const snapshot = await get(dossierQuery);
         if (!snapshot.exists()) {
-            const globalEntry = await findDossierEntryGlobal(newNome, db); // Passa 'db'
+            const globalEntry = await findDossierEntryGlobal(newNome);
             let dadosAntigos = null;
             if (globalEntry && globalEntry.oldOrg !== newOrg) {
                 dadosAntigos = globalEntry.personData;
                 await remove(ref(db, `dossies/${globalEntry.oldOrg}/${globalEntry.personId}`));
                 showToast(`"${newNome}" movido de "${globalEntry.oldOrg}" para "${newOrg}".`, "default", 4000);
             }
-            addDossierEntry(newVendaData, dadosAntigos, db); // Passa 'db'
+            addDossierEntry(newVendaData, dadosAntigos);
             return;
         }
 
@@ -189,22 +179,20 @@ export const updateDossierEntryOnEdit = async (oldNome, oldOrg, newVendaData, db
             await set(ref(db, `dossies/${newOrg}/${existingEntryId}`), newDossierData); 
         } else {
             await remove(ref(db, `dossies/${oldOrg}/${existingEntryId}`));
-            addDossierEntry(newVendaData, existingEntryData, db); // Passa 'db'
+            addDossierEntry(newVendaData, existingEntryData); 
         }
     } catch (err) {
         if(err.code !== "PERMISSION_DENIED") showToast(`Erro ao sincronizar dossiê: ${err.message}`, "error");
     }
 };
 
-// MODIFICADO: Aceita 'db'
-export const autoFillFromDossier = async (db) => {
-    if (els.registerBtn.textContent.includes('Atualizar')) return; 
-    
+export const autoFillFromDossier = async (vendaEmEdicao) => {
+    if (vendaEmEdicao) return; 
     const nome = els.nomeCliente.value.trim();
     if (!nome) return; 
 
     try {
-        const foundEntry = await findDossierEntryGlobal(nome, db); // Passa 'db'
+        const foundEntry = await findDossierEntryGlobal(nome);
         if (foundEntry && foundEntry.personData) {
             const data = foundEntry.personData;
             const orgBase = foundEntry.oldOrg;
@@ -248,8 +236,7 @@ export const closeImageLightbox = () => {
 };
 
 // --- Ordenação (SortableJS) ---
-// MODIFICADO: Aceita 'db'
-const saveHierarchyOrder = (orgName, db) => {
+const saveHierarchyOrder = (orgName) => {
     const children = Array.from(els.dossierPeopleGrid.children);
     if (children.length === 0 || !children[0].classList.contains('dossier-entry-card')) return; 
     
@@ -259,7 +246,7 @@ const saveHierarchyOrder = (orgName, db) => {
     });
     
     if (Object.keys(updates).length > 0) {
-        update(ref(db), updates) // Usa 'db'
+        update(ref(db), updates)
             .then(() => {
                 showToast("Hierarquia atualizada!", "success");
                 globalCurrentPeople = children.map((card, index) => {
@@ -272,23 +259,21 @@ const saveHierarchyOrder = (orgName, db) => {
     }
 };
 
-// MODIFICADO: Aceita 'db'
-const initSortable = (orgName, currentUserData, db) => {
+const initSortable = (orgName, currentUserData) => {
     if (sortableInstance) sortableInstance.destroy(); 
     const userTagUpper = currentUserData ? currentUserData.tag.toUpperCase() : 'VISITANTE';
     const canDrag = (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS');
     
     sortableInstance = new Sortable(els.dossierPeopleGrid, {
         animation: 150,
-        handle: '.drag-handle-icon',
+        handle: '.dossier-entry-card', // Alterado do seu script para o card todo
         disabled: !canDrag, 
         ghostClass: 'sortable-ghost', 
-        onEnd: () => saveHierarchyOrder(orgName, db) // Passa 'db'
+        onEnd: () => saveHierarchyOrder(orgName)
     });
 };
 
-// MODIFICADO: Aceita 'db'
-const saveOrgOrder = (db, showToastOnSuccess = true) => {
+const saveOrgOrder = (showToastOnSuccess = true) => {
     const children = Array.from(els.dossierOrgGrid.children).filter(el => el.classList.contains('dossier-org-card'));
     if (children.length === 0) return;
     
@@ -298,7 +283,7 @@ const saveOrgOrder = (db, showToastOnSuccess = true) => {
     });
     
     if (Object.keys(updates).length > 0) {
-        update(ref(db), updates) // Usa 'db'
+        update(ref(db), updates)
             .then(() => {
                 if(showToastOnSuccess) showToast("Ordem das Bases atualizada!", "success");
                 globalAllOrgs = children.map((card, index) => {
@@ -311,41 +296,39 @@ const saveOrgOrder = (db, showToastOnSuccess = true) => {
     }
 };
 
-// MODIFICADO: Aceita 'db'
-const initOrgSortable = (currentUserData, db) => {
+const initOrgSortable = (currentUserData) => {
     if (orgSortableInstance) orgSortableInstance.destroy();
     const userTagUpper = currentUserData ? currentUserData.tag.toUpperCase() : 'VISITANTE';
     const canDrag = (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS');
     
     orgSortableInstance = new Sortable(els.dossierOrgGrid, {
         animation: 150,
-        handle: '.drag-handle-icon',
+        handle: '.dossier-org-card', // Alterado para o card todo
         group: 'orgs', 
         disabled: !canDrag, 
         ghostClass: 'sortable-ghost',
         filter: 'h3.dossier-org-title', 
-        onEnd: () => saveOrgOrder(db) // Passa 'db'
+        onEnd: () => saveOrgOrder()
     });
 };
 
 // --- Nível 1: Organizações (Bases) ---
-// MODIFICADO: Aceita 'db'
-export const showDossierOrgs = async (currentUserData, db) => {
+export const showDossierOrgs = async (currentUserData) => {
     els.dossierOrgContainer.style.display = 'block';
     els.dossierPeopleContainer.style.display = 'none';
     els.dossierOrgGrid.innerHTML = '<p>Carregando organizações...</p>';
     globalAllOrgs = [];
     
     try {
-        const orgsInfoSnap = await get(ref(db, 'organizacoes')); // Usa 'db'
+        const orgsInfoSnap = await get(ref(db, 'organizacoes'));
         const orgsInfo = orgsInfoSnap.exists() ? orgsInfoSnap.val() : {};
-        const orgsPessoasSnap = await get(ref(db, 'dossies')); // Usa 'db'
+        const orgsPessoasSnap = await get(ref(db, 'dossies'));
         const orgsPessoas = orgsPessoasSnap.exists() ? orgsPessoasSnap.val() : {};
         const allOrgNames = new Set([...Object.keys(orgsInfo), ...Object.keys(orgsPessoas)]);
         
         if (allOrgNames.size === 0) {
             els.dossierOrgGrid.innerHTML = '<p>Nenhuma organização encontrada. Clique em "+ Adicionar Base" para começar.</p>';
-            initOrgSortable(currentUserData, db); // Passa 'db'
+            initOrgSortable(currentUserData);
             return;
         }
         
@@ -360,7 +343,7 @@ export const showDossierOrgs = async (currentUserData, db) => {
         });
         
         displayOrgs(globalAllOrgs);
-        initOrgSortable(currentUserData, db); // Passa 'db'
+        initOrgSortable(currentUserData);
         
     } catch (error) {
         els.dossierOrgGrid.innerHTML = `<p style="color: var(--cor-erro);">Erro ao carregar organizações: ${error.message}</p>`;
@@ -378,8 +361,6 @@ const displayOrgs = (orgs) => {
         const card = document.createElement('div');
         card.className = 'dossier-org-card';
         card.dataset.orgName = org.nome;
-        
-        card.innerHTML = `<span class="drag-handle-icon org-drag-handle">☰</span>`;
         
         const fotoDiv = document.createElement('div');
         fotoDiv.className = 'dossier-org-foto';
@@ -421,8 +402,6 @@ const displayGlobalSearchResults = (orgs, people) => {
             card.dataset.orgName = org.nome;
             card.style.cursor = 'pointer'; 
             
-            card.innerHTML = `<span class="drag-handle-icon org-drag-handle">☰</span>`;
-            
             const fotoDiv = document.createElement('div');
             fotoDiv.className = 'dossier-org-foto';
             if (org.fotoUrl) {
@@ -455,12 +434,10 @@ const displayGlobalSearchResults = (orgs, people) => {
             card.dataset.id = entry.id; 
             card.style.cursor = 'default'; 
             
-            card.innerHTML = `<span class="drag-handle-icon people-drag-handle">☰</span>`;
-            
             const baseLink = document.createElement('a'); 
             baseLink.href = '#';
             baseLink.textContent = `Base: ${entry.org}`;
-            baseLink.className = 'dossier-base-link'; 
+            baseLink.className = 'dossier-base-link'; // Estilizado no CSS
             baseLink.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); showDossierPeople(entry.org); });
             card.appendChild(baseLink); 
 
@@ -501,18 +478,17 @@ const displayGlobalSearchResults = (orgs, people) => {
     }
 };
 
-// MODIFICADO: Aceita 'db'
-export const filterOrgs = async (currentUserData, db) => {
+export const filterOrgs = async (currentUserData) => {
     const query = els.filtroDossierOrgs.value.toLowerCase().trim();
     if (!query) {
         displayOrgs(globalAllOrgs); 
-        initOrgSortable(currentUserData, db); // Passa 'db'
+        initOrgSortable(currentUserData);
         return;
     }
     
     els.dossierOrgGrid.innerHTML = '<p>Buscando...</p>'; 
     const filteredOrgs = globalAllOrgs.filter(org => org.nome.toLowerCase().includes(query));
-    const filteredPeople = await searchAllPeopleGlobal(query, db); // Passa 'db'
+    const filteredPeople = await searchAllPeopleGlobal(query);
     displayGlobalSearchResults(filteredOrgs, filteredPeople);
     
     if (orgSortableInstance) {
@@ -522,8 +498,7 @@ export const filterOrgs = async (currentUserData, db) => {
 };
 
 // --- Nível 2: Pessoas (Membros) ---
-// MODIFICADO: Aceita 'db'
-export const showDossierPeople = async (orgName, currentUserData, db) => {
+export const showDossierPeople = async (orgName, currentUserData) => {
     els.dossierOrgContainer.style.display = 'none';
     els.dossierPeopleContainer.style.display = 'block';
     els.dossierPeopleTitle.textContent = `Membros: ${orgName}`;
@@ -536,10 +511,10 @@ export const showDossierPeople = async (orgName, currentUserData, db) => {
     }
     
     try {
-        const snapshot = await get(ref(db, `dossies/${orgName}`)); // Usa 'db'
+        const snapshot = await get(ref(db, `dossies/${orgName}`));
         if (!snapshot.exists()) {
             els.dossierPeopleGrid.innerHTML = '<p>Nenhum membro registrado para esta organização.</p>';
-            initSortable(orgName, currentUserData, db); // Passa 'db'
+            initSortable(orgName, currentUserData);
             return;
         }
         
@@ -556,7 +531,7 @@ export const showDossierPeople = async (orgName, currentUserData, db) => {
         });
         
         displayPeople(globalCurrentPeople);
-        initSortable(orgName, currentUserData, db); // Passa 'db'
+        initSortable(orgName, currentUserData);
         
     } catch (error) {
         els.dossierPeopleGrid.innerHTML = `<p style="color: var(--cor-erro);">Erro ao carregar membros: ${error.message}</p>`;
@@ -569,7 +544,7 @@ const createVeiculosDetails = (veiculos) => {
     if (veiculosCount === 0) {
         const p = document.createElement('p');
         p.innerHTML = '<strong>Veículos:</strong> N/A';
-        p.className = 'dossier-veiculo-na';
+        p.className = 'dossier-veiculo-na'; // Estilo para 'N/A'
         return p;
     }
 
@@ -603,8 +578,6 @@ const displayPeople = (people) => {
         const card = document.createElement('div');
         card.className = 'dossier-entry-card';
         card.dataset.id = entry.id; 
-        
-        card.innerHTML = `<span class="drag-handle-icon people-drag-handle">☰</span>`;
         
         const fotoDiv = document.createElement('div');
         fotoDiv.className = 'dossier-foto';
@@ -715,8 +688,7 @@ export const closeOrgModal = () => {
     els.orgModal.style.display = 'none';
 };
 
-// MODIFICADO: Aceita 'db' e 'currentUserData'
-export const saveOrg = async (currentUserData, db) => {
+export const saveOrg = async (currentUserData) => {
     const orgNome = capitalizeText(els.orgNome.value.trim());
     const orgId = els.editOrgId.value || orgNome;
     
@@ -727,7 +699,7 @@ export const saveOrg = async (currentUserData, db) => {
     }
     els.orgNome.classList.remove('input-invalido');
     
-    const orgRef = ref(db, `organizacoes/${orgId}`); // Usa 'db'
+    const orgRef = ref(db, `organizacoes/${orgId}`);
     
     let existingIndex = 9999;
     if (els.editOrgId.value) {
@@ -750,22 +722,21 @@ export const saveOrg = async (currentUserData, db) => {
         .then(() => {
             showToast("Base salva com sucesso!", "success");
             closeOrgModal();
-            showDossierOrgs(currentUserData, db); // Passa 'db'
+            showDossierOrgs(currentUserData);
         })
         .catch(err => showToast(`Erro ao salvar: ${err.message}`, "error"));
 };
 
-// MODIFICADO: Aceita 'db' e 'currentUserData'
-export const deleteOrg = (currentUserData, db) => {
+export const deleteOrg = (currentUserData) => {
     const orgId = els.editOrgId.value;
     if (!orgId) return;
     
     if (confirm(`ATENÇÃO:\n\nIsso apagará as INFORMAÇÕES DA BASE "${orgId}".\n\NIsso NÃO apagará os membros (pessoas) que estão dentro dela.\n\nDeseja continuar?`)) {
-        remove(ref(db, `organizacoes/${orgId}`)) // Usa 'db'
+        remove(ref(db, `organizacoes/${orgId}`))
             .then(() => {
                 showToast("Informações da base removidas.", "success");
                 closeOrgModal();
-                showDossierOrgs(currentUserData, db); // Passa 'db'
+                showDossierOrgs(currentUserData);
             })
             .catch(err => showToast(`Erro: ${err.message}`, "error"));
     }
@@ -864,7 +835,7 @@ export const openAddDossierModal = (orgName) => {
     els.addDossierNumero.value = '';
     els.addDossierCargo.value = '';
     els.addDossierFotoUrl.value = '';
-    els.addDossierInstagram.value = ''; // Adicionado para limpar
+    els.addDossierInstagram.value = '';
     tempVeiculos = {}; 
     cancelarEdicaoVeiculo('addModal'); 
     renderModalVeiculos(els.addModalListaVeiculos); 
@@ -880,8 +851,7 @@ export const closeAddDossierModal = () => {
     cancelarEdicaoVeiculo('addModal'); 
 };
 
-// MODIFICADO: Aceita 'db' e 'currentUserData'
-export const saveNewDossierEntry = (currentUserData, db) => {
+export const saveNewDossierEntry = (currentUserData) => {
     const org = els.addDossierOrganizacao.value.trim();
     if (!org) { showToast("Erro: Organização não definida.", "error"); return; }
     
@@ -901,32 +871,30 @@ export const saveNewDossierEntry = (currentUserData, db) => {
         numero: els.addDossierNumero.value.trim(),
         cargo: els.addDossierCargo.value.trim(),
         fotoUrl: els.addDossierFotoUrl.value.trim(),
-        instagram: els.addDossierInstagram.value.trim(), // Adicionado
+        instagram: els.addDossierInstagram.value.trim(),
         veiculos: tempVeiculos, 
         hierarquiaIndex: 9999, 
         data: agora
     };
     
-    push(ref(db, `dossies/${org}`), newEntry) // Usa 'db'
+    push(ref(db, `dossies/${org}`), newEntry)
         .then(() => {
              showToast("Nova pessoa salva no dossiê!", "success");
              closeAddDossierModal();
-             showDossierPeople(org, currentUserData, db); // Passa 'db'
+             showDossierPeople(org, currentUserData);
         })
         .catch(err => showToast(`Erro ao salvar: ${err.message}`, "error"));
 };
 
 // --- Modal: Editar Pessoa ---
-// MODIFICADO: Aceita 'db'
-export const openEditDossierModal = async (org, id, db) => {
+export const openEditDossierModal = async (org, id) => {
     let entry = globalCurrentPeople.find(e => e.id === id && e.org === org);
     
     if (!entry) {
         try {
-            const snapshot = await get(ref(db, `dossies/${org}/${id}`)); // Usa 'db'
+            const snapshot = await get(ref(db, `dossies/${org}/${id}`));
             if (snapshot.exists()) {
                 entry = { id: snapshot.key, org: org, ...snapshot.val() };
-                // Não sobreescreve a lista global, apenas usa a entrada local
             } else {
                 showToast("Erro: Entrada não encontrada no Banco de Dados.", "error");
                 return;
@@ -957,24 +925,21 @@ export const closeEditDossierModal = () => {
     cancelarEdicaoVeiculo('editModal'); 
 };
 
-// MODIFICADO: Aceita 'db' e 'currentUserData'
-export const saveDossierChanges = (currentUserData, db) => {
+export const saveDossierChanges = (currentUserData) => {
     const org = els.editDossierOrg.value;
     const id = els.editDossierId.value;
     if (!org || !id) { showToast("Erro: ID da entrada perdido.", "error"); return; }
     
-    // Busca a entrada original novamente para garantir dados frescos
     const originalEntry = globalCurrentPeople.find(e => e.id === id && e.org === org);
     
     const updatedEntry = {
-        ...(originalEntry || {}), // Usa a entrada em cache se existir, senão, cria uma nova
+        ...(originalEntry || {}), 
         nome: els.editDossierNome.value.trim(),
         numero: els.editDossierNumero.value.trim(),
         cargo: els.editDossierCargo.value.trim(),
         fotoUrl: els.editDossierFotoUrl.value.trim(),
         instagram: els.editDossierInstagram.value.trim(), 
         veiculos: tempVeiculos,
-        // Garante que campos essenciais não sejam perdidos
         organizacao: org,
         hierarquiaIndex: originalEntry ? originalEntry.hierarquiaIndex : 9999,
         data: originalEntry ? originalEntry.data : new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
@@ -983,18 +948,17 @@ export const saveDossierChanges = (currentUserData, db) => {
     delete updatedEntry.id;
     delete updatedEntry.org;
 
-    set(ref(db, `dossies/${org}/${id}`), updatedEntry) // Usa 'db'
+    set(ref(db, `dossies/${org}/${id}`), updatedEntry)
         .then(() => {
             showToast("Dossiê atualizado com sucesso!", "success");
             closeEditDossierModal();
-            showDossierPeople(org, currentUserData, db); // Passa 'db'
+            showDossierPeople(org, currentUserData);
         })
         .catch((error) => showToast(`Erro ao salvar: ${error.message}`, "error"));
 };
 
 // --- Ação: Remover Pessoa ---
-// MODIFICADO: Aceita 'db' e 'currentUserData'
-export const removeDossierEntry = (orgName, entryId, currentUserData, db) => {
+export const removeDossierEntry = (orgName, entryId, currentUserData) => {
     const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
     if (userTagUpper !== 'ADMIN' && userTagUpper !== 'HELLS') {
         showToast("Apenas Admin/Hells podem remover entradas.", "error");
@@ -1002,10 +966,10 @@ export const removeDossierEntry = (orgName, entryId, currentUserData, db) => {
     }
     
     if (confirm("Tem certeza que deseja remover esta PESSOA do dossiê?")) {
-        remove(ref(db, `dossies/${orgName}/${entryId}`)) // Usa 'db'
+        remove(ref(db, `dossies/${orgName}/${entryId}`))
             .then(() => {
                 showToast("Pessoa removida do dossiê.", "success");
-                showDossierPeople(orgName, currentUserData, db); // Passa 'db'
+                showDossierPeople(orgName, currentUserData);
             })
             .catch((error) => showToast(`Erro ao remover: ${error.message}`, "error"));
     }
