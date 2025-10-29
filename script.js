@@ -10,7 +10,7 @@ import {
     auth, db, 
     onAuthStateChanged, signOut, sendPasswordResetEmail, 
     signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile,
-    ref, set, get, onValue, query, orderByChild, equalTo 
+    ref, set, get, onValue, query, orderByChild, equalTo, orderByValue, orderByChild
 } from './firebase.js'; 
 
 import { els } from './dom.js';
@@ -79,10 +79,11 @@ const handleAuthAction = (isLogin, creds) => {
                 return updateProfile(user, { displayName: displayName })
                     .then(() => {
                         const userRef = ref(db, `usuarios/${user.uid}`);
+                        // ⭐️ Corrigido: A tag padrão é 'Visitante'
                         const newUserProfile = { 
                             displayName: displayName,
                             email: user.email,
-                            tag: 'Visitante'
+                            tag: 'Visitante' 
                         };
                         return set(userRef, newUserProfile); 
                     });
@@ -170,37 +171,49 @@ onAuthStateChanged(auth, (user) => {
             if (snapshot.exists()) {
                 currentUserData = snapshot.val(); 
             } else {
-                const newUserProfile = { displayName: user.displayName, email: user.email, tag: 'Visitante' };
+                // Cria o perfil inicial se não existir (primeiro login)
+                const newUserProfile = { 
+                    displayName: user.displayName, 
+                    email: user.email, 
+                    tag: 'Visitante' // ⭐️ Corrigido: Garante a tag padrão.
+                };
                 set(userRef, newUserProfile);
                 currentUserData = newUserProfile; 
             }
             
+            // ⭐️ Otimizado: O Firebase agora filtra as vendas com base na tag no lado do servidor.
             configurarInterfacePorTag(currentUserData.tag);
-            updateUserActivity(currentUser, currentUserData, currentActivity); // Atualiza imediatamente com a tag
+            updateUserActivity(currentUser, currentUserData, currentActivity); 
              
             if(vendasListener) vendasListener(); // Remove o listener antigo
             
             let vendasRef;
             const userTagUpper = currentUserData.tag.toUpperCase();
             
+            // Admins/Hells leem tudo; Visitantes leem apenas o que é deles.
             if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
                 vendasRef = ref(db, 'vendas');
             } else {
+                // Regra de segurança exige order by child no campo que estamos a filtrar
                 vendasRef = query(ref(db, 'vendas'), orderByChild('registradoPorId'), equalTo(currentUser.uid));
             }
-
+            
+            // Escuta a referência (já filtrada/completa) e ordena pelo timestamp no lado do cliente (para evitar mais indexOn)
             vendasListener = onValue(vendasRef, (vendasSnapshot) => {
                 vendas = [];
                 vendasSnapshot.forEach((child) => {
                     vendas.push({ id: child.key, ...child.val() });
                 });
-                setVendas(vendas); // Envia os dados para o módulo sales.js
+                setVendas(vendas); 
+                
+                // Exibir histórico com ordenação por timestamp (feita no módulo sales.js)
                 if (els.historyCard.style.display !== 'none') {
                     displaySalesHistory(vendas, currentUser, currentUserData);
                 }
             }, (error) => {
-                if(error.code !== "PERMISSION_DENIED") showToast("Erro de permissão ao carregar histórico.", "error");
+                if(error.code !== "PERMISSION_DENIED") showToast("Erro de permissão ao carregar histórico. Verifique as regras.", "error");
             });
+            
         }, (error) => {
             showToast("Erro fatal ao ler permissões do usuário.", "error");
             configurarInterfacePorTag('Visitante'); 
@@ -213,6 +226,7 @@ onAuthStateChanged(auth, (user) => {
         // --- Logout ---
         currentUser = null;
         currentUserData = null;
+        setVendaOriginal(null);
         if (vendasListener) vendasListener(); 
         vendas = []; 
         setVendas(vendas);
@@ -293,9 +307,9 @@ els.addOrgBtn.onclick = openAddOrgModal;
 els.dossierOrgGrid.addEventListener('click', (e) => {
     const orgCard = e.target.closest('.dossier-org-card');
     const editOrgBtn = e.target.closest('.edit-org-btn');
-    const editBtn = e.target.closest('.edit-dossier-btn'); // Para resultados de busca
-    const deleteBtn = e.target.closest('.delete-dossier-btn'); // Para resultados de busca
-    const fotoLinkBtn = e.target.closest('.veiculo-foto-link'); // Para resultados de busca
+    const editBtn = e.target.closest('.edit-dossier-btn'); 
+    const deleteBtn = e.target.closest('.delete-dossier-btn'); 
+    const fotoLinkBtn = e.target.closest('.veiculo-foto-link'); 
 
     if (editOrgBtn) { e.stopPropagation(); openEditOrgModal(editOrgBtn.dataset.orgId); }
     else if (editBtn) { e.stopPropagation(); openEditDossierModal(editBtn.dataset.org, editBtn.dataset.id); }
@@ -305,7 +319,7 @@ els.dossierOrgGrid.addEventListener('click', (e) => {
 });
 
 // Nível 2 (Pessoas)
-els.dossierVoltarBtn.onclick = () => { setUserActivity('Investigação (Bases)'); showDossierOrgs(currentUserData); };
+els.dossierVoltarBtn.onclick = () => { setUserActivity('Investigação (Bases)'); toggleView('dossier'); showDossierOrgs(currentUserData); };
 els.filtroDossierPeople.addEventListener('input', filterPeople);
 els.addPessoaBtn.onclick = () => { const orgName = els.addPessoaBtn.dataset.orgName; if(orgName) { openAddDossierModal(orgName); } };
 els.dossierPeopleGrid.addEventListener('click', (e) => {
@@ -352,7 +366,7 @@ els.editModalListaVeiculos.onclick = (e) => {
 
 // Lightbox
 els.imageLightboxOverlay.onclick = closeImageLightbox;
-els.imageLightboxModal.onclick = closeImageLightbox; // Permite fechar clicando na imagem/modal
+els.imageLightboxModal.onclick = closeImageLightbox; 
 
 // --- Inicialização (Welcome Screen e Tema)
 const savedTheme = localStorage.getItem('theme') || 'light';
