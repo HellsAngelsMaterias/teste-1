@@ -19,6 +19,9 @@ export const els = {
   vendaValorObs: document.getElementById('vendaValorObs'),
   dataVenda: document.getElementById('dataVenda'),
   filtroHistorico: document.getElementById('filtroHistorico'),
+  topScrollbarContainer: document.getElementById('top-scrollbar-container'), // NOVO
+  topScrollbarContent: document.getElementById('top-scrollbar-content'), // NOVO
+  historyTableWrapper: document.getElementById('historyTableWrapper'), // NOVO
   resultsBody: document.getElementById('resultsBody'),
   valuesBody: document.getElementById('valuesBody'),
   valorTotalGeral: document.getElementById('valorTotalGeral'),
@@ -26,6 +29,7 @@ export const els = {
   mainCard: document.getElementById('mainCard'),
   historyCard: document.getElementById('historyCard'),
   salesHistory: document.getElementById('salesHistory'),
+  historicoVendas: document.getElementById('historicoVendas'), // NOVO
   calcBtn: document.getElementById('calcBtn'),
   resetBtn: document.getElementById('resetBtn'),
   registerBtn: document.getElementById('registerBtn'),
