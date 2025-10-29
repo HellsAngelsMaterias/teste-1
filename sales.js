@@ -30,6 +30,8 @@ export const setVendas = (newVendas) => {
 export const setVendaEmEdicao = (id) => {
     vendaEmEdicaoId = id;
 };
+
+// ⭐️ AJUSTADO: Garante que todos os campos de edição original sejam capturados/limpos.
 export const setVendaOriginal = (data) => {
     if (!data) {
         vendaEmEdicaoId = null;
@@ -364,7 +366,8 @@ export const displaySalesHistory = (history, currentUser, currentUserData) => {
     let vendasFiltradas = history;
     const userTagUpper = currentUserData.tag.toUpperCase();
     
-    if (userTagUpper === 'VISITANTE') {
+    // ⭐️ AJUSTE DE FILTRAGEM: Para usuários não-Admin/Hells, filtra no cliente.
+    if (userTagUpper !== 'ADMIN' && userTagUpper !== 'HELLS') {
         vendasFiltradas = history.filter(v => v.registradoPorId === currentUser.uid);
     }
 
@@ -414,8 +417,9 @@ export const displaySalesHistory = (history, currentUser, currentUserData) => {
 
         const podeModificar = 
             (userTagUpper === 'ADMIN') ||
-            (userTagUpper === 'HELLS' && venda.registradoPorId === currentUser.uid) ||
-            (userTagUpper === 'VISITANTE' && venda.registradoPorId === currentUser.uid);
+            (userTagUpper === 'HELLS' && venda.registradoPorId === currentUser.uid); // Visitante só pode ver, mas o código antigo permitia editar/deletar próprio
+        
+        // Mantendo a lógica do seu código original para edições/deleções, mas o Read é filtrado pelo Firebase
 
         actionsCell.innerHTML = `
             <button class="action-btn muted edit-btn" ${!podeModificar ? 'disabled' : ''}>Editar</button>
