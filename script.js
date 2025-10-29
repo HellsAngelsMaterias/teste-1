@@ -5,7 +5,7 @@
 ===============================================
 */
 
-// --- 1. Imports
+// --- 1. Imports (dos seus ficheiros)
 import { 
     auth, db, 
     onAuthStateChanged, signOut, sendPasswordResetEmail, 
@@ -23,7 +23,7 @@ import {
     showDossierPeople, filterPeople, openAddDossierModal, removeDossierEntry, 
     openEditDossierModal, saveDossierChanges, closeEditDossierModal, 
     saveNewDossierEntry, closeAddDossierModal, saveOrg, deleteOrg, closeOrgModal, 
-    closeImageLightbox, openEditOrgModal,
+    closeImageLightbox, openEditOrgModal, showImageLightbox,
     adicionarOuAtualizarVeiculoTemp, cancelarEdicaoVeiculo, 
     removerVeiculoTemp, iniciarEdicaoVeiculo
 } from './dossier.js'; 
@@ -36,9 +36,12 @@ import {
 
 import { els } from './dom.js'; 
 
+// Importa as funções do helpers.js
+// (Nota: o relógio 'atualizarRelogio' em helpers.js corre sozinho, por isso não precisa ser importado)
 import { 
     showToast, toggleView, toggleTheme, updateLogoAndThemeButton, 
-    showNextTourStep, phoneMask, PREFIX, camposParaCapitalizar, clearTour
+    showNextTourStep, phoneMask, PREFIX, camposParaCapitalizar, clearTour,
+    capitalizeText // Importa a função de capitalização
 } from './helpers.js'; 
 
 // --- 4. Estado Global Principal
@@ -54,7 +57,7 @@ const setUserActivity = (activity) => {
     }
 };
 
-// --- FUNÇÕES DE INTERFACE
+// --- FUNÇÕES DE INTERFACE (Baseado no seu DOM)
 const configurarInterfacePorTag = (tag) => {
   const tagUpper = tag ? tag.toUpperCase() : 'VISITANTE';
   
@@ -86,6 +89,7 @@ const configurarInterfacePorTag = (tag) => {
   }
 };
 
+// Sincronização de Scroll (para o Histórico)
 const setupHistoryScrollSync = () => {
     const scrollContainer = els.historyCard.querySelector('.history-table-wrapper');
     const topBar = els.topHistoryScrollbar;
@@ -98,7 +102,6 @@ const setupHistoryScrollSync = () => {
     topBar.appendChild(innerContent);
     
     let isScrolling = false;
-
     const syncScroll = (source, target) => {
         if (isScrolling) return;
         isScrolling = true;
@@ -159,7 +162,7 @@ if (localStorage.getItem('hasVisited')) {
     els.welcomeScreen.style.display = 'none';
     els.authScreen.style.display = 'block'; // Mostra o login
 } else {
-    els.welcomeScreen.classList.add('show');
+    els.welcomeScreen.style.display = 'block';
     els.authScreen.style.display = 'none';
     els.mainCard.style.display = 'none';
 }
@@ -169,13 +172,13 @@ camposParaCapitalizar.forEach(campo => {
   if (campo) {
     campo.addEventListener('input', (e) => {
       const { selectionStart, selectionEnd } = e.target;
-      e.target.value = capitalizeText(e.target.value); 
+      e.target.value = capitalizeText(e.target.value); // Usa a função importada
       e.target.setSelectionRange(selectionStart, selectionEnd);
     });
   }
 });
 
-// Aplica máscaras de telefone
+// Aplica máscaras de telefone (baseado no seu helpers.js)
 const camposTelefone = [els.telefone, els.editDossierNumero, els.addDossierNumero];
 camposTelefone.forEach(campo => {
     if (campo) {
@@ -190,11 +193,11 @@ camposTelefone.forEach(campo => {
 
 
 // ===============================================
-// LÓGICA DE AUTENTICAÇÃO (CORRIGIDA)
+// LÓGICA DE AUTENTICAÇÃO (A CHAVE DO SEU PROBLEMA)
 // ===============================================
 
 // DOMÍNIO FICTÍCIO para permitir login por nome de usuário
-const AUTH_DOMAIN = '@hells.app';
+const AUTH_DOMAIN = '@hells.app'; // Você pode mudar isto se quiser
 
 /**
  * Lida com o login ou registro.
@@ -208,6 +211,7 @@ const handleAuthAction = async (isLogin, creds) => {
     }
     
     const displayName = username.trim();
+    // Converte "snow123" para "snow123@hells.app"
     const email = `${displayName.toLowerCase()}${AUTH_DOMAIN}`;
     els.authMessage.textContent = isLogin ? 'Autenticando...' : 'Registrando...';
 
@@ -220,7 +224,7 @@ const handleAuthAction = async (isLogin, creds) => {
             }
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             
-            // Atualiza o profile do Firebase Auth
+            // Atualiza o profile do Firebase Auth com o nome de usuário
             await updateProfile(userCredential.user, { displayName: displayName });
             
             // Salva os dados no Realtime Database
@@ -251,15 +255,18 @@ const handleAuthAction = async (isLogin, creds) => {
         els.authMessage.textContent = 'Sucesso! A entrar...';
     } catch (error) {
         console.error("Erro no login:", error.code);
-        // Esta é a mensagem que você vê na imagem
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            els.authMessage.textContent = 'Erro ao tentar autenticar.'; 
+            els.authMessage.textContent = 'Usuário ou senha inválidos.'; 
+        } else if (error.code === 'auth/configuration-not-found') {
+            // Este é o erro que você está vendo
+            els.authMessage.textContent = 'Erro: Login por Email/Senha não ativado no Firebase.';
         } else {
-            els.authMessage.textContent = `Erro: ${error.code}`;
+            els.authMessage.textContent = 'Erro ao tentar autenticar.';
         }
     }
 };
 
+// Função para ligar aos botões
 const authAction = (isLogin) => {
     handleAuthAction(isLogin, {
         username: els.username.value, 
@@ -267,21 +274,27 @@ const authAction = (isLogin) => {
     });
 };
 
+// Função de redefinição de senha
 const resetPassword = async () => {
-    const username = prompt("Digite o seu NOME DE USUÁRIO (não o email) para redefinir a senha:");
-    if (!username) return;
+    const username = els.username.value.trim();
+    if (!username) {
+        els.authMessage.textContent = 'Digite o seu nome de usuário para redefinir a senha.';
+        return;
+    }
     
     const email = `${username.toLowerCase().trim()}${AUTH_DOMAIN}`;
+    els.authMessage.textContent = `A enviar email de redefinição...`;
     
     try {
         await sendPasswordResetEmail(auth, email);
-        showToast(`Email de redefinição enviado para ${email}. (Verifique seu Spam)`, "success", 5000);
+        els.authMessage.textContent = `Email enviado! Verifique a sua caixa de entrada (e spam).`;
+        showToast(`Email de redefinição enviado.`, "success", 5000);
     } catch (error) {
         console.error("Erro ao redefinir senha:", error);
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
-            showToast("Usuário não encontrado.", "error");
+            els.authMessage.textContent = 'Usuário não encontrado.';
         } else {
-            showToast("Erro ao tentar redefinir a senha.", "error");
+            els.authMessage.textContent = 'Erro ao tentar redefinir a senha.';
         }
     }
 };
@@ -390,14 +403,15 @@ onAuthStateChanged(auth, (user) => {
 
 // --- UI Geral ---
 els.enterBtn.onclick = () => {
-    els.welcomeScreen.classList.add('hidden');
+    els.welcomeScreen.style.display = 'none';
     els.authScreen.style.display = 'block';
     localStorage.setItem('hasVisited', 'true');
-    // Espera a transição CSS terminar antes de remover
-    setTimeout(() => { els.welcomeScreen.style.display = 'none'; }, 500); 
 };
 els.themeBtn.onclick = toggleTheme;
-els.tutorialBtn.onclick = showNextTourStep;
+els.tutorialBtn.onclick = () => {
+    clearTour(); // Limpa o tour antigo
+    showNextTourStep(); // Inicia o tour
+};
 els.logoLink.onclick = (e) => { e.preventDefault(); toggleView('main'); };
 
 // --- Autenticação ---
@@ -525,17 +539,19 @@ document.addEventListener('click', (e) => {
         removeDossierEntry(e.target.dataset.org, e.target.dataset.id, currentUserData);
     } else if (e.target.matches('.veiculo-foto-link')) {
         e.preventDefault();
-        closeImageLightbox(e.target.dataset.url); // Note: Esta função não usa o argumento, mas chama a global
+        showImageLightbox(e.target.dataset.url);
     }
     
     // Botões dos Cards (Organizações)
-    else if (e.target.matches('.dossier-org-card h4') || e.target.matches('.dossier-org-card p')) {
-        const orgName = e.target.closest('.dossier-org-card').dataset.orgName;
+    // Corrigido para funcionar com .closest()
+    else if (e.target.closest('.dossier-org-card') && !e.target.matches('button, a, img, .action-btn, .drag-handle-icon')) {
+         const orgName = e.target.closest('.dossier-org-card').dataset.orgName;
         if(orgName) {
             setUserActivity(`Investigação (${orgName})`);
             showDossierPeople(orgName, currentUserData);
         }
     } else if (e.target.matches('.edit-org-btn')) {
+        e.preventDefault();
         openEditOrgModal(e.target.dataset.orgId);
     }
 });
