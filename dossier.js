@@ -33,636 +33,639 @@ export const findDossierEntryGlobal = async (nome) => {
                 if (dossies[orgKey][personId].nome && dossies[orgKey][personId].nome.toLowerCase() === nome.toLowerCase()) {
                     return {
                         personData: dossies[orgKey][personId],
-                        oldOrg: orgKey,
-                        personId: personId
+                        personId: personId,
+                        oldOrg: orgKey
                     };
                 }
             }
         }
+        return null;
     } catch (error) {
-        if(error.code !== "PERMISSION_DENIED") console.error("Erro na busca global:", error);
+        if (error.code !== "PERMISSION_DENIED") {
+            showToast(`Erro ao buscar no dossiê: ${error.message}`, "error");
+        }
         return null;
     }
-    return null; 
 };
 
-export const searchAllPeopleGlobal = async (query) => {
-    if (!query) return [];
-    const results = [];
-    const queryLower = query.toLowerCase();
-    try {
-        const snapshot = await get(ref(db, 'dossies'));
-        if (!snapshot.exists()) return [];
-        const dossies = snapshot.val();
-        for (const orgKey in dossies) {
-            for (const personId in dossies[orgKey]) {
-                const person = dossies[orgKey][personId];
-                if (person.nome && person.nome.toLowerCase().includes(queryLower)) {
-                    results.push({ ...person, id: personId, org: orgKey });
+export const addDossierEntry = (venda, dadosAntigosParaMover = null) => {
+    if (!venda || !venda.organizacao || !venda.cliente || venda.organizacao.trim() === '') return;
+    
+    const orgRef = ref(db, `dossies/${venda.organizacao}`);
+    const q = query(orgRef, orderByChild('nome'), equalTo(venda.cliente));
+    
+    get(q).then(snapshot => {
+        let entryKey = null;
+        let entryData = null;
+        
+        if (snapshot.exists()) {
+            snapshot.forEach(child => {
+                entryKey = child.key;
+                entryData = child.val();
+            });
+        }
+        
+        const veiculosParaAdicionar = {};
+        if (venda.carro && venda.carro.trim()) {
+            const carros = venda.carro.split(',').map(c => c.trim());
+            const placas = venda.placas.split(',').map(p => p.trim());
+            
+            carros.forEach((carroNome, index) => {
+                const placa = placas[index] || '';
+                const key = placa || `carro_${Date.now()}_${index}`;
+                veiculosParaAdicionar[key] = {
+                    carro: carroNome,
+                    placa: placa,
+                    fotoUrl: ''
+                };
+            });
+        }
+
+        if (entryKey && entryData) {
+            // --- ATUALIZA ENTRADA EXISTENTE ---
+            const existingVeiculos = entryData.veiculos || {};
+            const mergedVeiculos = {...existingVeiculos, ...veiculosParaAdicionar};
+            
+            update(ref(db, `dossies/${venda.organizacao}/${entryKey}`), {
+                telefone: entryData.telefone || venda.telefone || '',
+                cargo: entryData.cargo || venda.vendaValorObs || '',
+                veiculos: mergedVeiculos,
+                fotoUrl: entryData.fotoUrl || '',
+                instagram: entryData.instagram || '',
+            }).catch(e => showToast(`Erro ao atualizar dossiê: ${e.message}`, "error"));
+            
+        } else {
+            // --- CRIA NOVA ENTRADA ---
+            const newEntry = dadosAntigosParaMover || {}; 
+            
+            const existingVeiculos = newEntry.veiculos || {};
+            const mergedVeiculos = {...existingVeiculos, ...veiculosParaAdicionar};
+
+            push(orgRef, {
+                nome: venda.cliente,
+                telefone: newEntry.telefone || venda.telefone || '',
+                cargo: newEntry.cargo || venda.vendaValorObs || '',
+                fotoUrl: newEntry.fotoUrl || '',
+                instagram: newEntry.instagram || '',
+                veiculos: mergedVeiculos,
+                organizacao: venda.organizacao, 
+                data: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+                hierarquiaIndex: newEntry.hierarquiaIndex || 9999 
+            }).catch(e => showToast(`Erro ao criar dossiê: ${e.message}`, "error"));
+        }
+    }).catch(error => {
+        if (error.code !== "PERMISSION_DENIED") {
+            showToast(`Erro de permissão no dossiê: ${error.message}`, "error");
+        }
+    });
+};
+
+export const updateDossierEntryOnEdit = (oldCliente, oldOrg, newVenda) => {
+    if (!newVenda || !newVenda.cliente) return;
+    
+    const newOrg = newVenda.organizacao.trim();
+    const newCliente = newVenda.cliente.trim();
+    
+    if (newCliente.toLowerCase() === oldCliente.toLowerCase() && newOrg.toLowerCase() === oldOrg.toLowerCase()) {
+        // --- CASO 1: Apenas atualiza dados (Telefone, Cargo) ---
+        addDossierEntry(newVenda);
+        
+    } else {
+        // --- CASO 2: Nome ou Organização mudaram ---
+        findDossierEntryGlobal(oldCliente)
+            .then(existingEntry => {
+                if (existingEntry && existingEntry.oldOrg.toLowerCase() === oldOrg.toLowerCase()) {
+                    // Encontrou o registro antigo, vamos movê-lo
+                    const personId = existingEntry.personId;
+                    const personData = existingEntry.personData;
+                    
+                    // Atualiza os dados com a nova venda
+                    personData.nome = newCliente;
+                    personData.telefone = newVenda.telefone || personData.telefone || '';
+                    personData.cargo = newVenda.vendaValorObs || personData.cargo || '';
+                    personData.organizacao = newOrg;
+                    
+                    const veiculosParaAdicionar = {};
+                    if (newVenda.carro && newVenda.carro.trim()) {
+                        const carros = newVenda.carro.split(',').map(c => c.trim());
+                        const placas = newVenda.placas.split(',').map(p => p.trim());
+                        
+                        carros.forEach((carroNome, index) => {
+                            const placa = placas[index] || '';
+                            const key = placa || `carro_${Date.now()}_${index}`;
+                            veiculosParaAdicionar[key] = {
+                                carro: carroNome,
+                                placa: placa,
+                                fotoUrl: ''
+                            };
+                        });
+                    }
+                    const mergedVeiculos = {...(personData.veiculos || {}), ...veiculosParaAdicionar};
+                    personData.veiculos = mergedVeiculos;
+                    
+                    // Remove o registro antigo
+                    remove(ref(db, `dossies/${oldOrg}/${personId}`))
+                        .then(() => {
+                            // Adiciona/Atualiza o novo registro
+                            addDossierEntry(personData); 
+                            showToast(`Dossiê de "${oldCliente}" movido/atualizado para "${newCliente}" em "${newOrg}".`, "default");
+                        })
+                        .catch(e => showToast(`Erro ao mover dossiê (remover): ${e.message}`, "error"));
+                        
+                } else {
+                    // Não encontrou o registro antigo, apenas cria um novo
+                    addDossierEntry(newVenda);
                 }
+            });
+    }
+};
+
+export const autoFillFromDossier = (isEditing) => {
+    if (isEditing) return; 
+
+    const nome = els.nomeCliente.value.trim();
+    if (!nome) return;
+
+    findDossierEntryGlobal(nome)
+        .then(result => {
+            if (result) {
+                const data = result.personData;
+                const org = result.oldOrg;
+
+                if (org === 'CPF') {
+                    els.organizacaoTipo.value = 'CPF';
+                    els.organizacao.value = '';
+                } else if (org === 'Outros') {
+                    els.organizacaoTipo.value = 'OUTROS';
+                    els.organizacao.value = '';
+                } else {
+                    els.organizacaoTipo.value = 'CNPJ';
+                    els.organizacao.value = org;
+                }
+                
+                els.telefone.value = data.telefone || '';
+                els.vendaValorObs.value = data.cargo || '';
+                showToast(`Dados de "${nome}" preenchidos (Dossiê).`, "default");
+            }
+        });
+};
+
+
+// ===============================================
+// LÓGICA DE UI (ORGANIZAÇÕES)
+// ===============================================
+
+const renderDossierOrgsGrid = (orgs, filtro = '', currentUserData) => {
+    const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
+    const canEdit = userTagUpper === 'ADMIN' || userTagUpper === 'HELLS';
+    
+    if (orgs.length === 0) {
+        els.dossierOrgGrid.innerHTML = '<p>Nenhuma base (organização) encontrada.</p>';
+        return;
+    }
+
+    els.dossierOrgGrid.innerHTML = orgs.map(org => {
+        const orgName = org.nome || 'Nome Inválido';
+        const fotoUrl = org.fotoUrl || '';
+        const info = org.info || 'Sem informações.';
+        
+        const cardHtml = `
+            <div class="dossier-org-card" data-org-name="${orgName}" data-org-id="${org.id}">
+                <div class="drag-handle"><div class="drag-handle-icon"></div></div>
+            
+                <div class="dossier-org-foto">
+                    ${fotoUrl ? `<img src="${fotoUrl}" alt="Logo ${orgName}">` : 'Sem Foto'}
+                </div>
+                <h4>${orgName}</h4>
+                <p>${info}</p>
+                <div class="dossier-org-actions">
+                    <button class="action-btn muted edit-org-btn" data-org-id="${org.id}" ${canEdit ? '' : 'disabled'}>Editar Base</button>
+                </div>
+            </div>
+        `;
+        return cardHtml;
+    }).join('');
+};
+
+const renderDossierSearchResults = (results, currentUserData) => {
+    const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
+    const canEdit = userTagUpper === 'ADMIN' || userTagUpper === 'HELLS';
+    
+    if (results.length === 0) {
+        els.dossierOrgGrid.innerHTML = '<p>Nenhum resultado encontrado para a busca.</p>';
+        return;
+    }
+    
+    els.dossierOrgGrid.innerHTML = results.map(pessoa => {
+        const orgName = pessoa.organizacao || 'Desconhecida';
+        const fotoUrl = pessoa.fotoUrl || '';
+        
+        let veiculosHtml = '';
+        if (pessoa.veiculos && Object.keys(pessoa.veiculos).length > 0) {
+            veiculosHtml = Object.values(pessoa.veiculos)
+                .map(v => {
+                    const placa = v.placa ? `(${v.placa})` : '';
+                    const foto = v.fotoUrl ? `<a href="#" class="veiculo-foto-link" data-url="${v.fotoUrl}">[Foto]</a>` : '';
+                    return `<li>${v.carro || 'Carro'} ${placa} ${foto}</li>`;
+                })
+                .join('');
+            veiculosHtml = `<ul style="font-size: 13px; text-align: left; margin: 5px 0 0 15px; padding: 0; list-style-type: disc;">${veiculosHtml}</ul>`;
+        } else {
+            veiculosHtml = '<p style="font-size: 13px; margin: 0; opacity: 0.7;">(Sem veículos)</p>';
+        }
+
+        return `
+            <div class="dossier-entry-card" data-id="${pessoa.id}" data-org="${orgName}" style="text-align: left; padding: 12px;">
+                <h4 style="text-align: center;">${pessoa.nome || 'Sem Nome'}</h4>
+                <p style="text-align: center; font-weight: 600; color: var(--cor-principal); font-size: 14px;">(Base: ${orgName})</p>
+                
+                <div class="dossier-foto" style="height: 150px;">
+                    ${fotoUrl ? `<img src="${fotoUrl}" alt="Foto ${pessoa.nome}">` : 'Sem Foto'}
+                </div>
+                
+                <p><strong>Tel:</strong> ${pessoa.telefone || 'N/A'}</p>
+                <p><strong>Cargo:</strong> ${pessoa.cargo || 'N/A'}</p>
+                <p><strong>Insta:</strong> ${pessoa.instagram || 'N/A'}</p>
+                
+                <strong style="margin-top: 5px; display: block; text-align: left;">Veículos:</strong>
+                ${veiculosHtml}
+                
+                <div class="dossier-actions" style="margin-top: 15px;">
+                    <button class="action-btn muted edit-dossier-btn" data-id="${pessoa.id}" data-org="${orgName}" ${canEdit ? '' : 'disabled'}>Editar</button>
+                    <button class="action-btn danger delete-dossier-btn" data-id="${pessoa.id}" data-org="${orgName}" ${canEdit ? '' : 'disabled'}>Remover</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+export const showDossierOrgs = (currentUserData) => {
+    els.dossierOrgContainer.style.display = 'block';
+    els.dossierPeopleContainer.style.display = 'none';
+    els.filtroDossierOrgs.value = ''; 
+    document.body.classList.add('dossier-view-active');
+
+    const orgsRef = ref(db, 'organizacoesDossier');
+    onValue(orgsRef, (snapshot) => {
+        globalAllOrgs = [];
+        if (snapshot.exists()) {
+            snapshot.forEach(child => {
+                globalAllOrgs.push({ id: child.key, ...child.val() });
+            });
+            globalAllOrgs.sort((a, b) => (a.hierarquiaIndex || 9999) - (b.hierarquiaIndex || 9999));
+        }
+        renderDossierOrgsGrid(globalAllOrgs, '', currentUserData);
+        
+        // --- INICIAR SORTABLE.JS (Hierarquia de Orgs) ---
+        const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
+        if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
+            
+            if (orgSortableInstance) {
+                orgSortableInstance.destroy();
+            }
+            orgSortableInstance = new Sortable(els.dossierOrgGrid, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                handle: '.drag-handle', // ALTERADO: Define o 'handle'
+                onEnd: (evt) => {
+                    const updates = {};
+                    Array.from(evt.to.children).forEach((item, index) => {
+                        const orgId = item.dataset.orgId;
+                        if (orgId) {
+                            updates[`organizacoesDossier/${orgId}/hierarquiaIndex`] = index;
+                        }
+                    });
+                    update(ref(db), updates).catch(e => showToast(`Erro ao salvar ordem: ${e.message}`, 'error'));
+                }
+            });
+        }
+        
+    }, (error) => {
+        if (error.code !== "PERMISSION_DENIED") {
+            showToast(`Erro ao carregar bases: ${error.message}`, "error");
+        }
+        els.dossierOrgGrid.innerHTML = '<p style="color: var(--cor-erro);">Erro ao carregar dados. Verifique sua conexão e permissões.</p>';
+    });
+};
+
+export const filterOrgs = (currentUserData) => {
+    const filtro = els.filtroDossierOrgs.value.toLowerCase().trim();
+    
+    if (orgSortableInstance) {
+        orgSortableInstance.destroy();
+        orgSortableInstance = null;
+    }
+
+    if (filtro.length < 2) {
+        showDossierOrgs(currentUserData); // Recarrega a visualização padrão
+        return;
+    }
+    
+    els.dossierOrgGrid.innerHTML = '<p>Buscando...</p>';
+
+    // --- LÓGICA DE BUSCA GLOBAL (PESSOAS) ---
+    findPeopleGlobal(filtro).then(results => {
+        if (results.length > 0) {
+            renderDossierSearchResults(results, currentUserData);
+        } else {
+            els.dossierOrgGrid.innerHTML = '<p>Nenhum resultado encontrado para a busca.</p>';
+        }
+    }).catch(e => {
+         if (e.code !== "PERMISSION_DENIED") {
+             showToast(`Erro ao buscar: ${e.message}`, "error");
+         }
+         els.dossierOrgGrid.innerHTML = '<p>Erro ao realizar busca.</p>';
+    });
+};
+
+const findPeopleGlobal = async (filtro) => {
+    const snapshot = await get(ref(db, 'dossies'));
+    if (!snapshot.exists()) return [];
+    
+    const dossies = snapshot.val();
+    let results = [];
+    
+    for (const orgKey in dossies) {
+        for (const personId in dossies[orgKey]) {
+            const pessoa = { id: personId, ...dossies[orgKey][personId] };
+            
+            const nomeMatch = pessoa.nome && pessoa.nome.toLowerCase().includes(filtro);
+            const cargoMatch = pessoa.cargo && pessoa.cargo.toLowerCase().includes(filtro);
+            const telMatch = pessoa.telefone && pessoa.telefone.replace(/\D/g, '').includes(filtro.replace(/\D/g, ''));
+            const instaMatch = pessoa.instagram && pessoa.instagram.toLowerCase().includes(filtro);
+            
+            let veiculoMatch = false;
+            if (pessoa.veiculos) {
+                veiculoMatch = Object.values(pessoa.veiculos).some(v => 
+                    (v.carro && v.carro.toLowerCase().includes(filtro)) ||
+                    (v.placa && v.placa.toLowerCase().includes(filtro))
+                );
+            }
+            
+            if (nomeMatch || cargoMatch || telMatch || instaMatch || veiculoMatch) {
+                results.push(pessoa);
             }
         }
-    } catch (error) {
-        if(error.code !== "PERMISSION_DENIED") console.error("Erro na busca global de pessoas:", error);
     }
     return results;
 };
 
-const parseAndMergeVeiculos = (vendaData, existingVeiculos = {}) => {
-    const carros = (vendaData.carro || '').split(',').map(c => c.trim());
-    const placas = (vendaData.placas || '').split(',').map(p => p.trim());
-    const maxLen = Math.max(carros.length, placas.length);
-    const merged = { ...existingVeiculos }; 
 
-    for (let i = 0; i < maxLen; i++) {
-        const carro = carros[i] || 'N/A';
-        const placa = placas[i] || '';
-        
-        if (placa) {
-            if (!merged[placa]) { 
-                merged[placa] = { carro: carro, placa: placa, fotoUrl: '' };
-            } else if (carro !== 'N/A' && merged[placa].carro === 'N/A') {
-                merged[placa].carro = carro;
-            }
-        } else if (carro !== 'N/A') {
-            const tempKey = `venda_${Date.now()}_${i}`;
-            merged[tempKey] = { carro: carro, placa: '', fotoUrl: '' };
-        }
+// ===============================================
+// LÓGICA DE UI (PESSOAS)
+// ===============================================
+
+const renderDossierPeopleGrid = (people, orgName, filtro = '', currentUserData) => {
+    const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
+    const canEdit = userTagUpper === 'ADMIN' || userTagUpper === 'HELLS';
+
+    if (people.length === 0) {
+        els.dossierPeopleGrid.innerHTML = '<p>Nenhuma pessoa encontrada nesta base.</p>';
+        return;
     }
-    return merged;
+
+    els.dossierPeopleGrid.innerHTML = people.map(pessoa => {
+        const fotoUrl = pessoa.fotoUrl || '';
+        
+        let veiculosHtml = '';
+        if (pessoa.veiculos && Object.keys(pessoa.veiculos).length > 0) {
+            veiculosHtml = Object.values(pessoa.veiculos)
+                .map(v => {
+                    const placa = v.placa ? `(${v.placa})` : '';
+                    const foto = v.fotoUrl ? `<a href="#" class="veiculo-foto-link" data-url="${v.fotoUrl}">[Foto]</a>` : '';
+                    return `<li>${v.carro || 'Carro'} ${placa} ${foto}</li>`;
+                })
+                .join('');
+            veiculosHtml = `<ul style="font-size: 13px; text-align: left; margin: 5px 0 0 15px; padding: 0; list-style-type: disc;">${veiculosHtml}</ul>`;
+        } else {
+            veiculosHtml = '<p style="font-size: 13px; margin: 0; opacity: 0.7;">(Sem veículos)</p>';
+        }
+
+        return `
+            <div class="dossier-entry-card" data-id="${pessoa.id}" data-org="${orgName}">
+                <div class="drag-handle"><div class="drag-handle-icon"></div></div>
+            
+                <div class="dossier-foto">
+                    ${fotoUrl ? `<img src="${fotoUrl}" alt="Foto ${pessoa.nome}">` : 'Sem Foto'}
+                </div>
+                <h4>${pessoa.nome || 'Sem Nome'}</h4>
+                <p><strong>Tel:</strong> ${pessoa.telefone || 'N/A'}</p>
+                <p><strong>Cargo:</strong> ${pessoa.cargo || 'N/A'}</p>
+                <p><strong>Insta:</strong> ${pessoa.instagram || 'N/A'}</p>
+                
+                <strong style="margin-top: 5px; display: block; text-align: left;">Veículos:</strong>
+                ${veiculosHtml}
+                
+                <div class="dossier-actions">
+                    <button class="action-btn muted edit-dossier-btn" data-id="${pessoa.id}" data-org="${orgName}" ${canEdit ? '' : 'disabled'}>Editar</button>
+                    <button class="action-btn danger delete-dossier-btn" data-id="${pessoa.id}" data-org="${orgName}" ${canEdit ? '' : 'disabled'}>Remover</button>
+                </div>
+            </div>
+        `;
+    }).join('');
 };
 
-export const addDossierEntry = async (vendaData, dadosAntigos = null) => {
-    const org = vendaData.organizacao.trim();
-    const nome = vendaData.cliente.trim();
-    if (!org || !nome) return;
+export const showDossierPeople = (orgName, currentUserData) => {
+    els.dossierOrgContainer.style.display = 'none';
+    els.dossierPeopleContainer.style.display = 'block';
+    els.dossierPeopleTitle.textContent = `Membros: ${orgName}`;
+    els.filtroDossierPeople.value = '';
+    els.addPessoaBtn.dataset.orgName = orgName; 
+    document.body.classList.add('dossier-view-active');
 
-    const orgRef = ref(db, `organizacoes/${org}`);
-    get(orgRef).then(snapshot => {
-        if (!snapshot.exists()) {
-            set(orgRef, { nome: org, fotoUrl: '', info: 'Base registrada automaticamente via Venda.', ordemIndex: 9999 });
+    const peopleRef = ref(db, `dossies/${orgName}`);
+    onValue(peopleRef, (snapshot) => {
+        globalCurrentPeople = [];
+        if (snapshot.exists()) {
+            snapshot.forEach(child => {
+                globalCurrentPeople.push({ id: child.key, ...child.val() });
+            });
+            globalCurrentPeople.sort((a, b) => (a.hierarquiaIndex || 9999) - (b.hierarquiaIndex || 9999));
         }
+        renderDossierPeopleGrid(globalCurrentPeople, orgName, '', currentUserData);
+        
+        // --- INICIAR SORTABLE.JS (Hierarquia de Pessoas) ---
+        const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
+        if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
+            
+            if (sortableInstance) {
+                sortableInstance.destroy();
+            }
+            sortableInstance = new Sortable(els.dossierPeopleGrid, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                handle: '.drag-handle', // ALTERADO: Define o 'handle'
+                onEnd: (evt) => {
+                    const updates = {};
+                    Array.from(evt.to.children).forEach((item, index) => {
+                        const pessoaId = item.dataset.id;
+                        const org = item.dataset.org;
+                        if (pessoaId && org) {
+                            updates[`dossies/${org}/${pessoaId}/hierarquiaIndex`] = index;
+                        }
+                    });
+                    update(ref(db), updates).catch(e => showToast(`Erro ao salvar ordem: ${e.message}`, 'error'));
+                }
+            });
+        }
+        
+    }, (error) => {
+        if (error.code !== "PERMISSION_DENIED") {
+            showToast(`Erro ao carregar pessoas: ${error.message}`, "error");
+        }
+        els.dossierPeopleGrid.innerHTML = '<p style="color: var(--cor-erro);">Erro ao carregar dados. Verifique sua conexão e permissões.</p>';
+    });
+};
+
+export const filterPeople = () => {
+    const filtro = els.filtroDossierPeople.value.toLowerCase().trim();
+    const orgName = els.addPessoaBtn.dataset.orgName;
+    
+    // Desativa a reordenação durante a filtragem
+    if (sortableInstance) {
+        sortableInstance.destroy();
+        sortableInstance = null;
+    }
+
+    const filteredPeople = globalCurrentPeople.filter(pessoa => {
+        const nomeMatch = pessoa.nome && pessoa.nome.toLowerCase().includes(filtro);
+        const cargoMatch = pessoa.cargo && pessoa.cargo.toLowerCase().includes(filtro);
+        const telMatch = pessoa.telefone && pessoa.telefone.replace(/\D/g, '').includes(filtro.replace(/\D/g, ''));
+        const instaMatch = pessoa.instagram && pessoa.instagram.toLowerCase().includes(filtro);
+        
+        let veiculoMatch = false;
+        if (pessoa.veiculos) {
+            veiculoMatch = Object.values(pessoa.veiculos).some(v => 
+                (v.carro && v.carro.toLowerCase().includes(filtro)) ||
+                (v.placa && v.placa.toLowerCase().includes(filtro))
+            );
+        }
+        
+        return nomeMatch || cargoMatch || telMatch || instaMatch || veiculoMatch;
     });
 
-    const dossierQuery = query(ref(db, `dossies/${org}`), orderByChild('nome'), equalTo(nome));
-    
-    try {
-        const snapshot = await get(dossierQuery);
-        if (snapshot.exists()) {
-            let existingEntryId, existingEntryData;
-            snapshot.forEach(child => { existingEntryId = child.key; existingEntryData = child.val(); });
-            const updates = {
-                numero: vendaData.telefone || existingEntryData.numero,
-                cargo: vendaData.vendaValorObs || existingEntryData.cargo,
-                data: vendaData.dataHora,
-                veiculos: parseAndMergeVeiculos(vendaData, (dadosAntigos ? dadosAntigos.veiculos : existingEntryData.veiculos) || {})
-            };
-            if (dadosAntigos) {
-                updates.fotoUrl = dadosAntigos.fotoUrl || existingEntryData.fotoUrl || '';
-                updates.instagram = dadosAntigos.instagram || existingEntryData.instagram || '';
-                updates.hierarquiaIndex = dadosAntigos.hierarquiaIndex !== undefined ? dadosAntigos.hierarquiaIndex : (existingEntryData.hierarquiaIndex !== undefined ? existingEntryData.hierarquiaIndex : 9999);
-            }
-            await update(ref(db, `dossies/${org}/${existingEntryId}`), updates);
-        } else {
-            const dossierEntry = { ...dadosAntigos };
-            dossierEntry.nome = vendaData.cliente;
-            dossierEntry.numero = vendaData.telefone;
-            dossierEntry.organizacao = org;
-            dossierEntry.cargo = vendaData.vendaValorObs || 'N/A';
-            dossierEntry.data = vendaData.dataHora; 
-            dossierEntry.veiculos = parseAndMergeVeiculos(vendaData, (dadosAntigos ? dadosAntigos.veiculos : {}));
-            dossierEntry.fotoUrl = dossierEntry.fotoUrl || '';
-            dossierEntry.instagram = dossierEntry.instagram || '';
-            dossierEntry.hierarquiaIndex = dossierEntry.hierarquiaIndex !== undefined ? dossierEntry.hierarquiaIndex : 9999;
-            await push(ref(db, `dossies/${org}`), dossierEntry);
-        }
-    } catch (err) {
-        if(err.code !== "PERMISSION_DENIED") showToast(`Erro ao sincronizar dossiê: ${err.message}`, "error");
-    }
+    renderDossierPeopleGrid(filteredPeople, orgName, filtro);
 };
 
-export const updateDossierEntryOnEdit = async (oldNome, oldOrg, newVendaData) => {
-    const newOrg = newVendaData.organizacao.trim();
-    const newNome = newVendaData.cliente.trim();
-    if (!oldOrg || !oldNome || !newOrg || !newNome) return;
-
-    const dossierQuery = query(ref(db, `dossies/${oldOrg}`), orderByChild('nome'), equalTo(oldNome));
-    
-    try {
-        const snapshot = await get(dossierQuery);
-        if (!snapshot.exists()) {
-            const globalEntry = await findDossierEntryGlobal(newNome);
-            let dadosAntigos = null;
-            if (globalEntry && globalEntry.oldOrg !== newOrg) {
-                dadosAntigos = globalEntry.personData;
-                await remove(ref(db, `dossies/${globalEntry.oldOrg}/${globalEntry.personId}`));
-                showToast(`"${newNome}" movido de "${globalEntry.oldOrg}" para "${newOrg}".`, "default", 4000);
-            }
-            addDossierEntry(newVendaData, dadosAntigos);
-            return;
-        }
-
-        let existingEntryId, existingEntryData;
-        snapshot.forEach(child => { existingEntryId = child.key; existingEntryData = child.val(); });
-        
-        const newDossierData = {
-            ...existingEntryData, 
-            nome: newVendaData.cliente,
-            numero: newVendaData.telefone,
-            organizacao: newVendaData.organizacao,
-            cargo: newVendaData.vendaValorObs || 'N/A',
-            data: newVendaData.dataHora,
-            veiculos: parseAndMergeVeiculos(newVendaData, existingEntryData.veiculos || {}),
-        };
-
-        if (oldOrg === newOrg) {
-            await set(ref(db, `dossies/${newOrg}/${existingEntryId}`), newDossierData); 
-        } else {
-            await remove(ref(db, `dossies/${oldOrg}/${existingEntryId}`));
-            addDossierEntry(newVendaData, existingEntryData); 
-        }
-    } catch (err) {
-        if(err.code !== "PERMISSION_DENIED") showToast(`Erro ao sincronizar dossiê: ${err.message}`, "error");
-    }
-};
-
-export const autoFillFromDossier = async (vendaEmEdicao) => {
-    if (vendaEmEdicao) return; 
-    const nome = els.nomeCliente.value.trim();
-    if (!nome) return; 
-
-    try {
-        const foundEntry = await findDossierEntryGlobal(nome);
-        if (foundEntry && foundEntry.personData) {
-            const data = foundEntry.personData;
-            const orgBase = foundEntry.oldOrg;
-
-            els.telefone.value = data.numero || '';
-            els.vendaValorObs.value = data.cargo || ''; 
-            
-            if (orgBase.toUpperCase() === 'CPF') {
-                els.organizacaoTipo.value = 'CPF';
-                els.organizacao.value = ''; 
-            } else if (orgBase.toUpperCase() === 'OUTROS') {
-                els.organizacaoTipo.value = 'OUTROS';
-                els.organizacao.value = ''; 
-            } else {
-                els.organizacaoTipo.value = 'CNPJ';
-                els.organizacao.value = orgBase; 
-            }
-            showToast(`Dados de "${nome}" preenchidos do dossiê.`, "success");
-        }
-    } catch (error) {
-        if(error.code !== "PERMISSION_DENIED") showToast("Erro ao buscar dados do dossiê.", "error");
-    }
-};
 
 // ===============================================
-// LÓGICA DE VISUALIZAÇÃO DO DOSSIÊ
+// LÓGICA DE MODAIS (GERAL)
 // ===============================================
 
-// --- Lightbox
 export const showImageLightbox = (url) => {
     if (!url) return;
     els.lightboxImg.src = url;
     els.imageLightboxOverlay.style.display = 'block';
     els.imageLightboxModal.style.display = 'block';
 };
-
 export const closeImageLightbox = () => {
     els.imageLightboxOverlay.style.display = 'none';
     els.imageLightboxModal.style.display = 'none';
-    els.lightboxImg.src = ''; 
+    els.lightboxImg.src = '';
 };
 
-// --- Ordenação (SortableJS) ---
-const saveHierarchyOrder = (orgName) => {
-    const children = Array.from(els.dossierPeopleGrid.children);
-    if (children.length === 0 || !children[0].classList.contains('dossier-entry-card')) return; 
-    
-    const updates = {};
-    children.forEach((card, index) => {
-        updates[`dossies/${orgName}/${card.dataset.id}/hierarquiaIndex`] = index;
-    });
-    
-    if (Object.keys(updates).length > 0) {
-        update(ref(db), updates)
-            .then(() => {
-                showToast("Hierarquia atualizada!", "success");
-                globalCurrentPeople = children.map((card, index) => {
-                    const person = globalCurrentPeople.find(p => p.id === card.dataset.id);
-                    if (person) person.hierarquiaIndex = index;
-                    return person;
-                }).filter(Boolean);
-            })
-            .catch((err) => showToast(`Erro ao salvar hierarquia: ${err.message}`, "error"));
-    }
-};
-
-const initSortable = (orgName, currentUserData) => {
-    if (sortableInstance) sortableInstance.destroy(); 
-    const userTagUpper = currentUserData ? currentUserData.tag.toUpperCase() : 'VISITANTE';
-    const canDrag = (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS');
-    
-    sortableInstance = new Sortable(els.dossierPeopleGrid, {
-        animation: 150,
-        handle: '.dossier-entry-card', // Alterado do seu script para o card todo
-        disabled: !canDrag, 
-        ghostClass: 'sortable-ghost', 
-        onEnd: () => saveHierarchyOrder(orgName)
-    });
-};
-
-const saveOrgOrder = (showToastOnSuccess = true) => {
-    const children = Array.from(els.dossierOrgGrid.children).filter(el => el.classList.contains('dossier-org-card'));
-    if (children.length === 0) return;
-    
-    const updates = {};
-    children.forEach((card, index) => {
-        updates[`organizacoes/${card.dataset.orgName}/ordemIndex`] = index;
-    });
-    
-    if (Object.keys(updates).length > 0) {
-        update(ref(db), updates)
-            .then(() => {
-                if(showToastOnSuccess) showToast("Ordem das Bases atualizada!", "success");
-                globalAllOrgs = children.map((card, index) => {
-                    const org = globalAllOrgs.find(o => o.id === card.dataset.orgName);
-                    if (org) org.ordemIndex = index;
-                    return org;
-                }).filter(Boolean);
-            })
-            .catch((err) => showToast(`Erro ao salvar ordem das Bases: ${err.message}`, "error"));
-    }
-};
-
-const initOrgSortable = (currentUserData) => {
-    if (orgSortableInstance) orgSortableInstance.destroy();
-    const userTagUpper = currentUserData ? currentUserData.tag.toUpperCase() : 'VISITANTE';
-    const canDrag = (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS');
-    
-    orgSortableInstance = new Sortable(els.dossierOrgGrid, {
-        animation: 150,
-        handle: '.dossier-org-card', // Alterado para o card todo
-        group: 'orgs', 
-        disabled: !canDrag, 
-        ghostClass: 'sortable-ghost',
-        filter: 'h3.dossier-org-title', 
-        onEnd: () => saveOrgOrder()
-    });
-};
-
-// --- Nível 1: Organizações (Bases) ---
-export const showDossierOrgs = async (currentUserData) => {
-    els.dossierOrgContainer.style.display = 'block';
-    els.dossierPeopleContainer.style.display = 'none';
-    els.dossierOrgGrid.innerHTML = '<p>Carregando organizações...</p>';
-    globalAllOrgs = [];
-    
-    try {
-        const orgsInfoSnap = await get(ref(db, 'organizacoes'));
-        const orgsInfo = orgsInfoSnap.exists() ? orgsInfoSnap.val() : {};
-        const orgsPessoasSnap = await get(ref(db, 'dossies'));
-        const orgsPessoas = orgsPessoasSnap.exists() ? orgsPessoasSnap.val() : {};
-        const allOrgNames = new Set([...Object.keys(orgsInfo), ...Object.keys(orgsPessoas)]);
-        
-        if (allOrgNames.size === 0) {
-            els.dossierOrgGrid.innerHTML = '<p>Nenhuma organização encontrada. Clique em "+ Adicionar Base" para começar.</p>';
-            initOrgSortable(currentUserData);
-            return;
-        }
-        
-        globalAllOrgs = Array.from(allOrgNames).map(orgName => {
-            const info = orgsInfo[orgName] || {};
-            return { id: orgName, nome: orgName, ordemIndex: info.ordemIndex !== undefined ? info.ordemIndex : 9999, ...info };
-        }).sort((a, b) => {
-             const indexA = a.ordemIndex !== undefined ? a.ordemIndex : Infinity;
-             const indexB = b.ordemIndex !== undefined ? b.ordemIndex : Infinity;
-             if (indexA !== indexB) return indexA - indexB; 
-             return a.nome.localeCompare(b.nome); 
-        });
-        
-        displayOrgs(globalAllOrgs);
-        initOrgSortable(currentUserData);
-        
-    } catch (error) {
-        els.dossierOrgGrid.innerHTML = `<p style="color: var(--cor-erro);">Erro ao carregar organizações: ${error.message}</p>`;
-    }
-};
-
-const displayOrgs = (orgs) => {
-    els.dossierOrgGrid.innerHTML = '';
-    if (orgs.length === 0) {
-        els.dossierOrgGrid.innerHTML = '<p>Nenhuma organização encontrada para este filtro.</p>';
-        return;
-    }
-    
-    orgs.forEach(org => {
-        const card = document.createElement('div');
-        card.className = 'dossier-org-card';
-        card.dataset.orgName = org.nome;
-        
-        const fotoDiv = document.createElement('div');
-        fotoDiv.className = 'dossier-org-foto';
-        if (org.fotoUrl) {
-            const img = document.createElement('img');
-            img.src = org.fotoUrl;
-            img.alt = `Base de ${org.nome}`;
-            img.addEventListener('click', (e) => { e.stopPropagation(); showImageLightbox(org.fotoUrl); });
-            fotoDiv.appendChild(img);
-        } else {
-            fotoDiv.textContent = 'Sem Foto da Base';
-        }
-        
-        card.innerHTML += `
-            <h4>${org.nome}</h4>
-            <p>${org.info || '(Sem informações da base)'}</p>
-            <div class="dossier-org-actions">
-                <button class="action-btn muted edit-org-btn" data-org-id="${org.id}">✏️ Editar Base</button>
-            </div>
-        `;
-        card.prepend(fotoDiv); 
-        
-        els.dossierOrgGrid.appendChild(card);
-    });
-};
-
-const displayGlobalSearchResults = (orgs, people) => {
-    els.dossierOrgGrid.innerHTML = ''; 
-    if (orgs.length === 0 && people.length === 0) {
-        els.dossierOrgGrid.innerHTML = '<p>Nenhuma organização ou pessoa encontrada para este filtro.</p>';
-        return;
-    }
-
-    if (orgs.length > 0) {
-        els.dossierOrgGrid.innerHTML += '<h3 class="dossier-org-title">Bases Encontradas</h3>';
-        orgs.forEach(org => {
-            const card = document.createElement('div');
-            card.className = 'dossier-org-card';
-            card.dataset.orgName = org.nome;
-            card.style.cursor = 'pointer'; 
-            
-            const fotoDiv = document.createElement('div');
-            fotoDiv.className = 'dossier-org-foto';
-            if (org.fotoUrl) {
-                const img = document.createElement('img');
-                img.src = org.fotoUrl;
-                img.alt = `Base de ${org.nome}`;
-                img.addEventListener('click', (e) => { e.stopPropagation(); showImageLightbox(org.fotoUrl); });
-                fotoDiv.appendChild(img);
-            } else {
-                fotoDiv.textContent = 'Sem Foto da Base';
-            }
-            card.prepend(fotoDiv); 
-            
-            card.innerHTML += `
-                <h4>${org.nome}</h4>
-                <p>${org.info || '(Sem informações da base)'}</p>
-                <div class="dossier-org-actions">
-                    <button class="action-btn muted edit-org-btn" data-org-id="${org.id}">✏️ Editar Base</button>
-                </div>
-            `;
-            els.dossierOrgGrid.appendChild(card);
-        });
-    }
-
-    if (people.length > 0) {
-        els.dossierOrgGrid.innerHTML += '<h3 class="dossier-org-title">Pessoas Encontradas</h3>';
-        people.forEach(entry => {
-            const card = document.createElement('div');
-            card.className = 'dossier-entry-card';
-            card.dataset.id = entry.id; 
-            card.style.cursor = 'default'; 
-            
-            const baseLink = document.createElement('a'); 
-            baseLink.href = '#';
-            baseLink.textContent = `Base: ${entry.org}`;
-            baseLink.className = 'dossier-base-link'; // Estilizado no CSS
-            baseLink.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); showDossierPeople(entry.org); });
-            card.appendChild(baseLink); 
-
-            const fotoDiv = document.createElement('div');
-            fotoDiv.className = 'dossier-foto';
-            if (entry.fotoUrl) {
-                const img = document.createElement('img');
-                img.src = entry.fotoUrl;
-                img.alt = `Foto de ${entry.nome}`;
-                img.addEventListener('click', (e) => { e.stopPropagation(); showImageLightbox(entry.fotoUrl); });
-                fotoDiv.appendChild(img);
-            } else {
-                fotoDiv.textContent = 'Sem Foto';
-            }
-            card.appendChild(fotoDiv);
-
-            card.innerHTML += `
-                <h4>${entry.nome || '(Sem Nome)'}</h4>
-                <p>${entry.numero || '(Sem Número)'}</p>
-                <p><strong>Cargo:</strong> ${entry.cargo || 'N/A'}</p>
-            `;
-            if (entry.instagram) {
-                let instaHandle = entry.instagram.startsWith('@') ? entry.instagram.substring(1) : entry.instagram;
-                instaHandle = instaHandle.split('/')[0]; 
-                card.innerHTML += `<p style="font-size: 13px;"><strong>Instagram:</strong> <span style="color: var(--cor-principal); font-weight: 500;">@${instaHandle}</span></p>`;
-            }
-            
-            card.appendChild(createVeiculosDetails(entry.veiculos));
-            
-            card.innerHTML += `
-                <div class="dossier-actions">
-                    <button class="action-btn muted edit-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">✏️ Editar</button>
-                    <button class="action-btn danger delete-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">❌ Apagar</button>
-                </div>
-            `;
-            els.dossierOrgGrid.appendChild(card);
-        });
-    }
-};
-
-export const filterOrgs = async (currentUserData) => {
-    const query = els.filtroDossierOrgs.value.toLowerCase().trim();
-    if (!query) {
-        displayOrgs(globalAllOrgs); 
-        initOrgSortable(currentUserData);
-        return;
-    }
-    
-    els.dossierOrgGrid.innerHTML = '<p>Buscando...</p>'; 
-    const filteredOrgs = globalAllOrgs.filter(org => org.nome.toLowerCase().includes(query));
-    const filteredPeople = await searchAllPeopleGlobal(query);
-    displayGlobalSearchResults(filteredOrgs, filteredPeople);
-    
-    if (orgSortableInstance) {
-        orgSortableInstance.destroy();
-        orgSortableInstance = null;
-    }
-};
-
-// --- Nível 2: Pessoas (Membros) ---
-export const showDossierPeople = async (orgName, currentUserData) => {
-    els.dossierOrgContainer.style.display = 'none';
-    els.dossierPeopleContainer.style.display = 'block';
-    els.dossierPeopleTitle.textContent = `Membros: ${orgName}`;
-    els.dossierPeopleGrid.innerHTML = '<p>Carregando membros...</p>';
-    els.addPessoaBtn.dataset.orgName = orgName;
-    globalCurrentPeople = [];
-    if (orgSortableInstance) {
-        orgSortableInstance.destroy();
-        orgSortableInstance = null;
-    }
-    
-    try {
-        const snapshot = await get(ref(db, `dossies/${orgName}`));
-        if (!snapshot.exists()) {
-            els.dossierPeopleGrid.innerHTML = '<p>Nenhum membro registrado para esta organização.</p>';
-            initSortable(orgName, currentUserData);
-            return;
-        }
-        
-        const peopleData = snapshot.val();
-        for (const personId in peopleData) {
-            globalCurrentPeople.push({ id: personId, org: orgName, ...peopleData[personId] });
-        }
-        
-        globalCurrentPeople.sort((a, b) => {
-            const indexA = a.hierarquiaIndex !== undefined ? a.hierarquiaIndex : Infinity;
-            const indexB = b.hierarquiaIndex !== undefined ? b.hierarquiaIndex : Infinity;
-            if (indexA !== indexB) return indexA - indexB; 
-            return (a.nome || '').localeCompare(b.nome || ''); 
-        });
-        
-        displayPeople(globalCurrentPeople);
-        initSortable(orgName, currentUserData);
-        
-    } catch (error) {
-        els.dossierPeopleGrid.innerHTML = `<p style="color: var(--cor-erro);">Erro ao carregar membros: ${error.message}</p>`;
-    }
-};
-
-const createVeiculosDetails = (veiculos) => {
-    const veiculosCount = veiculos ? Object.keys(veiculos).length : 0;
-    
-    if (veiculosCount === 0) {
-        const p = document.createElement('p');
-        p.innerHTML = '<strong>Veículos:</strong> N/A';
-        p.className = 'dossier-veiculo-na'; // Estilo para 'N/A'
-        return p;
-    }
-
-    const details = document.createElement('details');
-    details.className = 'dossier-veiculos-details';
-    
-    const summary = document.createElement('summary');
-    summary.innerHTML = `<strong>Veículos (${veiculosCount})</strong> (Clique para ver)`;
-    details.appendChild(summary);
-    
-    for (const id in veiculos) {
-        const veiculo = veiculos[id];
-        const p = document.createElement('p');
-        let fotoLink = veiculo.fotoUrl 
-            ? ` <a href="#" class="veiculo-foto-link" data-url="${veiculo.fotoUrl}">[Ver Foto]</a>`
-            : ` <span class="veiculo-sem-foto">[Sem Foto]</span>`;
-        p.innerHTML = `<strong>${veiculo.carro || 'N/A'}:</strong> ${veiculo.placa || 'N/A'}${fotoLink}`;
-        details.appendChild(p);
-    }
-    return details;
-};
-
-const displayPeople = (people) => {
-    els.dossierPeopleGrid.innerHTML = '';
-    if (people.length === 0) {
-        els.dossierPeopleGrid.innerHTML = '<p>Nenhum membro encontrado para este filtro.</p>';
-        return;
-    }
-
-    people.forEach(entry => {
-        const card = document.createElement('div');
-        card.className = 'dossier-entry-card';
-        card.dataset.id = entry.id; 
-        
-        const fotoDiv = document.createElement('div');
-        fotoDiv.className = 'dossier-foto';
-        if (entry.fotoUrl) {
-            const img = document.createElement('img');
-            img.src = entry.fotoUrl;
-            img.alt = `Foto de ${entry.nome}`;
-            img.addEventListener('click', (e) => { e.stopPropagation(); showImageLightbox(entry.fotoUrl); });
-            fotoDiv.appendChild(img);
-        } else {
-            fotoDiv.textContent = 'Sem Foto';
-        }
-        card.appendChild(fotoDiv);
-        
-        card.innerHTML += `
-            <h4>${entry.nome || '(Sem Nome)'}</h4>
-            <p>${entry.numero || '(Sem Número)'}</p>
-            <p><strong>Cargo:</strong> ${entry.cargo || 'N/A'}</p>
-        `;
-        
-        if (entry.instagram) {
-            let instaHandle = entry.instagram.startsWith('@') ? entry.instagram.substring(1) : entry.instagram;
-            instaHandle = instaHandle.split('/')[0]; 
-            card.innerHTML += `<p style="font-size: 13px;"><strong>Instagram:</strong> <span style="color: var(--cor-principal); font-weight: 500;">@${instaHandle}</span></p>`;
-        }
-        
-        card.appendChild(createVeiculosDetails(entry.veiculos));
-        
-        card.innerHTML += `
-            <div class="dossier-actions">
-                <button class="action-btn muted edit-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">✏️ Editar</button>
-                <button class="action-btn danger delete-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">❌ Apagar</button>
-            </div>
-        `;
-        
-        els.dossierPeopleGrid.appendChild(card);
-    });
-};
-
-export const filterPeople = () => {
-    const query = els.filtroDossierPeople.value.toLowerCase().trim();
-    if (!query) {
-        displayPeople(globalCurrentPeople);
-        return;
-    }
-    
-    const filteredPeople = globalCurrentPeople.filter(entry => {
-        const nome = (entry.nome || '').toLowerCase();
-        const cargo = (entry.cargo || '').toLowerCase();
-        const instagram = (entry.instagram || '').toLowerCase(); 
-        
-        let veiculoMatch = false;
-        if (entry.veiculos) {
-            for (const id in entry.veiculos) {
-                const v = entry.veiculos[id];
-                if (((v.carro || '').toLowerCase().includes(query)) || ((v.placa || '').toLowerCase().includes(query))) {
-                    veiculoMatch = true;
-                    break;
-                }
-            }
-        }
-        return nome.includes(query) || cargo.includes(query) || instagram.includes(query) || veiculoMatch; 
-    });
-    
-    displayPeople(filteredPeople);
-};
 
 // ===============================================
-// LÓGICA DOS MODAIS (Organização)
+// LÓGICA DE MODAIS (VEÍCULOS - Temporário)
 // ===============================================
 
+const renderTempVeiculosList = (containerEl) => {
+    containerEl.innerHTML = '';
+    if (Object.keys(tempVeiculos).length === 0) {
+        containerEl.innerHTML = '<li>Nenhum veículo registrado.</li>';
+        return;
+    }
+    
+    Object.entries(tempVeiculos).forEach(([key, veiculo]) => {
+        const placa = veiculo.placa ? `(${veiculo.placa})` : '';
+        const foto = veiculo.fotoUrl ? `<a href="#" class="veiculo-foto-link" data-url="${veiculo.fotoUrl}">[Foto]</a>` : '';
+        
+        containerEl.innerHTML += `
+            <li class="veiculo-item-modal" data-key="${key}">
+                <span>${veiculo.carro} ${placa} ${foto}</span>
+                <div>
+                    <button class="action-btn muted edit-veiculo-btn" data-key="${key}">✎</button>
+                    <button class="action-btn danger remove-veiculo-btn" data-key="${key}">X</button>
+                </div>
+            </li>
+        `;
+    });
+};
+
+export const adicionarOuAtualizarVeiculoTemp = (modalPrefix) => {
+    const nomeEl = els[`${modalPrefix}CarroNome`];
+    const placaEl = els[`${modalPrefix}CarroPlaca`];
+    const fotoEl = els[`${modalPrefix}CarroFoto`];
+    const listaEl = els[`${modalPrefix}ListaVeiculos`];
+    
+    const carro = nomeEl.value.trim();
+    const placa = placaEl.value.trim().toUpperCase();
+    const fotoUrl = fotoEl.value.trim();
+
+    if (!carro) {
+        showToast("O nome do carro é obrigatório.", "error");
+        return;
+    }
+    
+    // Se estava editando, usa a chave original. Se não, usa a placa (se houver) ou uma chave temporária.
+    const key = veiculoEmEdicaoKey || placa || `temp_${Date.now()}`;
+    
+    tempVeiculos[key] = { carro, placa, fotoUrl };
+    
+    renderTempVeiculosList(listaEl);
+    cancelarEdicaoVeiculo(modalPrefix); // Limpa os campos e reseta o estado
+};
+
+export const iniciarEdicaoVeiculo = (key, modalPrefix) => {
+    const veiculo = tempVeiculos[key];
+    if (!veiculo) return;
+    
+    veiculoEmEdicaoKey = key; // Entra em modo de edição
+    
+    els[`${modalPrefix}CarroNome`].value = veiculo.carro;
+    els[`${modalPrefix}CarroPlaca`].value = veiculo.placa;
+    els[`${modalPrefix}CarroFoto`].value = veiculo.fotoUrl;
+    
+    els[`${modalPrefix}AddVeiculoBtn`].textContent = 'Atualizar Veículo';
+    els[`${modalPrefix}CancelVeiculoBtn`].style.display = 'block';
+};
+
+export const cancelarEdicaoVeiculo = (modalPrefix) => {
+    veiculoEmEdicaoKey = null;
+    els[`${modalPrefix}CarroNome`].value = '';
+    els[`${modalPrefix}CarroPlaca`].value = '';
+    els[`${modalPrefix}CarroFoto`].value = '';
+    
+    els[`${modalPrefix}AddVeiculoBtn`].textContent = 'Salvar/Adicionar Veículo';
+    els[`${modalPrefix}CancelVeiculoBtn`].style.display = 'none';
+};
+
+export const removerVeiculoTemp = (key, listaEl) => {
+    if (confirm(`Tem certeza que deseja remover este veículo? (Placa: ${key})`)) {
+        delete tempVeiculos[key];
+        renderTempVeiculosList(listaEl);
+    }
+};
+
+
+// ===============================================
+// LÓGICA DE MODAIS (ORGANIZAÇÃO)
+// ===============================================
+
+// --- Ação: Abrir Modal (Nova Org) ---
 export const openAddOrgModal = () => {
-    els.orgModalTitle.textContent = "Adicionar Nova Base";
+    els.orgModalTitle.textContent = 'Adicionar Nova Base';
     els.editOrgId.value = '';
     els.orgNome.value = '';
-    els.orgNome.disabled = false;
     els.orgFotoUrl.value = '';
     els.orgInfo.value = '';
     els.deleteOrgBtn.style.display = 'none';
-    document.querySelectorAll('.input-invalido').forEach(el => el.classList.remove('input-invalido'));
+    
     els.orgModalOverlay.style.display = 'block';
     els.orgModal.style.display = 'block';
-    els.orgNome.focus();
 };
 
+// --- Ação: Abrir Modal (Editar Org) ---
 export const openEditOrgModal = (orgId) => {
     const org = globalAllOrgs.find(o => o.id === orgId);
     if (!org) {
@@ -670,272 +673,228 @@ export const openEditOrgModal = (orgId) => {
         return;
     }
     
-    els.orgModalTitle.textContent = "Editar Base";
+    els.orgModalTitle.textContent = `Editar Base: ${org.nome}`;
     els.editOrgId.value = org.id;
-    els.orgNome.value = org.nome;
-    els.orgNome.disabled = true;
+    els.orgNome.value = org.nome || '';
     els.orgFotoUrl.value = org.fotoUrl || '';
     els.orgInfo.value = org.info || '';
     els.deleteOrgBtn.style.display = 'inline-block';
-    document.querySelectorAll('.input-invalido').forEach(el => el.classList.remove('input-invalido'));
+    
     els.orgModalOverlay.style.display = 'block';
     els.orgModal.style.display = 'block';
-    els.orgFotoUrl.focus();
 };
 
+// --- Ação: Fechar Modal Org ---
 export const closeOrgModal = () => {
     els.orgModalOverlay.style.display = 'none';
     els.orgModal.style.display = 'none';
 };
 
-export const saveOrg = async (currentUserData) => {
-    const orgNome = capitalizeText(els.orgNome.value.trim());
-    const orgId = els.editOrgId.value || orgNome;
-    
-    if (!orgId) {
-        showToast("O Nome da Organização é obrigatório.", "error");
-        els.orgNome.classList.add('input-invalido');
+// --- Ação: Salvar Org ---
+export const saveOrg = (currentUserData) => {
+    const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
+    if (userTagUpper !== 'ADMIN' && userTagUpper !== 'HELLS') {
+        showToast("Apenas Admin/Hells podem salvar.", "error");
         return;
     }
-    els.orgNome.classList.remove('input-invalido');
     
-    const orgRef = ref(db, `organizacoes/${orgId}`);
-    
-    let existingIndex = 9999;
-    if (els.editOrgId.value) {
-        try {
-            const snapshot = await get(orgRef);
-            if (snapshot.exists()) {
-                existingIndex = snapshot.val().ordemIndex !== undefined ? snapshot.val().ordemIndex : 9999;
-            }
-        } catch (e) { console.error("Erro ao buscar ordemIndex:", e); }
-    } 
+    const orgId = els.editOrgId.value;
+    const nome = els.orgNome.value.trim();
+    const fotoUrl = els.orgFotoUrl.value.trim();
+    const info = els.orgInfo.value.trim();
 
-    const orgData = {
-        nome: orgNome,
-        fotoUrl: els.orgFotoUrl.value.trim(),
-        info: els.orgInfo.value.trim(),
-        ordemIndex: existingIndex 
-    };
-    
-    set(orgRef, orgData)
+    if (!nome) {
+        showToast("O nome da organização é obrigatório.", "error");
+        return;
+    }
+
+    let operation;
+    if (orgId) {
+        // --- Atualizar Org Existente ---
+        const orgRef = ref(db, `organizacoesDossier/${orgId}`);
+        const existingOrg = globalAllOrgs.find(o => o.id === orgId);
+        operation = set(orgRef, {
+            ...existingOrg, // Mantém dados existentes (como hierarquiaIndex)
+            nome: nome,
+            fotoUrl: fotoUrl,
+            info: info
+        });
+    } else {
+        // --- Criar Nova Org ---
+        const newOrgRef = push(ref(db, 'organizacoesDossier'));
+        operation = set(newOrgRef, {
+            nome: nome,
+            fotoUrl: fotoUrl,
+            info: info,
+            hierarquiaIndex: globalAllOrgs.length // Adiciona no final
+        });
+    }
+
+    operation
         .then(() => {
             showToast("Base salva com sucesso!", "success");
             closeOrgModal();
-            showDossierOrgs(currentUserData);
+            // A lista irá recarregar automaticamente pelo listener (showDossierOrgs)
         })
-        .catch(err => showToast(`Erro ao salvar: ${err.message}`, "error"));
+        .catch((e) => showToast(`Erro ao salvar: ${e.message}`, "error"));
 };
 
+// --- Ação: Deletar Org ---
 export const deleteOrg = (currentUserData) => {
+    const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
+    if (userTagUpper !== 'ADMIN') {
+        showToast("Apenas ADM pode excluir uma base.", "error");
+        return;
+    }
+    
     const orgId = els.editOrgId.value;
+    const orgNome = els.orgNome.value.trim();
     if (!orgId) return;
-    
-    if (confirm(`ATENÇÃO:\n\nIsso apagará as INFORMAÇÕES DA BASE "${orgId}".\n\NIsso NÃO apagará os membros (pessoas) que estão dentro dela.\n\nDeseja continuar?`)) {
-        remove(ref(db, `organizacoes/${orgId}`))
+
+    if (confirm(`ATENÇÃO: Deseja excluir a base "${orgNome}"?\n\nISSO TAMBÉM APAGARÁ TODOS OS MEMBROS (PESSOAS) DENTRO DELA.\n\nEsta ação é irreversível.`)) {
+        const updates = {};
+        updates[`organizacoesDossier/${orgId}`] = null; // Deleta a org
+        updates[`dossies/${orgNome}`] = null; // Deleta as pessoas da org
+        
+        update(ref(db), updates)
             .then(() => {
-                showToast("Informações da base removidas.", "success");
+                showToast("Base e todos os seus membros foram excluídos.", "success");
                 closeOrgModal();
-                showDossierOrgs(currentUserData);
             })
-            .catch(err => showToast(`Erro: ${err.message}`, "error"));
+            .catch((e) => showToast(`Erro ao excluir: ${e.message}`, "error"));
     }
 };
+
 
 // ===============================================
-// LÓGICA DOS MODAIS (Pessoa/Membros)
+// LÓGICA DE MODAIS (PESSOA)
 // ===============================================
 
-// --- Gerenciador de Veículos (Sub-Modal)
-const renderModalVeiculos = (listaElement) => {
-    listaElement.innerHTML = ''; 
-    if (Object.keys(tempVeiculos).length === 0) {
-        listaElement.innerHTML = '<p style="font-size: 13px; text-align: center; margin: 0; padding: 5px;">Nenhum veículo adicionado.</p>';
-        return;
-    }
-    
-    for (const key in tempVeiculos) {
-        const veiculo = tempVeiculos[key];
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'veiculo-item-modal';
-        itemDiv.innerHTML = `
-            <span style="flex-grow: 1;"><strong>${veiculo.carro || 'N/A'}:</strong> ${veiculo.placa || 'N/A'}</span>
-            <button class="muted action-btn edit-veiculo-btn" data-key="${key}">Editar</button>
-            <button class="danger action-btn remove-veiculo-btn" data-key="${key}">Remover</button>
-        `;
-        listaElement.appendChild(itemDiv);
-    }
-};
-
-export const iniciarEdicaoVeiculo = (key, modalPrefix) => {
-    if (!tempVeiculos[key]) return;
-    const veiculo = tempVeiculos[key];
-    veiculoEmEdicaoKey = key; 
-    els[modalPrefix + 'CarroNome'].value = veiculo.carro;
-    els[modalPrefix + 'CarroPlaca'].value = veiculo.placa;
-    els[modalPrefix + 'CarroFoto'].value = veiculo.fotoUrl;
-    els[modalPrefix + 'AddVeiculoBtn'].textContent = 'Atualizar Veículo';
-    els[modalPrefix + 'CancelVeiculoBtn'].style.display = 'inline-block';
-    els[modalPrefix + 'CarroNome'].focus();
-};
-
-export const cancelarEdicaoVeiculo = (modalPrefix) => {
-    veiculoEmEdicaoKey = null; 
-    els[modalPrefix + 'CarroNome'].value = '';
-    els[modalPrefix + 'CarroPlaca'].value = '';
-    els[modalPrefix + 'CarroFoto'].value = '';
-    els[modalPrefix + 'AddVeiculoBtn'].textContent = '+ Adicionar Veículo';
-    els[modalPrefix + 'CancelVeiculoBtn'].style.display = 'none';
-};
-
-export const adicionarOuAtualizarVeiculoTemp = (modalPrefix) => {
-    const carroEl = els[modalPrefix + 'CarroNome'];
-    const placaEl = els[modalPrefix + 'CarroPlaca'];
-    const fotoEl = els[modalPrefix + 'CarroFoto'];
-    const listaEl = els[modalPrefix + 'ListaVeiculos'];
-    const carro = carroEl.value.trim();
-    const placa = placaEl.value.trim().toUpperCase();
-    const fotoUrl = fotoEl.value.trim();
-    
-    if (!carro || !placa) {
-        showToast("Preencha o nome do carro e a placa.", "error");
-        return;
-    }
-    
-    if (veiculoEmEdicaoKey) {
-        // Se a placa (chave) mudou, remove a antiga e cria uma nova
-        if (veiculoEmEdicaoKey !== placa) {
-            delete tempVeiculos[veiculoEmEdicaoKey];
-        }
-        tempVeiculos[placa] = { carro, placa, fotoUrl };
-    } else {
-        if(tempVeiculos[placa]) {
-             showToast("Erro: Já existe um veículo com esta placa.", "error");
-             return;
-        }
-        tempVeiculos[placa] = { carro, placa, fotoUrl };
-    }
-    
-    renderModalVeiculos(listaEl); 
-    cancelarEdicaoVeiculo(modalPrefix); 
-};
-
-
-export const removerVeiculoTemp = (key, listaEl) => {
-    if (tempVeiculos[key]) {
-        delete tempVeiculos[key];
-        renderModalVeiculos(listaEl);
-    }
-};
-
-// --- Modal: Adicionar Pessoa ---
+// --- Ação: Abrir Modal (Nova Pessoa) ---
 export const openAddDossierModal = (orgName) => {
+    tempVeiculos = {}; // Limpa veículos temporários
+    veiculoEmEdicaoKey = null;
+
     els.addDossierOrganizacao.value = orgName;
     els.addDossierNome.value = '';
-    els.addDossierNumero.value = '';
+    els.addDossierNumero.value = '(055) ';
     els.addDossierCargo.value = '';
     els.addDossierFotoUrl.value = '';
-    els.addDossierInstagram.value = '';
-    tempVeiculos = {}; 
-    cancelarEdicaoVeiculo('addModal'); 
-    renderModalVeiculos(els.addModalListaVeiculos); 
-    document.querySelectorAll('.input-invalido').forEach(el => el.classList.remove('input-invalido'));
+    
+    renderTempVeiculosList(els.addModalListaVeiculos);
+    cancelarEdicaoVeiculo('addModal');
+    
     els.addDossierOverlay.style.display = 'block';
     els.addDossierModal.style.display = 'block';
-    els.addDossierNome.focus();
 };
 
+// --- Ação: Fechar Modal (Nova Pessoa) ---
 export const closeAddDossierModal = () => {
     els.addDossierOverlay.style.display = 'none';
     els.addDossierModal.style.display = 'none';
-    cancelarEdicaoVeiculo('addModal'); 
 };
 
-export const saveNewDossierEntry = (currentUserData) => {
-    const org = els.addDossierOrganizacao.value.trim();
-    if (!org) { showToast("Erro: Organização não definida.", "error"); return; }
-    
-    const nome = els.addDossierNome.value.trim();
-    if (!nome) {
-        showToast("O Nome da pessoa é obrigatório.", "error");
-        els.addDossierNome.classList.add('input-invalido');
-        return;
-    }
-    els.addDossierNome.classList.remove('input-invalido');
-
-    const agora = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-
-    const newEntry = {
-        organizacao: org,
-        nome: nome,
-        numero: els.addDossierNumero.value.trim(),
-        cargo: els.addDossierCargo.value.trim(),
-        fotoUrl: els.addDossierFotoUrl.value.trim(),
-        instagram: els.addDossierInstagram.value.trim(),
-        veiculos: tempVeiculos, 
-        hierarquiaIndex: 9999, 
-        data: agora
-    };
-    
-    push(ref(db, `dossies/${org}`), newEntry)
-        .then(() => {
-             showToast("Nova pessoa salva no dossiê!", "success");
-             closeAddDossierModal();
-             showDossierPeople(org, currentUserData);
-        })
-        .catch(err => showToast(`Erro ao salvar: ${err.message}`, "error"));
-};
-
-// --- Modal: Editar Pessoa ---
-export const openEditDossierModal = async (org, id) => {
-    let entry = globalCurrentPeople.find(e => e.id === id && e.org === org);
-    
-    if (!entry) {
-        try {
-            const snapshot = await get(ref(db, `dossies/${org}/${id}`));
-            if (snapshot.exists()) {
-                entry = { id: snapshot.key, org: org, ...snapshot.val() };
-            } else {
-                showToast("Erro: Entrada não encontrada no Banco de Dados.", "error");
-                return;
-            }
-        } catch (e) {
-            showToast(`Erro ao buscar dados da pessoa: ${e.message}`, "error");
+// --- Ação: Abrir Modal (Editar Pessoa) ---
+export const openEditDossierModal = (orgName, entryId) => {
+    const entryRef = ref(db, `dossies/${orgName}/${entryId}`);
+    get(entryRef).then(snapshot => {
+        if (!snapshot.exists()) {
+            showToast("Erro: Dossiê não encontrado.", "error");
             return;
         }
-    }
-    
-    els.editDossierOrg.value = entry.org;
-    els.editDossierId.value = entry.id;
-    els.editDossierNome.value = entry.nome || '';
-    els.editDossierNumero.value = entry.numero || '';
-    els.editDossierCargo.value = entry.cargo || '';
-    els.editDossierFotoUrl.value = entry.fotoUrl || '';
-    els.editDossierInstagram.value = entry.instagram || ''; 
-    tempVeiculos = { ...(entry.veiculos || {}) };
-    cancelarEdicaoVeiculo('editModal'); 
-    renderModalVeiculos(els.editModalListaVeiculos);
-    els.editDossierOverlay.style.display = 'block';
-    els.editDossierModal.style.display = 'block';
+        const data = snapshot.val();
+        
+        els.editDossierOrg.value = orgName;
+        els.editDossierId.value = entryId;
+        els.editDossierNome.value = data.nome || '';
+        els.editDossierNumero.value = data.telefone || '(055) ';
+        els.editDossierCargo.value = data.cargo || '';
+        els.editDossierFotoUrl.value = data.fotoUrl || '';
+        els.editDossierInstagram.value = data.instagram || '';
+        
+        // Carrega os veículos
+        tempVeiculos = data.veiculos || {};
+        veiculoEmEdicaoKey = null;
+        renderTempVeiculosList(els.editModalListaVeiculos);
+        cancelarEdicaoVeiculo('editModal');
+
+        els.editDossierOverlay.style.display = 'block';
+        els.editDossierModal.style.display = 'block';
+        
+    }).catch(e => {
+        if (e.code !== "PERMISSION_DENIED") {
+            showToast(`Erro ao abrir dossiê: ${e.message}`, "error");
+        }
+    });
 };
 
+// --- Ação: Fechar Modal (Editar Pessoa) ---
 export const closeEditDossierModal = () => {
     els.editDossierOverlay.style.display = 'none';
     els.editDossierModal.style.display = 'none';
-    cancelarEdicaoVeiculo('editModal'); 
+    tempVeiculos = {}; // Limpa
 };
 
+// --- Ação: Salvar Nova Pessoa ---
+export const saveNewDossierEntry = (currentUserData) => {
+    const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
+    if (userTagUpper !== 'ADMIN' && userTagUpper !== 'HELLS') {
+        showToast("Apenas Admin/Hells podem adicionar.", "error");
+        return;
+    }
+
+    const org = els.addDossierOrganizacao.value;
+    const nome = els.addDossierNome.value.trim();
+    
+    if (!org || !nome) {
+        showToast("Nome e Organização são obrigatórios.", "error");
+        return;
+    }
+    
+    const newEntry = {
+        nome: nome,
+        telefone: els.addDossierNumero.value.trim(),
+        cargo: els.addDossierCargo.value.trim(),
+        fotoUrl: els.addDossierFotoUrl.value.trim(),
+        instagram: els.addDossierInstagram.value.trim(),
+        veiculos: tempVeiculos,
+        organizacao: org,
+        data: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+        hierarquiaIndex: globalCurrentPeople.length // Adiciona no final
+    };
+
+    push(ref(db, `dossies/${org}`), newEntry)
+        .then(() => {
+            showToast("Nova pessoa adicionada ao dossiê!", "success");
+            closeAddDossierModal();
+            // A lista irá recarregar automaticamente pelo listener (showDossierPeople)
+        })
+        .catch((error) => showToast(`Erro ao salvar: ${error.message}`, "error"));
+};
+
+// --- Ação: Salvar Edição Pessoa ---
 export const saveDossierChanges = (currentUserData) => {
+    const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
+    if (userTagUpper !== 'ADMIN' && userTagUpper !== 'HELLS') {
+        showToast("Apenas Admin/Hells podem salvar.", "error");
+        return;
+    }
+
     const org = els.editDossierOrg.value;
     const id = els.editDossierId.value;
-    if (!org || !id) { showToast("Erro: ID da entrada perdido.", "error"); return; }
+    const nome = els.editDossierNome.value.trim();
+
+    if (!org || !id || !nome) {
+        showToast("Erro: Dados do dossiê inválidos.", "error");
+        return;
+    }
     
-    const originalEntry = globalCurrentPeople.find(e => e.id === id && e.org === org);
+    // Pega o index de hierarquia original
+    const originalEntry = globalCurrentPeople.find(p => p.id === id);
     
     const updatedEntry = {
-        ...(originalEntry || {}), 
-        nome: els.editDossierNome.value.trim(),
-        numero: els.editDossierNumero.value.trim(),
+        nome: nome,
+        telefone: els.editDossierNumero.value.trim(),
         cargo: els.editDossierCargo.value.trim(),
         fotoUrl: els.editDossierFotoUrl.value.trim(),
         instagram: els.editDossierInstagram.value.trim(), 
@@ -969,7 +928,7 @@ export const removeDossierEntry = (orgName, entryId, currentUserData) => {
         remove(ref(db, `dossies/${orgName}/${entryId}`))
             .then(() => {
                 showToast("Pessoa removida do dossiê.", "success");
-                showDossierPeople(orgName, currentUserData);
+                // A lista irá recarregar automaticamente
             })
             .catch((error) => showToast(`Erro ao remover: ${error.message}`, "error"));
     }
