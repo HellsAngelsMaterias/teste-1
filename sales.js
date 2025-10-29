@@ -355,9 +355,12 @@ export const copyDiscordMessage = (isFromHistory = false, venda = null) => {
     copyToClipboard(buildDiscordMessage(messageData));
 };
 
-export const displaySalesHistory = (history, currentUser, currentUserData) => {
+// ALTERADO: Adicionado 'onCompleteCallback'
+export const displaySalesHistory = (history, currentUser, currentUserData, onCompleteCallback) => {
     els.salesHistory.innerHTML = '';
     if (!currentUserData) { 
+         // ALTERADO: Chama o callback mesmo se não houver dados
+         if (onCompleteCallback) onCompleteCallback();
          return;
     }
 
@@ -374,6 +377,8 @@ export const displaySalesHistory = (history, currentUser, currentUserData) => {
         row.cells[0].textContent = "Nenhuma venda para exibir.";
         row.cells[0].style.textAlign = 'center';
         row.cells[0].style.padding = '20px';
+        // ALTERADO: Chama o callback
+        if (onCompleteCallback) onCompleteCallback();
         return;
     }
 
@@ -428,9 +433,15 @@ export const displaySalesHistory = (history, currentUser, currentUserData) => {
         }
         actionsCell.querySelector('.discord-btn').onclick = () => copyDiscordMessage(true, venda);
     });
+    
+    // ALTERADO: Chama o callback no final
+    if (onCompleteCallback) {
+        onCompleteCallback();
+    }
 };
 
-export const filterHistory = (currentUser, currentUserData) => {
+// ALTERADO: Adicionado 'onCompleteCallback'
+export const filterHistory = (currentUser, currentUserData, onCompleteCallback) => {
     const query = els.filtroHistorico.value.toLowerCase().trim();
     const filteredVendas = vendas.filter(v => 
         Object.values(v).some(val => String(val).toLowerCase().includes(query)) ||
@@ -438,7 +449,8 @@ export const filterHistory = (currentUser, currentUserData) => {
         (v.qtyTablets > 0 && `tablets`.includes(query)) ||
         (v.qtyNitro > 0 && `nitro`.includes(query))
     );
-    displaySalesHistory(query ? filteredVendas : vendas, currentUser, currentUserData);
+    // ALTERADO: Repassa o callback
+    displaySalesHistory(query ? filteredVendas : vendas, currentUser, currentUserData, onCompleteCallback);
 };
 
 export const exportToCsv = () => {
