@@ -53,6 +53,7 @@ let currentUser = null;
 let currentUserData = null; 
 let vendasListener = null; 
 let currentActivity = 'Calculadora';
+let isSyncingScroll = false; // NOVO: Flag para sincronização
 
 // --- 3. Lógica de Autenticação
 const handleAuthAction = (isLogin, creds) => {
@@ -154,6 +155,49 @@ const setUserActivity = (activity) => {
     updateUserActivity(currentUser, currentUserData, currentActivity);
 };
 
+// --- NOVO: Lógica de Sincronização de Rolagem ---
+const initScrollSync = () => {
+    const topScroll = els.topScrollbarContainer;
+    const bottomScroll = els.historyTableWrapper;
+    const topContent = els.topScrollbarContent;
+    const table = els.historicoVendas;
+
+    if (!topScroll || !bottomScroll || !topContent || !table) {
+        return;
+    }
+
+    // Define a largura do conteúdo da barra superior para ser igual à largura da tabela
+    topContent.style.width = table.scrollWidth + 'px';
+
+    // Remove listeners antigos para evitar duplicação
+    topScroll.onscroll = null;
+    bottomScroll.onscroll = null;
+
+    // Sincroniza de Cima para Baixo
+    topScroll.onscroll = () => {
+        if (isSyncingScroll) {
+            isSyncingScroll = false;
+            return;
+        }
+        isSyncingScroll = true;
+        bottomScroll.scrollLeft = topScroll.scrollLeft;
+    };
+
+    // Sincroniza de Baixo para Cima
+    bottomScroll.onscroll = () => {
+        if (isSyncingScroll) {
+            isSyncingScroll = false;
+            return;
+        }
+        isSyncingScroll = true;
+        topScroll.scrollLeft = bottomScroll.scrollLeft;
+        
+        // Atualiza a largura caso a tabela mude (ex: filtro)
+        topContent.style.width = table.scrollWidth + 'px';
+    };
+};
+
+
 // --- 5. O PONTO DE ENTRADA PRINCIPAL (onAuthStateChanged)
 onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -196,7 +240,8 @@ onAuthStateChanged(auth, (user) => {
                 });
                 setVendas(vendas); // Envia os dados para o módulo sales.js
                 if (els.historyCard.style.display !== 'none') {
-                    displaySalesHistory(vendas, currentUser, currentUserData);
+                    // ALTERADO: Adiciona o callback
+                    displaySalesHistory(vendas, currentUser, currentUserData, initScrollSync);
                 }
             }, (error) => {
                 if(error.code !== "PERMISSION_DENIED") showToast("Erro de permissão ao carregar histórico.", "error");
@@ -268,11 +313,17 @@ els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
 els.nomeCliente.addEventListener('change', () => autoFillFromDossier(!!els.registerBtn.textContent.includes('Atualizar')));
 
 // --- Histórico (Módulo: sales.js)
-els.toggleHistoryBtn.onclick = () => { setUserActivity('Histórico'); toggleView('history'); displaySalesHistory(vendas, currentUser, currentUserData); };
+// ALTERADO: Adiciona o callback
+els.toggleHistoryBtn.onclick = () => { 
+    setUserActivity('Histórico'); 
+    toggleView('history'); 
+    displaySalesHistory(vendas, currentUser, currentUserData, initScrollSync); 
+};
 els.toggleCalcBtn.onclick = () => { setUserActivity('Calculadora'); toggleView('main'); };
 els.clearHistoryBtn.onclick = () => clearHistory(currentUserData);
 els.csvBtn.onclick = exportToCsv;
-els.filtroHistorico.addEventListener('input', () => filterHistory(currentUser, currentUserData));
+// ALTERADO: Adiciona o callback
+els.filtroHistorico.addEventListener('input', () => filterHistory(currentUser, currentUserData, initScrollSync));
 
 // --- Painel Admin (Módulo: admin.js)
 els.adminPanelBtn.onclick = () => { setUserActivity('Painel Admin'); toggleView('admin'); loadAdminPanel(true, currentUser); };
