@@ -125,7 +125,8 @@ export const updateUserActivity = (currentUser, currentUserData, currentActivity
         set(activityRef, {
             lastActive: Date.now(),
             displayName: currentUser.displayName,
-            tag: currentUserData ? currentUserData.tag : 'N/A',
+            // ⭐️ AJUSTE: Garantir que a tag seja enviada corretamente para validação nas regras.
+            tag: currentUserData ? currentUserData.tag : 'N/A', 
             currentActivity: currentActivity
         }).catch(e => console.warn("Erro ao registrar atividade online:", e.message));
     }
@@ -191,13 +192,17 @@ const deleteUser = (uid, displayName, currentUser) => {
     }
 };
 
+// ⭐️ Ajustado para garantir que a tag seja passada em maiúsculas
 const updateUserTag = (uid, newTag) => {
-    set(ref(db, `usuarios/${uid}/tag`), newTag)
+    const tagUpper = newTag.toUpperCase();
+    set(ref(db, `usuarios/${uid}/tag`), tagUpper)
         .then(() => showToast("Permissão do usuário atualizada!", 'success'))
         .catch((error) => showToast(`Erro ao atualizar tag: ${error.message}`, 'error'));
 };
 
 export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
+    // ⭐️ AJUSTE: Não verifica permissão aqui, pois a regra do Firebase já faz isso.
+    // Apenas certifica-se de que o usuário está logado.
     if (!currentUser) {
         els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Acesso negado.</td></tr>';
         return;
@@ -303,6 +308,7 @@ export const loadAdminPanel = async (fetchStatus = true, currentUser) => {
                     </select>
                 `;
                 const select = tagContainer.querySelector('select');
+                // ⭐️ AJUSTE: Garante que o valor exibido corresponda à tag (em maiúsculas para HELLS/ADMIN)
                 select.value = userData.tag.toUpperCase() === 'HELLS' ? 'HELLS' : (userData.tag.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'Visitante');
                 select.onchange = (e) => updateUserTag(e.target.dataset.uid, e.target.value);
             }
