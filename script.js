@@ -6,14 +6,14 @@
 */
 
 // --- 1. Imports
+// ⭐️ CORREÇÃO: Removido 'orderByValue' e 'orderByChild' duplicado.
 import { 
     auth, db, 
     onAuthStateChanged, signOut, sendPasswordResetEmail, 
     signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile,
-    ref, set, get, onValue, query, orderByChild, equalTo, orderByValue, orderByChild
+    ref, set, get, onValue, query, orderByChild, equalTo 
 } from './firebase.js'; 
 
-import { els } from './dom.js';
 import { 
     logoLightModeSrc, logoDarkModeSrc, welcomeLogoSrc, 
     historyBackgroundSrc 
@@ -44,7 +44,7 @@ import {
 import { 
     showToast, toggleView, toggleTheme, updateLogoAndThemeButton, 
     showNextTourStep, clearTour, phoneMask, PREFIX, camposTelefone, 
-    camposParaCapitalizar, capitalizeText, atualizarRelogio
+    camposParaCapitalizar, capitalizeText, atualizarRelogio, els
 } from './helpers.js';
 
 // --- 2. Estado Global do Aplicativo
@@ -79,7 +79,6 @@ const handleAuthAction = (isLogin, creds) => {
                 return updateProfile(user, { displayName: displayName })
                     .then(() => {
                         const userRef = ref(db, `usuarios/${user.uid}`);
-                        // ⭐️ Corrigido: A tag padrão é 'Visitante'
                         const newUserProfile = { 
                             displayName: displayName,
                             email: user.email,
@@ -175,13 +174,12 @@ onAuthStateChanged(auth, (user) => {
                 const newUserProfile = { 
                     displayName: user.displayName, 
                     email: user.email, 
-                    tag: 'Visitante' // ⭐️ Corrigido: Garante a tag padrão.
+                    tag: 'Visitante' 
                 };
                 set(userRef, newUserProfile);
                 currentUserData = newUserProfile; 
             }
             
-            // ⭐️ Otimizado: O Firebase agora filtra as vendas com base na tag no lado do servidor.
             configurarInterfacePorTag(currentUserData.tag);
             updateUserActivity(currentUser, currentUserData, currentActivity); 
              
@@ -190,15 +188,12 @@ onAuthStateChanged(auth, (user) => {
             let vendasRef;
             const userTagUpper = currentUserData.tag.toUpperCase();
             
-            // Admins/Hells leem tudo; Visitantes leem apenas o que é deles.
             if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
                 vendasRef = ref(db, 'vendas');
             } else {
-                // Regra de segurança exige order by child no campo que estamos a filtrar
                 vendasRef = query(ref(db, 'vendas'), orderByChild('registradoPorId'), equalTo(currentUser.uid));
             }
             
-            // Escuta a referência (já filtrada/completa) e ordena pelo timestamp no lado do cliente (para evitar mais indexOn)
             vendasListener = onValue(vendasRef, (vendasSnapshot) => {
                 vendas = [];
                 vendasSnapshot.forEach((child) => {
@@ -206,7 +201,6 @@ onAuthStateChanged(auth, (user) => {
                 });
                 setVendas(vendas); 
                 
-                // Exibir histórico com ordenação por timestamp (feita no módulo sales.js)
                 if (els.historyCard.style.display !== 'none') {
                     displaySalesHistory(vendas, currentUser, currentUserData);
                 }
