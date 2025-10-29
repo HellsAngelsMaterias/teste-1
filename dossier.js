@@ -65,21 +65,42 @@ export const addDossierEntry = (venda, dadosAntigosParaMover = null) => {
             });
         }
         
+        // ======================================================
+        // --- INÍCIO DA CORREÇÃO ---
+        // Lógica de veículos robusta
+        
         const veiculosParaAdicionar = {};
-        if (venda.carro && venda.carro.trim()) {
-            const carros = venda.carro.split(',').map(c => c.trim());
-            const placas = venda.placas.split(',').map(p => p.trim());
-            
-            carros.forEach((carroNome, index) => {
-                const placa = placas[index] || '';
-                const key = placa || `carro_${Date.now()}_${index}`;
-                veiculosParaAdicionar[key] = {
-                    carro: carroNome,
-                    placa: placa,
-                    fotoUrl: ''
-                };
-            });
+        
+        // 1. Divide os campos de carro e placa de forma segura, tratando valores vazios/nulos
+        const carros = (venda.carro && venda.carro.trim())
+                       ? venda.carro.split(',').map(c => c.trim())
+                       : [];
+        const placas = (venda.placas && venda.placas.trim())
+                       ? venda.placas.split(',').map(p => p.trim())
+                       : [];
+        
+        // 2. Usa o array mais longo para garantir que todos os dados sejam lidos
+        const maxLen = Math.max(carros.length, placas.length);
+
+        if (maxLen > 0) {
+            for (let i = 0; i < maxLen; i++) {
+                const carroNome = carros[i] || ''; // Pega o carro ou usa string vazia
+                const placa = placas[i] || '';     // Pega a placa ou usa string vazia
+
+                // 3. Só adiciona se pelo menos um dos campos (carro ou placa) existir
+                if (carroNome || placa) {
+                    // A placa é a chave principal. Se não houver, gera uma chave temporária.
+                    const key = placa || `carro_${Date.now()}_${i}`;
+                    veiculosParaAdicionar[key] = {
+                        carro: carroNome,
+                        placa: placa,
+                        fotoUrl: ''
+                    };
+                }
+            }
         }
+        // --- FIM DA CORREÇÃO ---
+        // ======================================================
 
         if (entryKey && entryData) {
             // --- ATUALIZA ENTRADA EXISTENTE ---
@@ -114,8 +135,12 @@ export const addDossierEntry = (venda, dadosAntigosParaMover = null) => {
             }).catch(e => showToast(`Erro ao criar dossiê: ${e.message}`, "error"));
         }
     }).catch(error => {
-        if (error.code !== "PERMISSION_DENIED") {
-            showToast(`Erro de permissão no dossiê: ${error.message}`, "error");
+        // --- CORREÇÃO 2: Mensagem de erro melhorada ---
+        if (error.code === "PERMISSION_DENIED") {
+            showToast(`Erro de permissão no dossiê.`, "error");
+        } else {
+            // Mostra o erro real (Ex: TypeError)
+            showToast(`Erro ao salvar no dossiê: ${error.message}`, "error"); 
         }
     });
 };
@@ -145,10 +170,14 @@ export const updateDossierEntryOnEdit = (oldCliente, oldOrg, newVenda) => {
                     personData.cargo = newVenda.vendaValorObs || personData.cargo || '';
                     personData.organizacao = newOrg;
                     
+                    // (Esta lógica de veículos é usada na *migração* de um usuário, não em uma nova venda)
+                    // (A lógica de *nova venda* foi corrigida em addDossierEntry)
                     const veiculosParaAdicionar = {};
                     if (newVenda.carro && newVenda.carro.trim()) {
                         const carros = newVenda.carro.split(',').map(c => c.trim());
-                        const placas = newVenda.placas.split(',').map(p => p.trim());
+                        const placas = (newVenda.placas && newVenda.placas.trim()) 
+                                       ? newVenda.placas.split(',').map(p => p.trim()) 
+                                       : [];
                         
                         carros.forEach((carroNome, index) => {
                             const placa = placas[index] || '';
@@ -326,7 +355,7 @@ export const showDossierOrgs = (currentUserData) => {
             orgSortableInstance = new Sortable(els.dossierOrgGrid, {
                 animation: 150,
                 ghostClass: 'sortable-ghost',
-                handle: '.drag-handle', // ALTERADO: Define o 'handle'
+                handle: '.drag-handle', // Define o 'handle'
                 onEnd: (evt) => {
                     const updates = {};
                     Array.from(evt.to.children).forEach((item, index) => {
@@ -494,7 +523,7 @@ export const showDossierPeople = (orgName, currentUserData) => {
             sortableInstance = new Sortable(els.dossierPeopleGrid, {
                 animation: 150,
                 ghostClass: 'sortable-ghost',
-                handle: '.drag-handle', // ALTERADO: Define o 'handle'
+                handle: '.drag-handle', // Define o 'handle'
                 onEnd: (evt) => {
                     const updates = {};
                     Array.from(evt.to.children).forEach((item, index) => {
@@ -602,8 +631,8 @@ export const adicionarOuAtualizarVeiculoTemp = (modalPrefix) => {
     const placa = placaEl.value.trim().toUpperCase();
     const fotoUrl = fotoEl.value.trim();
 
-    if (!carro) {
-        showToast("O nome do carro é obrigatório.", "error");
+    if (!carro && !placa) { // Alterado: só exige se os dois estiverem vazios
+        showToast("Preencha o nome do carro ou a placa.", "error");
         return;
     }
     
@@ -636,7 +665,7 @@ export const cancelarEdicaoVeiculo = (modalPrefix) => {
     els[`${modalPrefix}CarroPlaca`].value = '';
     els[`${modalPrefix}CarroFoto`].value = '';
     
-    els[`${modalPrefix}AddVeiculoBtn`].textContent = 'Salvar/Adicionar Veículo';
+    els[`${modalPrefix}AddVeiculoBtn`].textContent = 'Salvar/Adicionar Veículo'; // (O texto padrão mudou)
     els[`${modalPrefix}CancelVeiculoBtn`].style.display = 'none';
 };
 
