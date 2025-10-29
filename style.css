@@ -227,6 +227,18 @@ body.dark #historyBackground { background: rgba(44, 0, 26, 0.7); }
 
 .action-btn { padding: 4px 8px; font-size: 12px; margin-right: 0px; border-radius: 4px; }
 
+/* NOVO: Estilos da Barra de Rolagem Superior */
+#top-scrollbar-container {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 20px; /* Altura padrão da barra de rolagem */
+}
+#top-scrollbar-content {
+    height: 1px;
+    /* A largura será definida via JS para ser igual à largura de rolagem da tabela */
+}
+
 .history-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; margin-top: 8px; }
 #historyCard table {
     width: 100%; border-collapse: collapse; table-layout: fixed;
