@@ -59,22 +59,34 @@ export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
 
     try {
         // --- ETAPA 1: Verificar e Criar a Organização (Base) ---
-        if (orgNome !== 'CPF' && orgNome !== 'Outros') {
-            const orgsRef = ref(db, 'organizacoesDossier');
-            const orgQuery = query(orgsRef, orderByChild('nome'), equalTo(orgNome));
-            const orgSnapshot = await get(orgQuery);
+        // REMOVIDO o 'if' que impedia a criação de 'CPF' e 'Outros'
+        
+        const orgsRef = ref(db, 'organizacoesDossier');
+        const orgQuery = query(orgsRef, orderByChild('nome'), equalTo(orgNome));
+        const orgSnapshot = await get(orgQuery);
+        
+        if (!orgSnapshot.exists()) {
+            // A Base não existe, vamos criá-la
+            const newOrgRef = push(orgsRef);
             
-            if (!orgSnapshot.exists()) {
-                const newOrgRef = push(orgsRef);
-                await set(newOrgRef, {
-                    nome: orgNome,
-                    fotoUrl: '', 
-                    info: 'Base criada automaticamente via Registro de Venda.', 
-                    hierarquiaIndex: 9999 
-                });
-                showToast(`Nova Base "${orgNome}" foi criada no Dossiê.`, "success");
+            // Personaliza a informação default
+            let defaultInfo = 'Base criada automaticamente via Registro de Venda.';
+            if (orgNome === 'CPF') {
+                defaultInfo = 'Pessoas registradas com a opção CPF.';
+            } else if (orgNome === 'Outros') {
+                defaultInfo = 'Pessoas registradas com a opção Outros.';
             }
+
+            await set(newOrgRef, {
+                nome: orgNome,
+                fotoUrl: '', // Default
+                info: defaultInfo, // Default personalizado
+                hierarquiaIndex: 9999 // Coloca no final da lista
+            });
+            showToast(`Nova Base "${orgNome}" foi criada no Dossiê.`, "success");
         }
+        
+        // --- FIM DA ETAPA 1 ---
 
         // --- ETAPA 2: Verificar e Criar/Atualizar a Pessoa ---
         const orgRef = ref(db, `dossies/${orgNome}`);
@@ -163,7 +175,6 @@ export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
 // --- FIM DA CORREÇÃO ---
 // ======================================================
 
-// --- CORREÇÃO: Convertida para async/await para garantir a ordem ---
 export const updateDossierEntryOnEdit = async (oldCliente, oldOrg, newVenda) => {
     if (!newVenda || !newVenda.cliente) return;
     
