@@ -313,15 +313,16 @@ body.dark #historyCard td { background: var(--cor-card); opacity: 0.95; }
     text-align: center;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
     /* Habilita o drag-and-drop para bases */
-    cursor: grab; 
+    /* cursor: grab; */ /* ALTERADO: Removido */
     overflow: hidden; 
+    position: relative; /* NOVO: Para o 'drag-handle' */
 }
 .dossier-org-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 6px 15px rgba(0,0,0,0.12);
 }
 .dossier-org-card:active {
-    cursor: grabbing;
+    /* cursor: grabbing; */ /* ALTERADO: Removido */
 }
 .dossier-org-card h4 { /* Nome da Org */
     margin: 12px 10px 12px 10px;
@@ -415,10 +416,11 @@ body.dark #historyCard td { background: var(--cor-card); opacity: 0.95; }
     gap: 5px;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
     /* --- MUDANÇA: HIERARQUIA --- */
-    cursor: grab;
+    /* cursor: grab; */ /* ALTERADO: Removido */
+    position: relative; /* NOVO: Para o 'drag-handle' */
 }
 .dossier-entry-card:active {
-    cursor: grabbing;
+    /* cursor: grabbing; */ /* ALTERADO: Removido */
 }
 /* --- FIM DA MUDANÇA --- */
 
@@ -467,6 +469,42 @@ body.dark #historyCard td { background: var(--cor-card); opacity: 0.95; }
     font-size: 12px;
     padding: 5px 10px;
 }
+
+/* --- NOVO: Ícone de Arrastar (Drag Handle) --- */
+.drag-handle {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px; /* Aumenta a área de clique */
+    height: 24px; /* Aumenta a área de clique */
+    padding: 4px; /* Espaçamento interno */
+    box-sizing: border-box;
+    cursor: grab;
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+    z-index: 5; /* Garante que está acima de outros elementos */
+}
+.drag-handle:hover {
+    opacity: 0.7;
+}
+.drag-handle:active {
+    cursor: grabbing;
+}
+/* As 3 linhas do ícone */
+.drag-handle-icon {
+    width: 100%;
+    height: 100%;
+    /* 3 linhas horizontais usando gradiente */
+    background:
+        linear-gradient(to bottom, 
+            var(--cor-texto) 0%, var(--cor-texto) 15%, /* Linha 1 */
+            transparent 15%, transparent 42.5%, 
+            var(--cor-texto) 42.5%, var(--cor-texto) 57.5%, /* Linha 2 */
+            transparent 57.5%, transparent 85%, 
+            var(--cor-texto) 85%, var(--cor-texto) 100% /* Linha 3 */
+        );
+}
+/* --- FIM: Ícone de Arrastar --- */
 
 .modal-overlay {
     display: none; position: fixed; top: 0; left: 0;
