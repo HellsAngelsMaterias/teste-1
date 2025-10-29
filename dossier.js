@@ -50,44 +50,37 @@ export const findDossierEntryGlobal = async (nome) => {
 
 // ======================================================
 // --- INÍCIO DA CORREÇÃO ---
-// A função agora é 'async' para poder usar 'await'
+// A função inteira agora usa try/catch e async/await
 export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
     if (!venda || !venda.organizacao || !venda.cliente || venda.organizacao.trim() === '') return;
     
     const orgNome = venda.organizacao.trim();
     const nomeCliente = venda.cliente.trim();
 
-    // --- NOVO: Bloco para verificar e criar a Organização (Base) ---
     try {
-        // Só cria a base se ela for do tipo 'CNPJ' (ou seja, não for CPF/Outros)
+        // --- ETAPA 1: Verificar e Criar a Organização (Base) ---
         if (orgNome !== 'CPF' && orgNome !== 'Outros') {
             const orgsRef = ref(db, 'organizacoesDossier');
             const orgQuery = query(orgsRef, orderByChild('nome'), equalTo(orgNome));
             const orgSnapshot = await get(orgQuery);
             
             if (!orgSnapshot.exists()) {
-                // A Base não existe, vamos criá-la
                 const newOrgRef = push(orgsRef);
                 await set(newOrgRef, {
                     nome: orgNome,
-                    fotoUrl: '', // Default
-                    info: 'Base criada automaticamente via Registro de Venda.', // Default
-                    hierarquiaIndex: 9999 // Coloca no final da lista
+                    fotoUrl: '', 
+                    info: 'Base criada automaticamente via Registro de Venda.', 
+                    hierarquiaIndex: 9999 
                 });
                 showToast(`Nova Base "${orgNome}" foi criada no Dossiê.`, "success");
             }
         }
-    } catch (e) {
-        // Se falhar (ex: permissão), pelo menos avisa e tenta salvar a pessoa mesmo assim
-        showToast(`Erro ao verificar/criar a Base: ${e.message}`, "error");
-    }
-    // --- FIM DO NOVO BLOCO ---
 
-    const orgRef = ref(db, `dossies/${orgNome}`);
-    const q = query(orgRef, orderByChild('nome'), equalTo(nomeCliente));
-    
-    // O resto da função continua dentro do .then()
-    get(q).then(snapshot => {
+        // --- ETAPA 2: Verificar e Criar/Atualizar a Pessoa ---
+        const orgRef = ref(db, `dossies/${orgNome}`);
+        const q = query(orgRef, orderByChild('nome'), equalTo(nomeCliente));
+        const snapshot = await get(q); // Aguarda a busca da pessoa
+
         let entryKey = null;
         let entryData = null;
         
@@ -129,22 +122,23 @@ export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
             const existingVeiculos = entryData.veiculos || {};
             const mergedVeiculos = {...existingVeiculos, ...veiculosParaAdicionar};
             
-            update(ref(db, `dossies/${orgNome}/${entryKey}`), {
+            // Aguarda a atualização
+            await update(ref(db, `dossies/${orgNome}/${entryKey}`), {
                 telefone: entryData.telefone || venda.telefone || '',
                 cargo: entryData.cargo || venda.vendaValorObs || '',
                 veiculos: mergedVeiculos,
                 fotoUrl: entryData.fotoUrl || '',
                 instagram: entryData.instagram || '',
-            }).catch(e => showToast(`Erro ao atualizar dossiê: ${e.message}`, "error"));
+            });
             
         } else {
             // --- CRIA NOVA ENTRADA ---
             const newEntry = dadosAntigosParaMover || {}; 
-            
             const existingVeiculos = newEntry.veiculos || {};
             const mergedVeiculos = {...existingVeiculos, ...veiculosParaAdicionar};
 
-            push(orgRef, {
+            // Aguarda a criação
+            await push(orgRef, {
                 nome: nomeCliente,
                 telefone: newEntry.telefone || venda.telefone || '',
                 cargo: newEntry.cargo || venda.vendaValorObs || '',
@@ -154,78 +148,82 @@ export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
                 organizacao: orgNome, 
                 data: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
                 hierarquiaIndex: newEntry.hierarquiaIndex || 9999 
-            }).catch(e => showToast(`Erro ao criar dossiê: ${e.message}`, "error"));
+            });
         }
-    }).catch(error => {
+
+    } catch (error) {
+        // Pega qualquer erro de qualquer etapa (criar base, buscar pessoa, salvar pessoa)
         if (error.code === "PERMISSION_DENIED") {
             showToast(`Erro de permissão no dossiê.`, "error");
         } else {
             showToast(`Erro ao salvar no dossiê: ${error.message}`, "error"); 
         }
-    });
+    }
 };
 // --- FIM DA CORREÇÃO ---
 // ======================================================
 
-export const updateDossierEntryOnEdit = (oldCliente, oldOrg, newVenda) => {
+// --- CORREÇÃO: Convertida para async/await para garantir a ordem ---
+export const updateDossierEntryOnEdit = async (oldCliente, oldOrg, newVenda) => {
     if (!newVenda || !newVenda.cliente) return;
     
     const newOrg = newVenda.organizacao.trim();
     const newCliente = newVenda.cliente.trim();
     
-    if (newCliente.toLowerCase() === oldCliente.toLowerCase() && newOrg.toLowerCase() === oldOrg.toLowerCase()) {
-        // --- CASO 1: Apenas atualiza dados (Telefone, Cargo) ---
-        addDossierEntry(newVenda);
-        
-    } else {
-        // --- CASO 2: Nome ou Organização mudaram ---
-        findDossierEntryGlobal(oldCliente)
-            .then(existingEntry => {
-                if (existingEntry && existingEntry.oldOrg.toLowerCase() === oldOrg.toLowerCase()) {
-                    // Encontrou o registro antigo, vamos movê-lo
-                    const personId = existingEntry.personId;
-                    const personData = existingEntry.personData;
+    try {
+        if (newCliente.toLowerCase() === oldCliente.toLowerCase() && newOrg.toLowerCase() === oldOrg.toLowerCase()) {
+            // --- CASO 1: Apenas atualiza dados (Telefone, Cargo) ---
+            await addDossierEntry(newVenda);
+            
+        } else {
+            // --- CASO 2: Nome ou Organização mudaram ---
+            const existingEntry = await findDossierEntryGlobal(oldCliente);
+            
+            if (existingEntry && existingEntry.oldOrg.toLowerCase() === oldOrg.toLowerCase()) {
+                // Encontrou o registro antigo, vamos movê-lo
+                const personId = existingEntry.personId;
+                const personData = existingEntry.personData;
+                
+                // Atualiza os dados com a nova venda
+                personData.nome = newCliente;
+                personData.telefone = newVenda.telefone || personData.telefone || '';
+                personData.cargo = newVenda.vendaValorObs || personData.cargo || '';
+                personData.organizacao = newOrg;
+                
+                const veiculosParaAdicionar = {};
+                if (newVenda.carro && newVenda.carro.trim()) {
+                    const carros = newVenda.carro.split(',').map(c => c.trim());
+                    const placas = (newVenda.placas && newVenda.placas.trim()) 
+                                   ? newVenda.placas.split(',').map(p => p.trim()) 
+                                   : [];
                     
-                    // Atualiza os dados com a nova venda
-                    personData.nome = newCliente;
-                    personData.telefone = newVenda.telefone || personData.telefone || '';
-                    personData.cargo = newVenda.vendaValorObs || personData.cargo || '';
-                    personData.organizacao = newOrg;
-                    
-                    const veiculosParaAdicionar = {};
-                    if (newVenda.carro && newVenda.carro.trim()) {
-                        const carros = newVenda.carro.split(',').map(c => c.trim());
-                        const placas = (newVenda.placas && newVenda.placas.trim()) 
-                                       ? newVenda.placas.split(',').map(p => p.trim()) 
-                                       : [];
-                        
-                        carros.forEach((carroNome, index) => {
-                            const placa = placas[index] || '';
-                            const key = placa || `carro_${Date.now()}_${index}`;
-                            veiculosParaAdicionar[key] = {
-                                carro: carroNome,
-                                placa: placa,
-                                fotoUrl: ''
-                            };
-                        });
-                    }
-                    const mergedVeiculos = {...(personData.veiculos || {}), ...veiculosParaAdicionar};
-                    personData.veiculos = mergedVeiculos;
-                    
-                    // Remove o registro antigo
-                    remove(ref(db, `dossies/${oldOrg}/${personId}`))
-                        .then(() => {
-                            // Adiciona/Atualiza o novo registro
-                            addDossierEntry(personData); 
-                            showToast(`Dossiê de "${oldCliente}" movido/atualizado para "${newCliente}" em "${newOrg}".`, "default");
-                        })
-                        .catch(e => showToast(`Erro ao mover dossiê (remover): ${e.message}`, "error"));
-                        
-                } else {
-                    // Não encontrou o registro antigo, apenas cria um novo
-                    addDossierEntry(newVenda);
+                    carros.forEach((carroNome, index) => {
+                        const placa = placas[index] || '';
+                        const key = placa || `carro_${Date.now()}_${index}`;
+                        veiculosParaAdicionar[key] = {
+                            carro: carroNome,
+                            placa: placa,
+                            fotoUrl: ''
+                        };
+                    });
                 }
-            });
+                const mergedVeiculos = {...(personData.veiculos || {}), ...veiculosParaAdicionar};
+                personData.veiculos = mergedVeiculos;
+                
+                // Remove o registro antigo
+                await remove(ref(db, `dossies/${oldOrg}/${personId}`));
+                
+                // Adiciona/Atualiza o novo registro
+                await addDossierEntry(personData); 
+                showToast(`Dossiê de "${oldCliente}" movido/atualizado para "${newCliente}" em "${newOrg}".`, "default");
+                    
+            } else {
+                // Não encontrou o registro antigo, apenas cria um novo
+                await addDossierEntry(newVenda);
+            }
+        }
+    } catch (e) {
+        showToast(`Erro ao atualizar dossiê (edit): ${e.message}`, "error");
     }
 };
 
