@@ -30,14 +30,14 @@ import {
 
 // Sua configuração (extraída do seu script.js)
 const firebaseConfig = {
-  apiKey: "AIzaSyCPNd9INqIfqG1-rjaYAlz988RLDZvL528", 
-  authDomain: "hells-angels-438c2.firebaseapp.com",
-  databaseURL: "https://hells-angels-438c2-default-rtdb.firebaseio.com/",
-  projectId: "hells-angels-438c2",
-  storageBucket: "hells-angels-438c2.firebasestorage.app",
-  messagingSenderId: "429406215315",
-  appId: "1:429406215315:web:96b68b172247824b308166",
-  measurementId: "G-CR415MEY32"
+  apiKey: "AIzaSyDZrHAMaUkVAZJwOyHSq8Y5jxppv_XHwqs", 
+  authDomain: "hhells-teste.firebaseapp.com",
+  databaseURL: "https://hells-teste-default-rtdb.firebaseio.com",
+  projectId: "hells-teste",
+  storageBucket: "hells-teste.firebasestorage.app",
+  messagingSenderId: "777418420603",
+  appId: "1:777418420603:web:0e33ad25caa12079564dde",
+  measurementId: "G-1VL7C8FZL0"
 };
 
 // Inicializa e exporta os serviços
@@ -69,3 +69,4 @@ export {
   equalTo, 
   update 
 };
+
