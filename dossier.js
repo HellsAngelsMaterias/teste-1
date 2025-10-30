@@ -585,6 +585,8 @@ export const showDossierPeople = (orgName, currentUserData) => {
     });
 };
 
+// ======================================================
+// --- INÍCIO DA CORREÇÃO ---
 // Esta é a busca da tela Nível 2 (Dentro de uma Base)
 export const filterPeople = () => {
     const filtro = els.filtroDossierPeople.value.toLowerCase().trim();
@@ -616,6 +618,8 @@ export const filterPeople = () => {
 
     renderDossierPeopleGrid(filteredPeople, orgName, filtro);
 };
+// --- FIM DA CORREÇÃO ---
+// ======================================================
 
 
 // ===============================================
