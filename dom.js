@@ -43,7 +43,7 @@ export const els = {
   placaVeiculo: document.getElementById('placaVeiculo'),
   negociadoras: document.getElementById('negociadoras'),
   vendaValorObs: document.getElementById('vendaValorObs'),
-  dataVenda: document.getElementById('dataVenda'),
+  dataVenda: document.getElementById('dataVenda'), // Este ID não estava no seu snippet, mas é bom ter
   resultsBody: document.getElementById('resultsBody'),
   valuesBody: document.getElementById('valuesBody'),
   valorTotalGeral: document.getElementById('valorTotalGeral'),
@@ -156,8 +156,7 @@ export const els = {
   imageLightboxModal: document.getElementById('imageLightboxModal'),
   lightboxImg: document.getElementById('lightboxImg'),
   
-  // ===============================================
-  // --- INÍCIO: NOVOS IDs (SITUAÇÕES) ---
+  // --- Abas e Modal (Situações)
   tabMembros: document.getElementById('tabMembros'),
   tabSituacoes: document.getElementById('tabSituacoes'),
   membrosContent: document.getElementById('membrosContent'),
@@ -174,6 +173,4 @@ export const els = {
   situacaoStatus: document.getElementById('situacaoStatus'),
   saveSituacaoBtn: document.getElementById('saveSituacaoBtn'),
   cancelSituacaoBtn: document.getElementById('cancelSituacaoBtn')
-  // --- FIM: NOVOS IDs (SITUAÇÕES) ---
-  // ===============================================
 };
