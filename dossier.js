@@ -48,9 +48,6 @@ export const findDossierEntryGlobal = async (nome) => {
     }
 };
 
-// ======================================================
-// --- INÍCIO DA CORREÇÃO ---
-// A função inteira agora usa try/catch e async/await
 export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
     if (!venda || !venda.organizacao || !venda.cliente || venda.organizacao.trim() === '') return;
     
@@ -59,17 +56,13 @@ export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
 
     try {
         // --- ETAPA 1: Verificar e Criar a Organização (Base) ---
-        // REMOVIDO o 'if' que impedia a criação de 'CPF' e 'Outros'
-        
         const orgsRef = ref(db, 'organizacoesDossier');
         const orgQuery = query(orgsRef, orderByChild('nome'), equalTo(orgNome));
         const orgSnapshot = await get(orgQuery);
         
         if (!orgSnapshot.exists()) {
-            // A Base não existe, vamos criá-la
             const newOrgRef = push(orgsRef);
             
-            // Personaliza a informação default
             let defaultInfo = 'Base criada automaticamente via Registro de Venda.';
             if (orgNome === 'CPF') {
                 defaultInfo = 'Pessoas registradas com a opção CPF.';
@@ -79,19 +72,17 @@ export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
 
             await set(newOrgRef, {
                 nome: orgNome,
-                fotoUrl: '', // Default
-                info: defaultInfo, // Default personalizado
-                hierarquiaIndex: 9999 // Coloca no final da lista
+                fotoUrl: '', 
+                info: defaultInfo,
+                hierarquiaIndex: 9999 
             });
             showToast(`Nova Base "${orgNome}" foi criada no Dossiê.`, "success");
         }
         
-        // --- FIM DA ETAPA 1 ---
-
         // --- ETAPA 2: Verificar e Criar/Atualizar a Pessoa ---
         const orgRef = ref(db, `dossies/${orgNome}`);
         const q = query(orgRef, orderByChild('nome'), equalTo(nomeCliente));
-        const snapshot = await get(q); // Aguarda a busca da pessoa
+        const snapshot = await get(q); 
 
         let entryKey = null;
         let entryData = null;
@@ -103,7 +94,6 @@ export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
             });
         }
         
-        // Lógica de veículos robusta
         const veiculosParaAdicionar = {};
         const carros = (venda.carro && venda.carro.trim())
                        ? venda.carro.split(',').map(c => c.trim())
@@ -134,7 +124,6 @@ export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
             const existingVeiculos = entryData.veiculos || {};
             const mergedVeiculos = {...existingVeiculos, ...veiculosParaAdicionar};
             
-            // Aguarda a atualização
             await update(ref(db, `dossies/${orgNome}/${entryKey}`), {
                 telefone: entryData.telefone || venda.telefone || '',
                 cargo: entryData.cargo || venda.vendaValorObs || '',
@@ -149,7 +138,6 @@ export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
             const existingVeiculos = newEntry.veiculos || {};
             const mergedVeiculos = {...existingVeiculos, ...veiculosParaAdicionar};
 
-            // Aguarda a criação
             await push(orgRef, {
                 nome: nomeCliente,
                 telefone: newEntry.telefone || venda.telefone || '',
@@ -164,7 +152,6 @@ export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
         }
 
     } catch (error) {
-        // Pega qualquer erro de qualquer etapa (criar base, buscar pessoa, salvar pessoa)
         if (error.code === "PERMISSION_DENIED") {
             showToast(`Erro de permissão no dossiê.`, "error");
         } else {
@@ -172,8 +159,6 @@ export const addDossierEntry = async (venda, dadosAntigosParaMover = null) => {
         }
     }
 };
-// --- FIM DA CORREÇÃO ---
-// ======================================================
 
 export const updateDossierEntryOnEdit = async (oldCliente, oldOrg, newVenda) => {
     if (!newVenda || !newVenda.cliente) return;
@@ -183,19 +168,15 @@ export const updateDossierEntryOnEdit = async (oldCliente, oldOrg, newVenda) => 
     
     try {
         if (newCliente.toLowerCase() === oldCliente.toLowerCase() && newOrg.toLowerCase() === oldOrg.toLowerCase()) {
-            // --- CASO 1: Apenas atualiza dados (Telefone, Cargo) ---
             await addDossierEntry(newVenda);
             
         } else {
-            // --- CASO 2: Nome ou Organização mudaram ---
             const existingEntry = await findDossierEntryGlobal(oldCliente);
             
             if (existingEntry && existingEntry.oldOrg.toLowerCase() === oldOrg.toLowerCase()) {
-                // Encontrou o registro antigo, vamos movê-lo
                 const personId = existingEntry.personId;
                 const personData = existingEntry.personData;
                 
-                // Atualiza os dados com a nova venda
                 personData.nome = newCliente;
                 personData.telefone = newVenda.telefone || personData.telefone || '';
                 personData.cargo = newVenda.vendaValorObs || personData.cargo || '';
@@ -221,15 +202,11 @@ export const updateDossierEntryOnEdit = async (oldCliente, oldOrg, newVenda) => 
                 const mergedVeiculos = {...(personData.veiculos || {}), ...veiculosParaAdicionar};
                 personData.veiculos = mergedVeiculos;
                 
-                // Remove o registro antigo
                 await remove(ref(db, `dossies/${oldOrg}/${personId}`));
-                
-                // Adiciona/Atualiza o novo registro
                 await addDossierEntry(personData); 
                 showToast(`Dossiê de "${oldCliente}" movido/atualizado para "${newCliente}" em "${newOrg}".`, "default");
                     
             } else {
-                // Não encontrou o registro antigo, apenas cria um novo
                 await addDossierEntry(newVenda);
             }
         }
@@ -290,7 +267,6 @@ const renderDossierOrgsGrid = (orgs, filtro = '', currentUserData) => {
         const cardHtml = `
             <div class="dossier-org-card" data-org-name="${orgName}" data-org-id="${org.id}">
                 <div class="drag-handle"><div class="drag-handle-icon"></div></div>
-            
                 <div class="dossier-org-foto">
                     ${fotoUrl ? `<img src="${fotoUrl}" alt="Logo ${orgName}">` : 'Sem Foto'}
                 </div>
@@ -305,17 +281,104 @@ const renderDossierOrgsGrid = (orgs, filtro = '', currentUserData) => {
     }).join('');
 };
 
-const renderDossierSearchResults = (results, currentUserData) => {
+// ======================================================
+// --- INÍCIO DA CORREÇÃO ---
+// Esta função renderiza os resultados da busca global (Bases + Pessoas)
+const renderGlobalSearchResults = (orgs, people, currentUserData) => {
     const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
     const canEdit = userTagUpper === 'ADMIN' || userTagUpper === 'HELLS';
     
-    if (results.length === 0) {
+    els.dossierOrgGrid.innerHTML = ''; 
+
+    if (orgs.length === 0 && people.length === 0) {
         els.dossierOrgGrid.innerHTML = '<p>Nenhum resultado encontrado para a busca.</p>';
         return;
     }
-    
-    els.dossierOrgGrid.innerHTML = results.map(pessoa => {
-        const orgName = pessoa.organizacao || 'Desconhecida';
+
+    // --- Renderiza as Bases encontradas ---
+    if (orgs.length > 0) {
+        els.dossierOrgGrid.innerHTML += '<h3 class="dossier-org-title">Bases Encontradas</h3>';
+        orgs.forEach(org => {
+            const orgName = org.nome || 'Nome Inválido';
+            const fotoUrl = org.fotoUrl || '';
+            const info = org.info || 'Sem informações.';
+            
+            els.dossierOrgGrid.innerHTML += `
+                <div class="dossier-org-card" data-org-name="${orgName}" data-org-id="${org.id}">
+                    <div class="drag-handle"><div class="drag-handle-icon"></div></div>
+                    <div class="dossier-org-foto">
+                        ${fotoUrl ? `<img src="${fotoUrl}" alt="Logo ${orgName}">` : 'Sem Foto'}
+                    </div>
+                    <h4>${orgName}</h4>
+                    <p>${info}</p>
+                    <div class="dossier-org-actions">
+                        <button class="action-btn muted edit-org-btn" data-org-id="${org.id}" ${canEdit ? '' : 'disabled'}>Editar Base</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // --- Renderiza as Pessoas encontradas ---
+    if (people.length > 0) {
+        els.dossierOrgGrid.innerHTML += '<h3 class="dossier-org-title">Pessoas Encontradas</h3>';
+        
+        people.forEach(pessoa => {
+            const orgName = pessoa.organizacao || 'Desconhecida';
+            const fotoUrl = pessoa.fotoUrl || '';
+            
+            let veiculosHtml = '';
+            if (pessoa.veiculos && Object.keys(pessoa.veiculos).length > 0) {
+                veiculosHtml = Object.values(pessoa.veiculos)
+                    .map(v => {
+                        const placa = v.placa ? `(${v.placa})` : '';
+                        const foto = v.fotoUrl ? `<a href="#" class="veiculo-foto-link" data-url="${v.fotoUrl}">[Foto]</a>` : '';
+                        return `<li>${v.carro || 'Carro'} ${placa} ${foto}</li>`;
+                    })
+                    .join('');
+                veiculosHtml = `<ul style="font-size: 13px; text-align: left; margin: 5px 0 0 15px; padding: 0; list-style-type: disc;">${veiculosHtml}</ul>`;
+            } else {
+                veiculosHtml = '<p style="font-size: 13px; margin: 0; opacity: 0.7;">(Sem veículos)</p>';
+            }
+
+            els.dossierOrgGrid.innerHTML += `
+                <div class="dossier-entry-card" data-id="${pessoa.id}" data-org="${orgName}" style="text-align: left; padding: 12px;">
+                    <h4 style="text-align: center;">${pessoa.nome || 'Sem Nome'}</h4>
+                    <p style="text-align: center; font-weight: 600; color: var(--cor-principal); font-size: 14px;">(Base: ${orgName})</p>
+                    
+                    <div class="dossier-foto" style="height: 150px;">
+                        ${fotoUrl ? `<img src="${fotoUrl}" alt="Foto ${pessoa.nome}">` : 'Sem Foto'}
+                    </div>
+                    
+                    <p><strong>Tel:</strong> ${pessoa.telefone || 'N/A'}</p>
+                    <p><strong>Cargo:</strong> ${pessoa.cargo || 'N/A'}</p>
+                    <p><strong>Insta:</strong> ${pessoa.instagram || 'N/A'}</p>
+                    
+                    <strong style="margin-top: 5px; display: block; text-align: left;">Veículos:</strong>
+                    ${veiculosHtml}
+                    
+                    <div class="dossier-actions" style="margin-top: 15px;">
+                        <button class="action-btn muted edit-dossier-btn" data-id="${pessoa.id}" data-org="${orgName}" ${canEdit ? '' : 'disabled'}>Editar</button>
+                        <button class="action-btn danger delete-dossier-btn" data-id="${pessoa.id}" data-org="${orgName}" ${canEdit ? '' : 'disabled'}>Remover</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+};
+
+// Esta é a função que renderiza APENAS pessoas (usada na tela Nível 2)
+const renderDossierPeopleGrid = (people, orgName, filtro = '', currentUserData) => {
+    // ... (Esta função permanece a mesma da sua versão anterior, ela já está correta)
+    const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
+    const canEdit = userTagUpper === 'ADMIN' || userTagUpper === 'HELLS';
+
+    if (people.length === 0) {
+        els.dossierPeopleGrid.innerHTML = '<p>Nenhuma pessoa encontrada nesta base.</p>';
+        return;
+    }
+
+    els.dossierPeopleGrid.innerHTML = people.map(pessoa => {
         const fotoUrl = pessoa.fotoUrl || '';
         
         let veiculosHtml = '';
@@ -333,22 +396,18 @@ const renderDossierSearchResults = (results, currentUserData) => {
         }
 
         return `
-            <div class="dossier-entry-card" data-id="${pessoa.id}" data-org="${orgName}" style="text-align: left; padding: 12px;">
-                <h4 style="text-align: center;">${pessoa.nome || 'Sem Nome'}</h4>
-                <p style="text-align: center; font-weight: 600; color: var(--cor-principal); font-size: 14px;">(Base: ${orgName})</p>
-                
-                <div class="dossier-foto" style="height: 150px;">
+            <div class="dossier-entry-card" data-id="${pessoa.id}" data-org="${orgName}">
+                <div class="drag-handle"><div class="drag-handle-icon"></div></div>
+                <div class="dossier-foto">
                     ${fotoUrl ? `<img src="${fotoUrl}" alt="Foto ${pessoa.nome}">` : 'Sem Foto'}
                 </div>
-                
+                <h4>${pessoa.nome || 'Sem Nome'}</h4>
                 <p><strong>Tel:</strong> ${pessoa.telefone || 'N/A'}</p>
                 <p><strong>Cargo:</strong> ${pessoa.cargo || 'N/A'}</p>
                 <p><strong>Insta:</strong> ${pessoa.instagram || 'N/A'}</p>
-                
                 <strong style="margin-top: 5px; display: block; text-align: left;">Veículos:</strong>
                 ${veiculosHtml}
-                
-                <div class="dossier-actions" style="margin-top: 15px;">
+                <div class="dossier-actions">
                     <button class="action-btn muted edit-dossier-btn" data-id="${pessoa.id}" data-org="${orgName}" ${canEdit ? '' : 'disabled'}>Editar</button>
                     <button class="action-btn danger delete-dossier-btn" data-id="${pessoa.id}" data-org="${orgName}" ${canEdit ? '' : 'disabled'}>Remover</button>
                 </div>
@@ -356,6 +415,8 @@ const renderDossierSearchResults = (results, currentUserData) => {
         `;
     }).join('');
 };
+// --- FIM DA CORREÇÃO ---
+// ======================================================
 
 export const showDossierOrgs = (currentUserData) => {
     els.dossierOrgContainer.style.display = 'block';
@@ -374,7 +435,6 @@ export const showDossierOrgs = (currentUserData) => {
         }
         renderDossierOrgsGrid(globalAllOrgs, '', currentUserData);
         
-        // --- INICIAR SORTABLE.JS (Hierarquia de Orgs) ---
         const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
         if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
             
@@ -384,7 +444,7 @@ export const showDossierOrgs = (currentUserData) => {
             orgSortableInstance = new Sortable(els.dossierOrgGrid, {
                 animation: 150,
                 ghostClass: 'sortable-ghost',
-                handle: '.drag-handle', // Define o 'handle'
+                handle: '.drag-handle',
                 onEnd: (evt) => {
                     const updates = {};
                     Array.from(evt.to.children).forEach((item, index) => {
@@ -406,14 +466,19 @@ export const showDossierOrgs = (currentUserData) => {
     });
 };
 
-export const filterOrgs = (currentUserData) => {
+// ======================================================
+// --- INÍCIO DA CORREÇÃO ---
+// Esta é a função da busca principal (Nível 1)
+export const filterOrgs = async (currentUserData) => {
     const filtro = els.filtroDossierOrgs.value.toLowerCase().trim();
     
+    // Destrói o 'sortable' para a busca
     if (orgSortableInstance) {
         orgSortableInstance.destroy();
         orgSortableInstance = null;
     }
 
+    // Se o filtro estiver vazio, volta ao normal
     if (filtro.length < 2) {
         showDossierOrgs(currentUserData); // Recarrega a visualização padrão
         return;
@@ -421,21 +486,28 @@ export const filterOrgs = (currentUserData) => {
     
     els.dossierOrgGrid.innerHTML = '<p>Buscando...</p>';
 
-    // --- LÓGICA DE BUSCA GLOBAL (PESSOAS) ---
-    findPeopleGlobal(filtro).then(results => {
-        if (results.length > 0) {
-            renderDossierSearchResults(results, currentUserData);
-        } else {
-            els.dossierOrgGrid.innerHTML = '<p>Nenhum resultado encontrado para a busca.</p>';
-        }
-    }).catch(e => {
+    try {
+        // 1. Filtra as Bases (Orgs) que já estão na memória
+        const filteredOrgs = globalAllOrgs.filter(org => 
+            (org.nome && org.nome.toLowerCase().includes(filtro)) ||
+            (org.info && org.info.toLowerCase().includes(filtro))
+        );
+
+        // 2. Busca globalmente por Pessoas
+        const filteredPeople = await findPeopleGlobal(filtro);
+        
+        // 3. Renderiza os dois resultados
+        renderGlobalSearchResults(filteredOrgs, filteredPeople, currentUserData);
+
+    } catch (e) {
          if (e.code !== "PERMISSION_DENIED") {
              showToast(`Erro ao buscar: ${e.message}`, "error");
          }
          els.dossierOrgGrid.innerHTML = '<p>Erro ao realizar busca.</p>';
-    });
+    }
 };
 
+// Esta é a função que busca em TODAS as pessoas
 const findPeopleGlobal = async (filtro) => {
     const snapshot = await get(ref(db, 'dossies'));
     if (!snapshot.exists()) return [];
@@ -467,61 +539,15 @@ const findPeopleGlobal = async (filtro) => {
     }
     return results;
 };
+// --- FIM DA CORREÇÃO ---
+// ======================================================
 
 
 // ===============================================
 // LÓGICA DE UI (PESSOAS)
 // ===============================================
 
-const renderDossierPeopleGrid = (people, orgName, filtro = '', currentUserData) => {
-    const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
-    const canEdit = userTagUpper === 'ADMIN' || userTagUpper === 'HELLS';
-
-    if (people.length === 0) {
-        els.dossierPeopleGrid.innerHTML = '<p>Nenhuma pessoa encontrada nesta base.</p>';
-        return;
-    }
-
-    els.dossierPeopleGrid.innerHTML = people.map(pessoa => {
-        const fotoUrl = pessoa.fotoUrl || '';
-        
-        let veiculosHtml = '';
-        if (pessoa.veiculos && Object.keys(pessoa.veiculos).length > 0) {
-            veiculosHtml = Object.values(pessoa.veiculos)
-                .map(v => {
-                    const placa = v.placa ? `(${v.placa})` : '';
-                    const foto = v.fotoUrl ? `<a href="#" class="veiculo-foto-link" data-url="${v.fotoUrl}">[Foto]</a>` : '';
-                    return `<li>${v.carro || 'Carro'} ${placa} ${foto}</li>`;
-                })
-                .join('');
-            veiculosHtml = `<ul style="font-size: 13px; text-align: left; margin: 5px 0 0 15px; padding: 0; list-style-type: disc;">${veiculosHtml}</ul>`;
-        } else {
-            veiculosHtml = '<p style="font-size: 13px; margin: 0; opacity: 0.7;">(Sem veículos)</p>';
-        }
-
-        return `
-            <div class="dossier-entry-card" data-id="${pessoa.id}" data-org="${orgName}">
-                <div class="drag-handle"><div class="drag-handle-icon"></div></div>
-            
-                <div class="dossier-foto">
-                    ${fotoUrl ? `<img src="${fotoUrl}" alt="Foto ${pessoa.nome}">` : 'Sem Foto'}
-                </div>
-                <h4>${pessoa.nome || 'Sem Nome'}</h4>
-                <p><strong>Tel:</strong> ${pessoa.telefone || 'N/A'}</p>
-                <p><strong>Cargo:</strong> ${pessoa.cargo || 'N/A'}</p>
-                <p><strong>Insta:</strong> ${pessoa.instagram || 'N/A'}</p>
-                
-                <strong style="margin-top: 5px; display: block; text-align: left;">Veículos:</strong>
-                ${veiculosHtml}
-                
-                <div class="dossier-actions">
-                    <button class="action-btn muted edit-dossier-btn" data-id="${pessoa.id}" data-org="${orgName}" ${canEdit ? '' : 'disabled'}>Editar</button>
-                    <button class="action-btn danger delete-dossier-btn" data-id="${pessoa.id}" data-org="${orgName}" ${canEdit ? '' : 'disabled'}>Remover</button>
-                </div>
-            </div>
-        `;
-    }).join('');
-};
+// ... (A função renderDossierPeopleGrid já está lá em cima) ...
 
 export const showDossierPeople = (orgName, currentUserData) => {
     els.dossierOrgContainer.style.display = 'none';
@@ -542,7 +568,6 @@ export const showDossierPeople = (orgName, currentUserData) => {
         }
         renderDossierPeopleGrid(globalCurrentPeople, orgName, '', currentUserData);
         
-        // --- INICIAR SORTABLE.JS (Hierarquia de Pessoas) ---
         const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
         if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
             
@@ -552,7 +577,7 @@ export const showDossierPeople = (orgName, currentUserData) => {
             sortableInstance = new Sortable(els.dossierPeopleGrid, {
                 animation: 150,
                 ghostClass: 'sortable-ghost',
-                handle: '.drag-handle', // Define o 'handle'
+                handle: '.drag-handle',
                 onEnd: (evt) => {
                     const updates = {};
                     Array.from(evt.to.children).forEach((item, index) => {
@@ -579,7 +604,6 @@ export const filterPeople = () => {
     const filtro = els.filtroDossierPeople.value.toLowerCase().trim();
     const orgName = els.addPessoaBtn.dataset.orgName;
     
-    // Desativa a reordenação durante a filtragem
     if (sortableInstance) {
         sortableInstance.destroy();
         sortableInstance = null;
@@ -660,25 +684,24 @@ export const adicionarOuAtualizarVeiculoTemp = (modalPrefix) => {
     const placa = placaEl.value.trim().toUpperCase();
     const fotoUrl = fotoEl.value.trim();
 
-    if (!carro && !placa) { // Alterado: só exige se os dois estiverem vazios
+    if (!carro && !placa) {
         showToast("Preencha o nome do carro ou a placa.", "error");
         return;
     }
     
-    // Se estava editando, usa a chave original. Se não, usa a placa (se houver) ou uma chave temporária.
     const key = veiculoEmEdicaoKey || placa || `temp_${Date.now()}`;
     
     tempVeiculos[key] = { carro, placa, fotoUrl };
     
     renderTempVeiculosList(listaEl);
-    cancelarEdicaoVeiculo(modalPrefix); // Limpa os campos e reseta o estado
+    cancelarEdicaoVeiculo(modalPrefix); 
 };
 
 export const iniciarEdicaoVeiculo = (key, modalPrefix) => {
     const veiculo = tempVeiculos[key];
     if (!veiculo) return;
     
-    veiculoEmEdicaoKey = key; // Entra em modo de edição
+    veiculoEmEdicaoKey = key; 
     
     els[`${modalPrefix}CarroNome`].value = veiculo.carro;
     els[`${modalPrefix}CarroPlaca`].value = veiculo.placa;
@@ -694,7 +717,7 @@ export const cancelarEdicaoVeiculo = (modalPrefix) => {
     els[`${modalPrefix}CarroPlaca`].value = '';
     els[`${modalPrefix}CarroFoto`].value = '';
     
-    els[`${modalPrefix}AddVeiculoBtn`].textContent = 'Salvar/Adicionar Veículo'; // (O texto padrão mudou)
+    els[`${modalPrefix}AddVeiculoBtn`].textContent = 'Salvar/Adicionar Veículo'; 
     els[`${modalPrefix}CancelVeiculoBtn`].style.display = 'none';
 };
 
@@ -710,7 +733,6 @@ export const removerVeiculoTemp = (key, listaEl) => {
 // LÓGICA DE MODAIS (ORGANIZAÇÃO)
 // ===============================================
 
-// --- Ação: Abrir Modal (Nova Org) ---
 export const openAddOrgModal = () => {
     els.orgModalTitle.textContent = 'Adicionar Nova Base';
     els.editOrgId.value = '';
@@ -723,7 +745,6 @@ export const openAddOrgModal = () => {
     els.orgModal.style.display = 'block';
 };
 
-// --- Ação: Abrir Modal (Editar Org) ---
 export const openEditOrgModal = (orgId) => {
     const org = globalAllOrgs.find(o => o.id === orgId);
     if (!org) {
@@ -742,13 +763,11 @@ export const openEditOrgModal = (orgId) => {
     els.orgModal.style.display = 'block';
 };
 
-// --- Ação: Fechar Modal Org ---
 export const closeOrgModal = () => {
     els.orgModalOverlay.style.display = 'none';
     els.orgModal.style.display = 'none';
 };
 
-// --- Ação: Salvar Org ---
 export const saveOrg = (currentUserData) => {
     const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
     if (userTagUpper !== 'ADMIN' && userTagUpper !== 'HELLS') {
@@ -768,23 +787,21 @@ export const saveOrg = (currentUserData) => {
 
     let operation;
     if (orgId) {
-        // --- Atualizar Org Existente ---
         const orgRef = ref(db, `organizacoesDossier/${orgId}`);
         const existingOrg = globalAllOrgs.find(o => o.id === orgId);
         operation = set(orgRef, {
-            ...existingOrg, // Mantém dados existentes (como hierarquiaIndex)
+            ...existingOrg, 
             nome: nome,
             fotoUrl: fotoUrl,
             info: info
         });
     } else {
-        // --- Criar Nova Org ---
         const newOrgRef = push(ref(db, 'organizacoesDossier'));
         operation = set(newOrgRef, {
             nome: nome,
             fotoUrl: fotoUrl,
             info: info,
-            hierarquiaIndex: globalAllOrgs.length // Adiciona no final
+            hierarquiaIndex: globalAllOrgs.length 
         });
     }
 
@@ -792,12 +809,10 @@ export const saveOrg = (currentUserData) => {
         .then(() => {
             showToast("Base salva com sucesso!", "success");
             closeOrgModal();
-            // A lista irá recarregar automaticamente pelo listener (showDossierOrgs)
         })
         .catch((e) => showToast(`Erro ao salvar: ${e.message}`, "error"));
 };
 
-// --- Ação: Deletar Org ---
 export const deleteOrg = (currentUserData) => {
     const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
     if (userTagUpper !== 'ADMIN') {
@@ -811,8 +826,8 @@ export const deleteOrg = (currentUserData) => {
 
     if (confirm(`ATENÇÃO: Deseja excluir a base "${orgNome}"?\n\nISSO TAMBÉM APAGARÁ TODOS OS MEMBROS (PESSOAS) DENTRO DELA.\n\nEsta ação é irreversível.`)) {
         const updates = {};
-        updates[`organizacoesDossier/${orgId}`] = null; // Deleta a org
-        updates[`dossies/${orgNome}`] = null; // Deleta as pessoas da org
+        updates[`organizacoesDossier/${orgId}`] = null; 
+        updates[`dossies/${orgNome}`] = null; 
         
         update(ref(db), updates)
             .then(() => {
@@ -828,9 +843,8 @@ export const deleteOrg = (currentUserData) => {
 // LÓGICA DE MODAIS (PESSOA)
 // ===============================================
 
-// --- Ação: Abrir Modal (Nova Pessoa) ---
 export const openAddDossierModal = (orgName) => {
-    tempVeiculos = {}; // Limpa veículos temporários
+    tempVeiculos = {}; 
     veiculoEmEdicaoKey = null;
 
     els.addDossierOrganizacao.value = orgName;
@@ -846,13 +860,11 @@ export const openAddDossierModal = (orgName) => {
     els.addDossierModal.style.display = 'block';
 };
 
-// --- Ação: Fechar Modal (Nova Pessoa) ---
 export const closeAddDossierModal = () => {
     els.addDossierOverlay.style.display = 'none';
     els.addDossierModal.style.display = 'none';
 };
 
-// --- Ação: Abrir Modal (Editar Pessoa) ---
 export const openEditDossierModal = (orgName, entryId) => {
     const entryRef = ref(db, `dossies/${orgName}/${entryId}`);
     get(entryRef).then(snapshot => {
@@ -870,7 +882,6 @@ export const openEditDossierModal = (orgName, entryId) => {
         els.editDossierFotoUrl.value = data.fotoUrl || '';
         els.editDossierInstagram.value = data.instagram || '';
         
-        // Carrega os veículos
         tempVeiculos = data.veiculos || {};
         veiculoEmEdicaoKey = null;
         renderTempVeiculosList(els.editModalListaVeiculos);
@@ -886,14 +897,12 @@ export const openEditDossierModal = (orgName, entryId) => {
     });
 };
 
-// --- Ação: Fechar Modal (Editar Pessoa) ---
 export const closeEditDossierModal = () => {
     els.editDossierOverlay.style.display = 'none';
     els.editDossierModal.style.display = 'none';
-    tempVeiculos = {}; // Limpa
+    tempVeiculos = {}; 
 };
 
-// --- Ação: Salvar Nova Pessoa ---
 export const saveNewDossierEntry = (currentUserData) => {
     const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
     if (userTagUpper !== 'ADMIN' && userTagUpper !== 'HELLS') {
@@ -918,19 +927,17 @@ export const saveNewDossierEntry = (currentUserData) => {
         veiculos: tempVeiculos,
         organizacao: org,
         data: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
-        hierarquiaIndex: globalCurrentPeople.length // Adiciona no final
+        hierarquiaIndex: globalCurrentPeople.length 
     };
 
     push(ref(db, `dossies/${org}`), newEntry)
         .then(() => {
             showToast("Nova pessoa adicionada ao dossiê!", "success");
             closeAddDossierModal();
-            // A lista irá recarregar automaticamente pelo listener (showDossierPeople)
         })
         .catch((error) => showToast(`Erro ao salvar: ${error.message}`, "error"));
 };
 
-// --- Ação: Salvar Edição Pessoa ---
 export const saveDossierChanges = (currentUserData) => {
     const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
     if (userTagUpper !== 'ADMIN' && userTagUpper !== 'HELLS') {
@@ -947,7 +954,6 @@ export const saveDossierChanges = (currentUserData) => {
         return;
     }
     
-    // Pega o index de hierarquia original
     const originalEntry = globalCurrentPeople.find(p => p.id === id);
     
     const updatedEntry = {
@@ -969,12 +975,10 @@ export const saveDossierChanges = (currentUserData) => {
         .then(() => {
             showToast("Dossiê atualizado com sucesso!", "success");
             closeEditDossierModal();
-            showDossierPeople(org, currentUserData);
         })
         .catch((error) => showToast(`Erro ao salvar: ${error.message}`, "error"));
 };
 
-// --- Ação: Remover Pessoa ---
 export const removeDossierEntry = (orgName, entryId, currentUserData) => {
     const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
     if (userTagUpper !== 'ADMIN' && userTagUpper !== 'HELLS') {
@@ -986,7 +990,6 @@ export const removeDossierEntry = (orgName, entryId, currentUserData) => {
         remove(ref(db, `dossies/${orgName}/${entryId}`))
             .then(() => {
                 showToast("Pessoa removida do dossiê.", "success");
-                // A lista irá recarregar automaticamente
             })
             .catch((error) => showToast(`Erro ao remover: ${error.message}`, "error"));
     }
