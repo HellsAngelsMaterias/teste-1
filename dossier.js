@@ -281,9 +281,6 @@ const renderDossierOrgsGrid = (orgs, filtro = '', currentUserData) => {
     }).join('');
 };
 
-// ======================================================
-// --- INÍCIO DA CORREÇÃO ---
-// Esta função renderiza os resultados da busca global (Bases + Pessoas)
 const renderGlobalSearchResults = (orgs, people, currentUserData) => {
     const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
     const canEdit = userTagUpper === 'ADMIN' || userTagUpper === 'HELLS';
@@ -295,7 +292,6 @@ const renderGlobalSearchResults = (orgs, people, currentUserData) => {
         return;
     }
 
-    // --- Renderiza as Bases encontradas ---
     if (orgs.length > 0) {
         els.dossierOrgGrid.innerHTML += '<h3 class="dossier-org-title">Bases Encontradas</h3>';
         orgs.forEach(org => {
@@ -319,7 +315,6 @@ const renderGlobalSearchResults = (orgs, people, currentUserData) => {
         });
     }
 
-    // --- Renderiza as Pessoas encontradas ---
     if (people.length > 0) {
         els.dossierOrgGrid.innerHTML += '<h3 class="dossier-org-title">Pessoas Encontradas</h3>';
         
@@ -367,9 +362,7 @@ const renderGlobalSearchResults = (orgs, people, currentUserData) => {
     }
 };
 
-// Esta é a função que renderiza APENAS pessoas (usada na tela Nível 2)
 const renderDossierPeopleGrid = (people, orgName, filtro = '', currentUserData) => {
-    // ... (Esta função permanece a mesma da sua versão anterior, ela já está correta)
     const userTagUpper = (currentUserData.tag || 'VISITANTE').toUpperCase();
     const canEdit = userTagUpper === 'ADMIN' || userTagUpper === 'HELLS';
 
@@ -415,8 +408,6 @@ const renderDossierPeopleGrid = (people, orgName, filtro = '', currentUserData) 
         `;
     }).join('');
 };
-// --- FIM DA CORREÇÃO ---
-// ======================================================
 
 export const showDossierOrgs = (currentUserData) => {
     els.dossierOrgContainer.style.display = 'block';
@@ -466,37 +457,29 @@ export const showDossierOrgs = (currentUserData) => {
     });
 };
 
-// ======================================================
-// --- INÍCIO DA CORREÇÃO ---
-// Esta é a função da busca principal (Nível 1)
 export const filterOrgs = async (currentUserData) => {
     const filtro = els.filtroDossierOrgs.value.toLowerCase().trim();
     
-    // Destrói o 'sortable' para a busca
     if (orgSortableInstance) {
         orgSortableInstance.destroy();
         orgSortableInstance = null;
     }
 
-    // Se o filtro estiver vazio, volta ao normal
     if (filtro.length < 2) {
-        showDossierOrgs(currentUserData); // Recarrega a visualização padrão
+        showDossierOrgs(currentUserData); 
         return;
     }
     
     els.dossierOrgGrid.innerHTML = '<p>Buscando...</p>';
 
     try {
-        // 1. Filtra as Bases (Orgs) que já estão na memória
         const filteredOrgs = globalAllOrgs.filter(org => 
             (org.nome && org.nome.toLowerCase().includes(filtro)) ||
             (org.info && org.info.toLowerCase().includes(filtro))
         );
 
-        // 2. Busca globalmente por Pessoas
         const filteredPeople = await findPeopleGlobal(filtro);
         
-        // 3. Renderiza os dois resultados
         renderGlobalSearchResults(filteredOrgs, filteredPeople, currentUserData);
 
     } catch (e) {
@@ -507,6 +490,8 @@ export const filterOrgs = async (currentUserData) => {
     }
 };
 
+// ======================================================
+// --- INÍCIO DA CORREÇÃO ---
 // Esta é a função que busca em TODAS as pessoas
 const findPeopleGlobal = async (filtro) => {
     const snapshot = await get(ref(db, 'dossies'));
@@ -514,21 +499,23 @@ const findPeopleGlobal = async (filtro) => {
     
     const dossies = snapshot.val();
     let results = [];
+    const filtroNum = filtro.replace(/\D/g, ''); // Filtro pré-calculado para números
     
     for (const orgKey in dossies) {
         for (const personId in dossies[orgKey]) {
             const pessoa = { id: personId, ...dossies[orgKey][personId] };
             
-            const nomeMatch = pessoa.nome && pessoa.nome.toLowerCase().includes(filtro);
-            const cargoMatch = pessoa.cargo && pessoa.cargo.toLowerCase().includes(filtro);
-            const telMatch = pessoa.telefone && pessoa.telefone.replace(/\D/g, '').includes(filtro.replace(/\D/g, ''));
-            const instaMatch = pessoa.instagram && pessoa.instagram.toLowerCase().includes(filtro);
+            // Verificações seguras (convertendo para String)
+            const nomeMatch = pessoa.nome && String(pessoa.nome).toLowerCase().includes(filtro);
+            const cargoMatch = pessoa.cargo && String(pessoa.cargo).toLowerCase().includes(filtro);
+            const telMatch = pessoa.telefone && String(pessoa.telefone).replace(/\D/g, '').includes(filtroNum);
+            const instaMatch = pessoa.instagram && String(pessoa.instagram).toLowerCase().includes(filtro);
             
             let veiculoMatch = false;
             if (pessoa.veiculos) {
                 veiculoMatch = Object.values(pessoa.veiculos).some(v => 
-                    (v.carro && v.carro.toLowerCase().includes(filtro)) ||
-                    (v.placa && v.placa.toLowerCase().includes(filtro))
+                    (v.carro && String(v.carro).toLowerCase().includes(filtro)) ||
+                    (v.placa && String(v.placa).toLowerCase().includes(filtro))
                 );
             }
             
@@ -546,8 +533,6 @@ const findPeopleGlobal = async (filtro) => {
 // ===============================================
 // LÓGICA DE UI (PESSOAS)
 // ===============================================
-
-// ... (A função renderDossierPeopleGrid já está lá em cima) ...
 
 export const showDossierPeople = (orgName, currentUserData) => {
     els.dossierOrgContainer.style.display = 'none';
@@ -600,9 +585,11 @@ export const showDossierPeople = (orgName, currentUserData) => {
     });
 };
 
+// Esta é a busca da tela Nível 2 (Dentro de uma Base)
 export const filterPeople = () => {
     const filtro = els.filtroDossierPeople.value.toLowerCase().trim();
     const orgName = els.addPessoaBtn.dataset.orgName;
+    const filtroNum = filtro.replace(/\D/g, '');
     
     if (sortableInstance) {
         sortableInstance.destroy();
@@ -610,16 +597,17 @@ export const filterPeople = () => {
     }
 
     const filteredPeople = globalCurrentPeople.filter(pessoa => {
-        const nomeMatch = pessoa.nome && pessoa.nome.toLowerCase().includes(filtro);
-        const cargoMatch = pessoa.cargo && pessoa.cargo.toLowerCase().includes(filtro);
-        const telMatch = pessoa.telefone && pessoa.telefone.replace(/\D/g, '').includes(filtro.replace(/\D/g, ''));
-        const instaMatch = pessoa.instagram && pessoa.instagram.toLowerCase().includes(filtro);
+        // Verificações seguras (convertendo para String)
+        const nomeMatch = pessoa.nome && String(pessoa.nome).toLowerCase().includes(filtro);
+        const cargoMatch = pessoa.cargo && String(pessoa.cargo).toLowerCase().includes(filtro);
+        const telMatch = pessoa.telefone && String(pessoa.telefone).replace(/\D/g, '').includes(filtroNum);
+        const instaMatch = pessoa.instagram && String(pessoa.instagram).toLowerCase().includes(filtro);
         
         let veiculoMatch = false;
         if (pessoa.veiculos) {
             veiculoMatch = Object.values(pessoa.veiculos).some(v => 
-                (v.carro && v.carro.toLowerCase().includes(filtro)) ||
-                (v.placa && v.placa.toLowerCase().includes(filtro))
+                (v.carro && String(v.carro).toLowerCase().includes(filtro)) ||
+                (v.placa && String(v.placa).toLowerCase().includes(filtro))
             );
         }
         
