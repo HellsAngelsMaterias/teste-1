@@ -325,7 +325,13 @@ const renderGlobalSearchResults = (orgs, people, currentUserData) => {
             let veiculosHtml = '';
             if (pessoa.veiculos && Object.keys(pessoa.veiculos).length > 0) {
                 veiculosHtml = Object.values(pessoa.veiculos)
+                    // ======================================================
+                    // --- INÍCIO DA CORREÇÃO 1 ---
+                    // Adiciona "v &&" para checar se o veículo não é nulo
+                    .filter(v => v) 
                     .map(v => {
+                    // --- FIM DA CORREÇÃO 1 ---
+                    // ======================================================
                         const placa = v.placa ? `(${v.placa})` : '';
                         const foto = v.fotoUrl ? `<a href="#" class="veiculo-foto-link" data-url="${v.fotoUrl}">[Foto]</a>` : '';
                         return `<li>${v.carro || 'Carro'} ${placa} ${foto}</li>`;
@@ -377,7 +383,13 @@ const renderDossierPeopleGrid = (people, orgName, filtro = '', currentUserData) 
         let veiculosHtml = '';
         if (pessoa.veiculos && Object.keys(pessoa.veiculos).length > 0) {
             veiculosHtml = Object.values(pessoa.veiculos)
+                // ======================================================
+                // --- INÍCIO DA CORREÇÃO 2 ---
+                // Adiciona "v &&" para checar se o veículo não é nulo
+                .filter(v => v)
                 .map(v => {
+                // --- FIM DA CORREÇÃO 2 ---
+                // ======================================================
                     const placa = v.placa ? `(${v.placa})` : '';
                     const foto = v.fotoUrl ? `<a href="#" class="veiculo-foto-link" data-url="${v.fotoUrl}">[Foto]</a>` : '';
                     return `<li>${v.carro || 'Carro'} ${placa} ${foto}</li>`;
@@ -474,8 +486,8 @@ export const filterOrgs = async (currentUserData) => {
 
     try {
         const filteredOrgs = globalAllOrgs.filter(org => 
-            (org.nome && org.nome.toLowerCase().includes(filtro)) ||
-            (org.info && org.info.toLowerCase().includes(filtro))
+            (org.nome && String(org.nome).toLowerCase().includes(filtro)) || // Protegido com String()
+            (org.info && String(org.info).toLowerCase().includes(filtro))  // Protegido com String()
         );
 
         const filteredPeople = await findPeopleGlobal(filtro);
@@ -490,22 +502,18 @@ export const filterOrgs = async (currentUserData) => {
     }
 };
 
-// ======================================================
-// --- INÍCIO DA CORREÇÃO ---
-// Esta é a função que busca em TODAS as pessoas
 const findPeopleGlobal = async (filtro) => {
     const snapshot = await get(ref(db, 'dossies'));
     if (!snapshot.exists()) return [];
     
     const dossies = snapshot.val();
     let results = [];
-    const filtroNum = filtro.replace(/\D/g, ''); // Filtro pré-calculado para números
+    const filtroNum = filtro.replace(/\D/g, ''); 
     
     for (const orgKey in dossies) {
         for (const personId in dossies[orgKey]) {
             const pessoa = { id: personId, ...dossies[orgKey][personId] };
             
-            // Verificações seguras (convertendo para String)
             const nomeMatch = pessoa.nome && String(pessoa.nome).toLowerCase().includes(filtro);
             const cargoMatch = pessoa.cargo && String(pessoa.cargo).toLowerCase().includes(filtro);
             const telMatch = pessoa.telefone && String(pessoa.telefone).replace(/\D/g, '').includes(filtroNum);
@@ -514,8 +522,15 @@ const findPeopleGlobal = async (filtro) => {
             let veiculoMatch = false;
             if (pessoa.veiculos) {
                 veiculoMatch = Object.values(pessoa.veiculos).some(v => 
-                    (v.carro && String(v.carro).toLowerCase().includes(filtro)) ||
-                    (v.placa && String(v.placa).toLowerCase().includes(filtro))
+                    // ======================================================
+                    // --- INÍCIO DA CORREÇÃO 3 ---
+                    // Adiciona "v &&" para checar se o veículo não é nulo
+                    v && (
+                        (v.carro && String(v.carro).toLowerCase().includes(filtro)) ||
+                        (v.placa && String(v.placa).toLowerCase().includes(filtro))
+                    )
+                    // --- FIM DA CORREÇÃO 3 ---
+                    // ======================================================
                 );
             }
             
@@ -526,8 +541,6 @@ const findPeopleGlobal = async (filtro) => {
     }
     return results;
 };
-// --- FIM DA CORREÇÃO ---
-// ======================================================
 
 
 // ===============================================
@@ -585,9 +598,6 @@ export const showDossierPeople = (orgName, currentUserData) => {
     });
 };
 
-// ======================================================
-// --- INÍCIO DA CORREÇÃO ---
-// Esta é a busca da tela Nível 2 (Dentro de uma Base)
 export const filterPeople = () => {
     const filtro = els.filtroDossierPeople.value.toLowerCase().trim();
     const orgName = els.addPessoaBtn.dataset.orgName;
@@ -599,7 +609,6 @@ export const filterPeople = () => {
     }
 
     const filteredPeople = globalCurrentPeople.filter(pessoa => {
-        // Verificações seguras (convertendo para String)
         const nomeMatch = pessoa.nome && String(pessoa.nome).toLowerCase().includes(filtro);
         const cargoMatch = pessoa.cargo && String(pessoa.cargo).toLowerCase().includes(filtro);
         const telMatch = pessoa.telefone && String(pessoa.telefone).replace(/\D/g, '').includes(filtroNum);
@@ -608,8 +617,15 @@ export const filterPeople = () => {
         let veiculoMatch = false;
         if (pessoa.veiculos) {
             veiculoMatch = Object.values(pessoa.veiculos).some(v => 
-                (v.carro && String(v.carro).toLowerCase().includes(filtro)) ||
-                (v.placa && String(v.placa).toLowerCase().includes(filtro))
+                // ======================================================
+                // --- INÍCIO DA CORREÇÃO 4 ---
+                // Adiciona "v &&" para checar se o veículo não é nulo
+                v && (
+                    (v.carro && String(v.carro).toLowerCase().includes(filtro)) ||
+                    (v.placa && String(v.placa).toLowerCase().includes(filtro))
+                )
+                // --- FIM DA CORREÇÃO 4 ---
+                // ======================================================
             );
         }
         
@@ -618,8 +634,6 @@ export const filterPeople = () => {
 
     renderDossierPeopleGrid(filteredPeople, orgName, filtro);
 };
-// --- FIM DA CORREÇÃO ---
-// ======================================================
 
 
 // ===============================================
