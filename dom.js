@@ -156,7 +156,7 @@ export const els = {
   imageLightboxModal: document.getElementById('imageLightboxModal'),
   lightboxImg: document.getElementById('lightboxImg'),
   
-  // --- Abas e Modal (Situações) - (Adicionado do seu HTML)
+  // --- Abas e Modal (Situações)
   tabMembros: document.getElementById('tabMembros'),
   tabSituacoes: document.getElementById('tabSituacoes'),
   membrosContent: document.getElementById('membrosContent'),
