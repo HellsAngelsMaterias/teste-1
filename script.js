@@ -38,7 +38,8 @@ import {
 import { 
     calculate, registerVenda, clearAllFields, editVenda, removeVenda,
     copyDiscordMessage, displaySalesHistory, filterHistory, exportToCsv, 
-    clearHistory, setVendas, setVendaEmEdicao, setVendaOriginal
+    clearHistory, setVendas, setVendaEmEdicao, setVendaOriginal,
+    cancelEditAndClearFields // <-- NOVO
 } from './sales.js';
 
 import { 
@@ -53,7 +54,7 @@ let currentUser = null;
 let currentUserData = null; 
 let vendasListener = null; 
 let currentActivity = 'Calculadora';
-let isSyncingScroll = false; // NOVO: Flag para sincronização
+let isSyncingScroll = false; 
 
 // --- 3. Lógica de Autenticação
 const handleAuthAction = (isLogin, creds) => {
@@ -155,7 +156,7 @@ const setUserActivity = (activity) => {
     updateUserActivity(currentUser, currentUserData, currentActivity);
 };
 
-// --- NOVO: Lógica de Sincronização de Rolagem ---
+// --- Lógica de Sincronização de Rolagem ---
 const initScrollSync = () => {
     const topScroll = els.topScrollbarContainer;
     const bottomScroll = els.historyTableWrapper;
@@ -165,15 +166,14 @@ const initScrollSync = () => {
     if (!topScroll || !bottomScroll || !topContent || !table) {
         return;
     }
+    
+    // Define a largura do conteúdo da barra superior
+    // Adiciona um pequeno buffer (1px) para garantir que funcione em todos os browsers
+    topContent.style.width = (table.scrollWidth + 1) + 'px';
 
-    // Define a largura do conteúdo da barra superior para ser igual à largura da tabela
-    topContent.style.width = table.scrollWidth + 'px';
-
-    // Remove listeners antigos para evitar duplicação
     topScroll.onscroll = null;
     bottomScroll.onscroll = null;
 
-    // Sincroniza de Cima para Baixo
     topScroll.onscroll = () => {
         if (isSyncingScroll) {
             isSyncingScroll = false;
@@ -183,7 +183,6 @@ const initScrollSync = () => {
         bottomScroll.scrollLeft = topScroll.scrollLeft;
     };
 
-    // Sincroniza de Baixo para Cima
     bottomScroll.onscroll = () => {
         if (isSyncingScroll) {
             isSyncingScroll = false;
@@ -192,8 +191,8 @@ const initScrollSync = () => {
         isSyncingScroll = true;
         topScroll.scrollLeft = bottomScroll.scrollLeft;
         
-        // Atualiza a largura caso a tabela mude (ex: filtro)
-        topContent.style.width = table.scrollWidth + 'px';
+        // Atualiza a largura
+        topContent.style.width = (table.scrollWidth + 1) + 'px';
     };
 };
 
@@ -203,7 +202,6 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user; 
         
-        // Inicia monitores globais
         const activityInterval = setInterval(() => updateUserActivity(currentUser, currentUserData, currentActivity), 30000);
         monitorOnlineStatus(currentUser); 
         monitorGlobalLayout();
@@ -220,9 +218,9 @@ onAuthStateChanged(auth, (user) => {
             }
             
             configurarInterfacePorTag(currentUserData.tag);
-            updateUserActivity(currentUser, currentUserData, currentActivity); // Atualiza imediatamente com a tag
+            updateUserActivity(currentUser, currentUserData, currentActivity); 
              
-            if(vendasListener) vendasListener(); // Remove o listener antigo
+            if(vendasListener) vendasListener(); 
             
             let vendasRef;
             const userTagUpper = currentUserData.tag.toUpperCase();
@@ -238,9 +236,12 @@ onAuthStateChanged(auth, (user) => {
                 vendasSnapshot.forEach((child) => {
                     vendas.push({ id: child.key, ...child.val() });
                 });
-                setVendas(vendas); // Envia os dados para o módulo sales.js
+                setVendas(vendas); 
+                
+                // ATUALIZAÇÃO AUTOMÁTICA DE LOCK
+                // Se o histórico estiver visível, ele será redesenhado
+                // mostrando o status de "Bloqueado" em tempo real
                 if (els.historyCard.style.display !== 'none') {
-                    // ALTERADO: Adiciona o callback
                     displaySalesHistory(vendas, currentUser, currentUserData, initScrollSync);
                 }
             }, (error) => {
@@ -307,13 +308,13 @@ els.logoLink.onclick = (e) => { e.preventDefault(); if (currentUser) { setUserAc
 
 // --- Calculadora (Módulo: sales.js)
 els.calcBtn.onclick = calculate;
-els.resetBtn.onclick = clearAllFields;
+// ALTERADO: Usa a nova função para limpar o lock do Firebase ao cancelar
+els.resetBtn.onclick = cancelEditAndClearFields; 
 els.registerBtn.onclick = () => { setUserActivity('Registrando Venda'); registerVenda(currentUser); };
 els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
 els.nomeCliente.addEventListener('change', () => autoFillFromDossier(!!els.registerBtn.textContent.includes('Atualizar')));
 
 // --- Histórico (Módulo: sales.js)
-// ALTERADO: Adiciona o callback
 els.toggleHistoryBtn.onclick = () => { 
     setUserActivity('Histórico'); 
     toggleView('history'); 
@@ -322,7 +323,6 @@ els.toggleHistoryBtn.onclick = () => {
 els.toggleCalcBtn.onclick = () => { setUserActivity('Calculadora'); toggleView('main'); };
 els.clearHistoryBtn.onclick = () => clearHistory(currentUserData);
 els.csvBtn.onclick = exportToCsv;
-// ALTERADO: Adiciona o callback
 els.filtroHistorico.addEventListener('input', () => filterHistory(currentUser, currentUserData, initScrollSync));
 
 // --- Painel Admin (Módulo: admin.js)
@@ -344,9 +344,9 @@ els.addOrgBtn.onclick = openAddOrgModal;
 els.dossierOrgGrid.addEventListener('click', (e) => {
     const orgCard = e.target.closest('.dossier-org-card');
     const editOrgBtn = e.target.closest('.edit-org-btn');
-    const editBtn = e.target.closest('.edit-dossier-btn'); // Para resultados de busca
-    const deleteBtn = e.target.closest('.delete-dossier-btn'); // Para resultados de busca
-    const fotoLinkBtn = e.target.closest('.veiculo-foto-link'); // Para resultados de busca
+    const editBtn = e.target.closest('.edit-dossier-btn'); 
+    const deleteBtn = e.target.closest('.delete-dossier-btn'); 
+    const fotoLinkBtn = e.target.closest('.veiculo-foto-link'); 
 
     if (editOrgBtn) { e.stopPropagation(); openEditOrgModal(editOrgBtn.dataset.orgId); }
     else if (editBtn) { e.stopPropagation(); openEditDossierModal(editBtn.dataset.org, editBtn.dataset.id); }
@@ -403,7 +403,7 @@ els.editModalListaVeiculos.onclick = (e) => {
 
 // Lightbox
 els.imageLightboxOverlay.onclick = closeImageLightbox;
-els.imageLightboxModal.onclick = closeImageLightbox; // Permite fechar clicando na imagem/modal
+els.imageLightboxModal.onclick = closeImageLightbox; 
 
 // --- Inicialização (Welcome Screen e Tema)
 const savedTheme = localStorage.getItem('theme') || 'light';
