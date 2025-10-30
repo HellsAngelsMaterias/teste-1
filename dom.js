@@ -43,7 +43,7 @@ export const els = {
   placaVeiculo: document.getElementById('placaVeiculo'),
   negociadoras: document.getElementById('negociadoras'),
   vendaValorObs: document.getElementById('vendaValorObs'),
-  dataVenda: document.getElementById('dataVenda'), // Este ID não estava no seu snippet, mas é bom ter
+  dataVenda: document.getElementById('dataVenda'), // Este ID não estava no seu snippet, mas está no HTML
   resultsBody: document.getElementById('resultsBody'),
   valuesBody: document.getElementById('valuesBody'),
   valorTotalGeral: document.getElementById('valorTotalGeral'),
