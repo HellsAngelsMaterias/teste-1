@@ -43,7 +43,7 @@ export const els = {
   placaVeiculo: document.getElementById('placaVeiculo'),
   negociadoras: document.getElementById('negociadoras'),
   vendaValorObs: document.getElementById('vendaValorObs'),
-  dataVenda: document.getElementById('dataVenda'), // Este ID não estava no seu snippet, mas está no HTML
+  dataVenda: document.getElementById('dataVenda'),
   resultsBody: document.getElementById('resultsBody'),
   valuesBody: document.getElementById('valuesBody'),
   valorTotalGeral: document.getElementById('valorTotalGeral'),
@@ -156,7 +156,7 @@ export const els = {
   imageLightboxModal: document.getElementById('imageLightboxModal'),
   lightboxImg: document.getElementById('lightboxImg'),
   
-  // --- Abas e Modal (Situações)
+  // --- Abas e Modal (Situações) - (Adicionado do seu HTML)
   tabMembros: document.getElementById('tabMembros'),
   tabSituacoes: document.getElementById('tabSituacoes'),
   membrosContent: document.getElementById('membrosContent'),
