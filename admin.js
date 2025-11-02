@@ -1,4 +1,4 @@
-/* ===============================================
+ /* ===============================================
   ADMIN.JS
   Lógica do Painel Admin, Status Online,
   Controles Globais e Migrações.
@@ -495,4 +495,5 @@ export const migrateVeiculosData = async () => {
         updateMigrationUI();
     }
 };
+
 
