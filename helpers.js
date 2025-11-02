@@ -184,3 +184,4 @@ export const showNextTourStep = () => {
     targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
 };
 
+
