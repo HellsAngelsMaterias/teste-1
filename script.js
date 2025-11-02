@@ -38,8 +38,7 @@ import {
 import { 
     calculate, registerVenda, clearAllFields, editVenda, removeVenda,
     copyDiscordMessage, displaySalesHistory, filterHistory, exportToCsv, 
-    clearHistory, setVendas, setVendaEmEdicao, setVendaOriginal,
-    cancelEditAndClearFields // <-- NOVO
+    clearHistory, setVendas, setVendaEmEdicao, setVendaOriginal
 } from './sales.js';
 
 import { 
@@ -54,7 +53,6 @@ let currentUser = null;
 let currentUserData = null; 
 let vendasListener = null; 
 let currentActivity = 'Calculadora';
-let isSyncingScroll = false; 
 
 // --- 3. Lógica de Autenticação
 const handleAuthAction = (isLogin, creds) => {
@@ -156,52 +154,12 @@ const setUserActivity = (activity) => {
     updateUserActivity(currentUser, currentUserData, currentActivity);
 };
 
-// --- Lógica de Sincronização de Rolagem ---
-const initScrollSync = () => {
-    const topScroll = els.topScrollbarContainer;
-    const bottomScroll = els.historyTableWrapper;
-    const topContent = els.topScrollbarContent;
-    const table = els.historicoVendas;
-
-    if (!topScroll || !bottomScroll || !topContent || !table) {
-        return;
-    }
-    
-    // Define a largura do conteúdo da barra superior
-    // Adiciona um pequeno buffer (1px) para garantir que funcione em todos os browsers
-    topContent.style.width = (table.scrollWidth + 1) + 'px';
-
-    topScroll.onscroll = null;
-    bottomScroll.onscroll = null;
-
-    topScroll.onscroll = () => {
-        if (isSyncingScroll) {
-            isSyncingScroll = false;
-            return;
-        }
-        isSyncingScroll = true;
-        bottomScroll.scrollLeft = topScroll.scrollLeft;
-    };
-
-    bottomScroll.onscroll = () => {
-        if (isSyncingScroll) {
-            isSyncingScroll = false;
-            return;
-        }
-        isSyncingScroll = true;
-        topScroll.scrollLeft = bottomScroll.scrollLeft;
-        
-        // Atualiza a largura
-        topContent.style.width = (table.scrollWidth + 1) + 'px';
-    };
-};
-
-
 // --- 5. O PONTO DE ENTRADA PRINCIPAL (onAuthStateChanged)
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user; 
         
+        // Inicia monitores globais
         const activityInterval = setInterval(() => updateUserActivity(currentUser, currentUserData, currentActivity), 30000);
         monitorOnlineStatus(currentUser); 
         monitorGlobalLayout();
@@ -218,9 +176,9 @@ onAuthStateChanged(auth, (user) => {
             }
             
             configurarInterfacePorTag(currentUserData.tag);
-            updateUserActivity(currentUser, currentUserData, currentActivity); 
+            updateUserActivity(currentUser, currentUserData, currentActivity); // Atualiza imediatamente com a tag
              
-            if(vendasListener) vendasListener(); 
+            if(vendasListener) vendasListener(); // Remove o listener antigo
             
             let vendasRef;
             const userTagUpper = currentUserData.tag.toUpperCase();
@@ -236,13 +194,9 @@ onAuthStateChanged(auth, (user) => {
                 vendasSnapshot.forEach((child) => {
                     vendas.push({ id: child.key, ...child.val() });
                 });
-                setVendas(vendas); 
-                
-                // ATUALIZAÇÃO AUTOMÁTICA DE LOCK
-                // Se o histórico estiver visível, ele será redesenhado
-                // mostrando o status de "Bloqueado" em tempo real
+                setVendas(vendas); // Envia os dados para o módulo sales.js
                 if (els.historyCard.style.display !== 'none') {
-                    displaySalesHistory(vendas, currentUser, currentUserData, initScrollSync);
+                    displaySalesHistory(vendas, currentUser, currentUserData);
                 }
             }, (error) => {
                 if(error.code !== "PERMISSION_DENIED") showToast("Erro de permissão ao carregar histórico.", "error");
@@ -308,22 +262,17 @@ els.logoLink.onclick = (e) => { e.preventDefault(); if (currentUser) { setUserAc
 
 // --- Calculadora (Módulo: sales.js)
 els.calcBtn.onclick = calculate;
-// ALTERADO: Usa a nova função para limpar o lock do Firebase ao cancelar
-els.resetBtn.onclick = cancelEditAndClearFields; 
+els.resetBtn.onclick = clearAllFields;
 els.registerBtn.onclick = () => { setUserActivity('Registrando Venda'); registerVenda(currentUser); };
 els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
 els.nomeCliente.addEventListener('change', () => autoFillFromDossier(!!els.registerBtn.textContent.includes('Atualizar')));
 
 // --- Histórico (Módulo: sales.js)
-els.toggleHistoryBtn.onclick = () => { 
-    setUserActivity('Histórico'); 
-    toggleView('history'); 
-    displaySalesHistory(vendas, currentUser, currentUserData, initScrollSync); 
-};
+els.toggleHistoryBtn.onclick = () => { setUserActivity('Histórico'); toggleView('history'); displaySalesHistory(vendas, currentUser, currentUserData); };
 els.toggleCalcBtn.onclick = () => { setUserActivity('Calculadora'); toggleView('main'); };
 els.clearHistoryBtn.onclick = () => clearHistory(currentUserData);
 els.csvBtn.onclick = exportToCsv;
-els.filtroHistorico.addEventListener('input', () => filterHistory(currentUser, currentUserData, initScrollSync));
+els.filtroHistorico.addEventListener('input', () => filterHistory(currentUser, currentUserData));
 
 // --- Painel Admin (Módulo: admin.js)
 els.adminPanelBtn.onclick = () => { setUserActivity('Painel Admin'); toggleView('admin'); loadAdminPanel(true, currentUser); };
@@ -344,9 +293,9 @@ els.addOrgBtn.onclick = openAddOrgModal;
 els.dossierOrgGrid.addEventListener('click', (e) => {
     const orgCard = e.target.closest('.dossier-org-card');
     const editOrgBtn = e.target.closest('.edit-org-btn');
-    const editBtn = e.target.closest('.edit-dossier-btn'); 
-    const deleteBtn = e.target.closest('.delete-dossier-btn'); 
-    const fotoLinkBtn = e.target.closest('.veiculo-foto-link'); 
+    const editBtn = e.target.closest('.edit-dossier-btn'); // Para resultados de busca
+    const deleteBtn = e.target.closest('.delete-dossier-btn'); // Para resultados de busca
+    const fotoLinkBtn = e.target.closest('.veiculo-foto-link'); // Para resultados de busca
 
     if (editOrgBtn) { e.stopPropagation(); openEditOrgModal(editOrgBtn.dataset.orgId); }
     else if (editBtn) { e.stopPropagation(); openEditDossierModal(editBtn.dataset.org, editBtn.dataset.id); }
@@ -403,7 +352,7 @@ els.editModalListaVeiculos.onclick = (e) => {
 
 // Lightbox
 els.imageLightboxOverlay.onclick = closeImageLightbox;
-els.imageLightboxModal.onclick = closeImageLightbox; 
+els.imageLightboxModal.onclick = closeImageLightbox; // Permite fechar clicando na imagem/modal
 
 // --- Inicialização (Welcome Screen e Tema)
 const savedTheme = localStorage.getItem('theme') || 'light';
@@ -426,3 +375,4 @@ els.enterBtn.onclick = () => {
         els.welcomeScreen.style.display = 'none';
     }, 500);
 };
+
