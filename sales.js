@@ -6,13 +6,13 @@
 
 // --- Imports
 import { els } from './dom.js';
-// ALTERADO: Adicionado 'get' e 'update'
-import { db, ref, set, push, remove, get, update } from './firebase.js'; 
+import { db, ref, set, push, remove } from './firebase.js';
 import { perUnit, valores, valorDescricao } from './constantes.js';
 import { getQty, formatCurrency, capitalizeText, showToast, toggleView, copyToClipboard } from './helpers.js';
 import { addDossierEntry, updateDossierEntryOnEdit, findDossierEntryGlobal } from './dossier.js';
 
 // --- Estado Interno do Módulo (Gerenciado pelo script.js)
+// Estas variáveis são definidas no script.js e passadas para as funções
 let vendas = [];
 let vendaEmEdicaoId = null;
 let vendaOriginalRegistradoPor = null;
@@ -126,26 +126,10 @@ export const clearAllFields = () => {
   document.querySelectorAll('.input-invalido').forEach(input => input.classList.remove('input-invalido'));
   
   if (vendaEmEdicaoId) {
-    setVendaOriginal(null); // Limpa o estado de edição local
+    setVendaOriginal(null); // Limpa o estado de edição
     els.registerBtn.textContent = 'Registrar Venda';
   }
 };
-
-// --- NOVO: Função para cancelar e limpar o lock do Firebase ---
-export const cancelEditAndClearFields = async () => {
-  const id = vendaEmEdicaoId; // Pega o ID *antes* de clearAllFields limpá-lo
-  if (id) {
-    const lockData = {
-      editandoPorUid: null,
-      editandoPorNome: null,
-      editandoDesdeTimestamp: null
-    };
-    // Limpa o lock no Firebase. Não precisa 'await', pode ser em background.
-    update(ref(db, `vendas/${id}`), lockData);
-  }
-  clearAllFields(); // Limpa o formulário e o estado local
-};
-
 
 const validateFields = () => {
     let isValid = true;
@@ -211,13 +195,6 @@ export const registerVenda = async (currentUser) => {
     registradoPorId: vendaEmEdicaoId ? vendaOriginalRegistradoPorId : currentUser.uid 
   };
   
-  // --- NOVO: Limpa os campos de lock ao salvar uma edição ---
-  if (vendaEmEdicaoId) {
-    newVenda.editandoPorUid = null;
-    newVenda.editandoPorNome = null;
-    newVenda.editandoDesdeTimestamp = null;
-  }
-  
   
   let dossierOrgDestino = '';
   if (newVenda.organizacaoTipo === 'CPF') {
@@ -274,35 +251,10 @@ export const registerVenda = async (currentUser) => {
       });
 };
 
-// --- ALTERADO: Função agora é 'async' e passa 'currentUser' ---
-export const editVenda = async (id, currentUser) => {
-    // 1. Busca os dados mais recentes do Firebase
-    const vendaRef = ref(db, `vendas/${id}`);
-    const vendaSnap = await get(vendaRef);
-    if (!vendaSnap.exists()) {
-        showToast("Erro: Venda não encontrada.", "error");
-        return;
-    }
-    const venda = vendaSnap.val();
-
-    // 2. NOVO: Controle de Concorrência
-    const lockTime = 300000; // 5 minutos (300.000 ms)
-    const isStale = (Date.now() - (venda.editandoDesdeTimestamp || 0)) > lockTime;
+export const editVenda = (id) => {
+    const venda = vendas.find(v => v.id === id);
+    if (!venda) return;
     
-    if (venda.editandoPorUid && venda.editandoPorUid !== currentUser.uid && !isStale) {
-        showToast(`Esta venda está sendo editada por ${venda.editandoPorNome} no momento.`, "error", 4000);
-        return;
-    }
-    
-    // 3. NOVO: Define o lock para este usuário
-    const lockData = {
-        editandoPorUid: currentUser.uid,
-        editandoPorNome: currentUser.displayName,
-        editandoDesdeTimestamp: Date.now()
-    };
-    await update(vendaRef, lockData);
-    
-    // 4. Lógica existente (agora usando 'venda' do Firebase)
     els.nomeCliente.value = venda.cliente || '';
     els.organizacao.value = venda.organizacao || '';
     els.organizacaoTipo.value = venda.organizacaoTipo || 'CNPJ';
@@ -320,18 +272,12 @@ export const editVenda = async (id, currentUser) => {
     
     calculate(); 
     
-    // Atualiza o lock localmente também para o setVendaOriginal
-    venda.editandoPorUid = lockData.editandoPorUid;
-    venda.editandoPorNome = lockData.editandoPorNome;
-    venda.editandoDesdeTimestamp = lockData.editandoDesdeTimestamp;
-    
     setVendaOriginal({ id, ...venda }); // Configura o estado de edição
     
     els.registerBtn.textContent = 'Atualizar Venda';
     toggleView('main'); 
     showToast(`Editando venda de ${venda.cliente}`, "default");
 };
-
 
 export const removeVenda = (id) => {
     if (confirm("Tem certeza que deseja remover esta venda?")) {
@@ -409,10 +355,9 @@ export const copyDiscordMessage = (isFromHistory = false, venda = null) => {
     copyToClipboard(buildDiscordMessage(messageData));
 };
 
-export const displaySalesHistory = (history, currentUser, currentUserData, onCompleteCallback) => {
+export const displaySalesHistory = (history, currentUser, currentUserData) => {
     els.salesHistory.innerHTML = '';
     if (!currentUserData) { 
-         if (onCompleteCallback) onCompleteCallback();
          return;
     }
 
@@ -429,7 +374,6 @@ export const displaySalesHistory = (history, currentUser, currentUserData, onCom
         row.cells[0].textContent = "Nenhuma venda para exibir.";
         row.cells[0].style.textAlign = 'center';
         row.cells[0].style.padding = '20px';
-        if (onCompleteCallback) onCompleteCallback();
         return;
     }
 
@@ -473,53 +417,20 @@ export const displaySalesHistory = (history, currentUser, currentUserData, onCom
             (userTagUpper === 'HELLS' && venda.registradoPorId === currentUser.uid) ||
             (userTagUpper === 'VISITANTE' && venda.registradoPorId === currentUser.uid);
 
-        // --- NOVO: Lógica do Botão de Edição com Lock ---
-        const lockTime = 300000; // 5 minutos
-        const isStale = (Date.now() - (venda.editandoDesdeTimestamp || 0)) > lockTime;
-        const isLockedByOther = venda.editandoPorUid && venda.editandoPorUid !== currentUser.uid && !isStale;
-        const isLockedByMe = venda.editandoPorUid && venda.editandoPorUid === currentUser.uid && !isStale;
-
-        let editBtnText = "Editar";
-        let editBtnClass = "muted";
-        let editBtnDisabled = !podeModificar; // Começa com a permissão base
-
-        if (isLockedByOther) {
-            editBtnText = "Bloqueada";
-            editBtnClass = "danger";
-            editBtnDisabled = true; // Trava o botão
-        } else if (isLockedByMe) {
-            editBtnText = "Editando";
-            editBtnClass = "success"; // Verde para indicar que *eu* estou editando
-        }
-        // --- FIM DA LÓGICA ---
-
         actionsCell.innerHTML = `
-            <button class="action-btn ${editBtnClass} edit-btn" ${editBtnDisabled ? 'disabled' : ''}>${editBtnText}</button>
+            <button class="action-btn muted edit-btn" ${!podeModificar ? 'disabled' : ''}>Editar</button>
             <button class="action-btn danger delete-btn" ${!podeModificar ? 'disabled' : ''}>Deletar</button>
             <button class="action-btn muted discord-btn">Discord</button>
         `;
-        
-        // Adiciona os listeners
-        const editBtn = actionsCell.querySelector('.edit-btn');
-        const deleteBtn = actionsCell.querySelector('.delete-btn');
-        
-        if (podeModificar) {
-            if (!editBtnDisabled) { // Se não estiver desabilitado (pelas regras de lock)
-                // ALTERADO: Passa 'currentUser'
-                editBtn.onclick = () => editVenda(venda.id, currentUser); 
-            }
-            deleteBtn.onclick = () => removeVenda(venda.id);
+        if(podeModificar){
+            actionsCell.querySelector('.edit-btn').onclick = () => editVenda(venda.id);
+            actionsCell.querySelector('.delete-btn').onclick = () => removeVenda(venda.id);
         }
-        
         actionsCell.querySelector('.discord-btn').onclick = () => copyDiscordMessage(true, venda);
     });
-    
-    if (onCompleteCallback) {
-        onCompleteCallback();
-    }
 };
 
-export const filterHistory = (currentUser, currentUserData, onCompleteCallback) => {
+export const filterHistory = (currentUser, currentUserData) => {
     const query = els.filtroHistorico.value.toLowerCase().trim();
     const filteredVendas = vendas.filter(v => 
         Object.values(v).some(val => String(val).toLowerCase().includes(query)) ||
@@ -527,7 +438,7 @@ export const filterHistory = (currentUser, currentUserData, onCompleteCallback) 
         (v.qtyTablets > 0 && `tablets`.includes(query)) ||
         (v.qtyNitro > 0 && `nitro`.includes(query))
     );
-    displaySalesHistory(query ? filteredVendas : vendas, currentUser, currentUserData, onCompleteCallback);
+    displaySalesHistory(query ? filteredVendas : vendas, currentUser, currentUserData);
 };
 
 export const exportToCsv = () => {
@@ -556,3 +467,4 @@ export const clearHistory = (currentUserData) => {
             .catch(e => showToast(`Erro: ${e.message}`, "error"));
     }
 };
+
