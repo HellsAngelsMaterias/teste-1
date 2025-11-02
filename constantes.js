@@ -41,3 +41,4 @@ export const tourSteps = [
     { element: 'toggleHistoryBtn', title: '5/5: Ver Histórico', content: 'Acesse o histórico para ver, editar, apagar ou copiar vendas antigas.' }
 ];
 
+
