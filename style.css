@@ -1,0 +1,213 @@
+:root {
+  /* Tema Claro (Padrão) */
+  --cor-fundo: #fff0f6;
+  --cor-texto: #4a0033;
+  --cor-principal: #e60073;
+  --cor-card: #ffffff;
+  --cor-borda: #ffb3d9;
+  
+  /* Botões */
+  --cor-btn-primario: #e60073;
+  --cor-btn-texto: #fff;
+  --cor-btn-secundario: #ffd6eb;
+  --cor-btn-secundario-texto: #4a0033;
+  
+  /* Estados */
+  --cor-erro: #cc0000;
+  --cor-sucesso: #28a745;
+  --cor-glow-pulsante: rgba(230, 0, 115, 0.8);
+  
+  /* Tags */
+  --cor-tag-admin: #0056b3;
+  --cor-tag-hells: #e60073;
+  --cor-tag-visitante: #008000;
+}
+
+body.dark {
+  /* Tema Escuro */
+  --cor-fundo: #1a000d;
+  --cor-texto: #ffccf0;
+  --cor-principal: #ff0080; 
+  --cor-card: #2c001a;
+  --cor-borda: #e60073;
+  
+  --cor-btn-primario: #ff0080; 
+  --cor-btn-texto: #fff;
+  --cor-btn-secundario: #4d002a; 
+  --cor-btn-secundario-texto: #ffccf0;
+  --cor-glow-pulsante: rgba(255, 0, 128, 0.5);
+  
+  --cor-tag-admin: #4da3ff;
+  --cor-tag-hells: #ff0080;
+  --cor-tag-visitante: #00cc00;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto);
+  margin: 0;
+  padding: 20px;
+  transition: background 0.3s, color 0.3s;
+  padding-bottom: 60px; /* Espaço para o rodapé */
+}
+
+/* --- Layout e Cards --- */
+.card {
+  background: var(--cor-card);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+  border: 1px solid var(--cor-borda);
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+h1, h2, h3 { color: var(--cor-principal); margin-top: 0; }
+h1 { font-size: 1.5rem; text-align: center; flex-grow: 1;}
+
+/* --- Logos e Imagens --- */
+.app-logo {
+    width: 60px;
+    position: absolute;
+    top: 15px;
+    left: 20px;
+    cursor: pointer;
+    z-index: 100;
+}
+#historyImg { display: none; } /* Oculto no layout padrão */
+
+/* --- Controles Superiores --- */
+.top-right-controls {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+}
+.control-btn {
+    font-size: 12px;
+    padding: 5px 10px;
+    background: var(--cor-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+/* --- Grids de Formulário --- */
+.grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+.grid-venda { grid-template-columns: 1fr 1fr; }
+.grid-venda-3col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; grid-column: span 2; }
+
+@media (max-width: 600px) {
+  .grid, .grid-venda, .grid-venda-3col { grid-template-columns: 1fr; }
+  .app-logo { width: 40px; top: 10px; left: 10px; }
+  .top-right-controls { top: 60px; right: 10px; flex-direction: column; align-items: flex-end; }
+}
+
+/* --- Inputs e Botões --- */
+label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  margin-bottom: 10px;
+}
+input:focus, select:focus { outline: 2px solid var(--cor-principal); }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; justify-content: center; }
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.1s;
+}
+button:active { transform: scale(0.98); }
+
+button.primary { background: var(--cor-btn-primario); color: var(--cor-btn-texto); }
+button.muted { background: var(--cor-btn-secundario); color: var(--cor-btn-secundario-texto); }
+button.success { background: var(--cor-sucesso); color: #fff; }
+button.danger { background: var(--cor-erro); color: #fff; }
+
+.suggestion-tip { font-size: 0.75rem; color: var(--cor-texto); opacity: 0.7; margin-top: -8px; margin-bottom: 8px; }
+
+/* --- Tabelas --- */
+table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+th, td { border: 1px solid var(--cor-borda); padding: 8px; text-align: left; }
+th { background-color: var(--cor-btn-secundario); color: var(--cor-btn-secundario-texto); }
+
+.history-table-wrapper {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--cor-borda);
+    border-radius: 6px;
+}
+
+/* --- Telas Especiais (Welcome, Auth, Rodapé) --- */
+#welcomeScreen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--cor-fundo); z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; transition: opacity 0.5s;
+}
+#welcomeScreen.show { display: flex; opacity: 1; }
+#welcomeLogo { max-width: 150px; margin-bottom: 20px; animation: pulseLogo 2s infinite; }
+
+@keyframes pulseLogo { 
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px var(--cor-glow-pulsante)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 15px var(--cor-glow-pulsante)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--cor-glow-pulsante)); }
+}
+
+#bottomPanel {
+    position: fixed; bottom: 0; left: 0; width: 100%;
+    background: var(--cor-principal); color: #fff;
+    text-align: center; padding: 5px; font-size: 0.9rem;
+    z-index: 9000; display: none;
+}
+
+/* --- Toasts (Notificações) --- */
+#toast-container { position: fixed; top: 20px; right: 20px; z-index: 10001; }
+.toast {
+    background: var(--cor-card); border-left: 5px solid var(--cor-principal);
+    color: var(--cor-texto); padding: 15px 20px; margin-bottom: 10px;
+    border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    opacity: 0; transition: opacity 0.3s, transform 0.3s; transform: translateX(100%);
+}
+.toast.show { opacity: 1; transform: translateX(0); }
+.toast.success { border-left-color: var(--cor-sucesso); }
+.toast.error { border-left-color: var(--cor-erro); }
+
+/* --- Modais (Estrutura Geral) --- */
+.modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 10000; backdrop-filter: blur(2px);
+}
+.modal-content {
+    display: none; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); z-index: 10001;
+    width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+}
+
+/* Badge de Usuário */
+.user-tag-badge {
+    font-size: 10px; color: #fff; padding: 2px 6px; border-radius: 4px;
+    font-weight: bold; text-transform: uppercase; display: inline-block;
+}

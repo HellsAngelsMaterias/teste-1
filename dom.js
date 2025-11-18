@@ -1,0 +1,147 @@
+export const els = {
+  // --- Tela Principal e Calculadora ---
+  qtyTickets: document.getElementById('qtyTickets'),
+  qtyTablets: document.getElementById('qtyTablets'),
+  qtyNitro: document.getElementById('qtyNitro'),
+  tipoValor: document.getElementById('tipoValor'),
+  nomeCliente: document.getElementById('nomeCliente'),
+  organizacao: document.getElementById('organizacao'),
+  organizacaoTipo: document.getElementById('organizacaoTipo'),
+  telefone: document.getElementById('telefone'),
+  carroVeiculo: document.getElementById('carroVeiculo'), 
+  placaVeiculo: document.getElementById('placaVeiculo'),
+  negociadoras: document.getElementById('negociadoras'),
+  vendaValorObs: document.getElementById('vendaValorObs'),
+  dataVenda: document.getElementById('dataVenda'),
+  filtroHistorico: document.getElementById('filtroHistorico'),
+  resultsBody: document.getElementById('resultsBody'),
+  valuesBody: document.getElementById('valuesBody'),
+  valorTotalGeral: document.getElementById('valorTotalGeral'),
+  results: document.getElementById('results'),
+  mainCard: document.getElementById('mainCard'),
+  historyCard: document.getElementById('historyCard'),
+  salesHistory: document.getElementById('salesHistory'),
+  
+  // --- Botões Principais ---
+  calcBtn: document.getElementById('calcBtn'),
+  resetBtn: document.getElementById('resetBtn'),
+  registerBtn: document.getElementById('registerBtn'),
+  toggleHistoryBtn: document.getElementById('toggleHistoryBtn'),
+  toggleCalcBtn: document.getElementById('toggleCalcBtn'),
+  clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+  csvBtn: document.getElementById('csvBtn'),
+  discordBtnCalc: document.getElementById('discordBtnCalc'),
+  themeBtn: document.getElementById('themeBtn'),
+  tutorialBtn: document.getElementById('tutorialBtn'),
+  
+  // --- Assets e Logos ---
+  logoLink: document.getElementById('logoLink'),
+  appLogo: document.getElementById('appLogo'),
+  historyImg: document.getElementById('historyImg'),
+  welcomeScreen: document.getElementById('welcomeScreen'),
+  enterBtn: document.getElementById('enterBtn'),
+  welcomeLogo: document.getElementById('welcomeLogo'),
+  
+  // --- Autenticação ---
+  authScreen: document.getElementById('authScreen'),
+  username: document.getElementById('username'),
+  password: document.getElementById('password'),
+  loginBtn: document.getElementById('loginBtn'),
+  registerUserBtn: document.getElementById('registerUserBtn'),
+  authMessage: document.getElementById('authMessage'),
+  logoutBtn: document.getElementById('logoutBtn'),
+  mainTitle: document.getElementById('mainTitle'),
+  forgotPasswordLink: document.getElementById('forgotPasswordLink'),
+  userStatus: document.getElementById('userStatus'),
+  
+  // --- Painel Admin ---
+  adminPanelBtn: document.getElementById('adminPanelBtn'),
+  adminPanel: document.getElementById('adminPanel'),
+  adminUserListBody: document.getElementById('adminUserListBody'),
+  toggleCalcBtnAdmin: document.getElementById('toggleCalcBtnAdmin'), 
+  onlineUsersCount: document.getElementById('onlineUsersCount'),
+  layoutToggleNightMode: document.getElementById('layoutToggleNightMode'),
+  layoutToggleBottomPanel: document.getElementById('layoutToggleBottomPanel'),
+  bottomPanelText: document.getElementById('bottomPanelText'),
+  saveBottomPanelTextBtn: document.getElementById('saveBottomPanelTextBtn'),
+  bottomPanelDisplay: document.getElementById('bottomPanelDisplay'),
+  bottomPanel: document.getElementById('bottomPanel'),
+  migrateDossierBtn: document.getElementById('migrateDossierBtn'),
+  migrateVeiculosBtn: document.getElementById('migrateVeiculosBtn'), 
+  
+  // --- Dossiê (Investigação) ---
+  investigacaoBtn: document.getElementById('investigacaoBtn'),
+  dossierCard: document.getElementById('dossierCard'),
+  toggleCalcBtnDossier: document.getElementById('toggleCalcBtnDossier'),
+  
+  // Nível 1: Organizações
+  dossierOrgContainer: document.getElementById('dossierOrgContainer'),
+  filtroDossierOrgs: document.getElementById('filtroDossierOrgs'),
+  addOrgBtn: document.getElementById('addOrgBtn'),
+  dossierOrgGrid: document.getElementById('dossierOrgGrid'),
+  
+  // Nível 2: Pessoas
+  dossierPeopleContainer: document.getElementById('dossierPeopleContainer'),
+  dossierPeopleTitle: document.getElementById('dossierPeopleTitle'),
+  dossierVoltarBtn: document.getElementById('dossierVoltarBtn'),
+  filtroDossierPeople: document.getElementById('filtroDossierPeople'),
+  addPessoaBtn: document.getElementById('addPessoaBtn'),
+  dossierPeopleGrid: document.getElementById('dossierPeopleGrid'),
+  
+  // --- Modais de Edição (Dossiê) ---
+  editDossierOverlay: document.getElementById('editDossierOverlay'),
+  editDossierModal: document.getElementById('editDossierModal'),
+  editDossierOrg: document.getElementById('editDossierOrg'),
+  editDossierId: document.getElementById('editDossierId'),
+  editDossierNome: document.getElementById('editDossierNome'),
+  editDossierNumero: document.getElementById('editDossierNumero'),
+  editDossierCargo: document.getElementById('editDossierCargo'),
+  editDossierFotoUrl: document.getElementById('editDossierFotoUrl'),
+  editDossierInstagram: document.getElementById('editDossierInstagram'), 
+  saveDossierBtn: document.getElementById('saveDossierBtn'),
+  cancelDossierBtn: document.getElementById('cancelDossierBtn'),
+  
+  // Veículos no Modal de Edição
+  editModalCarroNome: document.getElementById('editModalCarroNome'),
+  editModalCarroPlaca: document.getElementById('editModalCarroPlaca'),
+  editModalCarroFoto: document.getElementById('editModalCarroFoto'), 
+  editModalAddVeiculoBtn: document.getElementById('editModalAddVeiculoBtn'),
+  editModalCancelVeiculoBtn: document.getElementById('editModalCancelVeiculoBtn'), 
+  editModalListaVeiculos: document.getElementById('editModalListaVeiculos'),
+  
+  // --- Modais de Adição (Dossiê) ---
+  addDossierOverlay: document.getElementById('addDossierOverlay'),
+  addDossierModal: document.getElementById('addDossierModal'),
+  addDossierOrganizacao: document.getElementById('addDossierOrganizacao'),
+  addDossierNome: document.getElementById('addDossierNome'),
+  addDossierNumero: document.getElementById('addDossierNumero'),
+  addDossierCargo: document.getElementById('addDossierCargo'),
+  addDossierFotoUrl: document.getElementById('addDossierFotoUrl'),
+  saveNewDossierBtn: document.getElementById('saveNewDossierBtn'),
+  cancelNewDossierBtn: document.getElementById('cancelNewDossierBtn'),
+
+  // Veículos no Modal de Adição
+  addModalCarroNome: document.getElementById('addModalCarroNome'),
+  addModalCarroPlaca: document.getElementById('addModalCarroPlaca'),
+  addModalCarroFoto: document.getElementById('addModalCarroFoto'), 
+  addModalAddVeiculoBtn: document.getElementById('addModalAddVeiculoBtn'),
+  addModalCancelVeiculoBtn: document.getElementById('addModalCancelVeiculoBtn'), 
+  addModalListaVeiculos: document.getElementById('addModalListaVeiculos'),
+  
+  // --- Modal de Organização ---
+  orgModalOverlay: document.getElementById('orgModalOverlay'),
+  orgModal: document.getElementById('orgModal'),
+  orgModalTitle: document.getElementById('orgModalTitle'),
+  editOrgId: document.getElementById('editOrgId'),
+  orgNome: document.getElementById('orgNome'),
+  orgFotoUrl: document.getElementById('orgFotoUrl'),
+  orgInfo: document.getElementById('orgInfo'),
+  saveOrgBtn: document.getElementById('saveOrgBtn'),
+  cancelOrgBtn: document.getElementById('cancelOrgBtn'),
+  deleteOrgBtn: document.getElementById('deleteOrgBtn'),
+  
+  // --- Lightbox ---
+  imageLightboxOverlay: document.getElementById('imageLightboxOverlay'),
+  imageLightboxModal: document.getElementById('imageLightboxModal'),
+  lightboxImg: document.getElementById('lightboxImg')
+};

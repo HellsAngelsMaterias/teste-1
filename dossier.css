@@ -1,0 +1,152 @@
+/* --- Grids Principais (Bases e Membros) --- */
+.dossier-org-grid, .dossier-people-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+/* --- Cards (Cartões) --- */
+.dossier-org-card, .dossier-entry-card {
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dossier-org-card:hover, .dossier-entry-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border-color: var(--cor-principal);
+}
+
+/* --- Fotos nos Cards --- */
+.dossier-org-foto, .dossier-foto {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #ccc;
+  margin-bottom: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--cor-principal);
+}
+
+.dossier-org-foto img, .dossier-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* --- Textos nos Cards --- */
+.dossier-org-card h4, .dossier-entry-card h4 {
+  margin: 5px 0;
+  font-size: 1.1rem;
+  color: var(--cor-principal);
+  word-break: break-word;
+}
+
+.dossier-org-card p, .dossier-entry-card p {
+  font-size: 0.85rem;
+  color: var(--cor-texto);
+  margin: 2px 0;
+  word-break: break-word;
+}
+
+/* --- Botões de Ação dentro dos Cards --- */
+.dossier-org-actions, .dossier-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.dossier-actions button {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+}
+
+/* --- Efeito Drag & Drop (Arrastar) --- */
+.sortable-ghost {
+  opacity: 0.4;
+  background-color: var(--cor-btn-secundario);
+  border: 2px dashed var(--cor-principal);
+}
+
+/* --- Lista de Veículos (Dentro dos Modais de Edição) --- */
+.veiculo-item-modal {
+    display: flex;
+    align-items: center;
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    padding: 8px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+}
+
+.veiculo-item-modal:last-child { 
+    border-bottom: 1px solid var(--cor-borda); 
+}
+
+.veiculo-item-modal span { 
+    word-break: break-all; 
+    font-size: 13px;
+    flex-grow: 1;
+}
+
+.veiculo-item-modal button { 
+    font-size: 11px; 
+    padding: 3px 6px; 
+    flex-shrink: 0; 
+    margin-left: 5px; 
+}
+
+/* --- Lightbox (Zoom na Imagem) --- */
+#imageLightboxModal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10012;
+    max-width: 90vw;
+    max-height: 90vh;
+    background: #fff;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+}
+
+body.dark #imageLightboxModal {
+    background: var(--cor-card);
+    border: 1px solid var(--cor-borda);
+}
+
+#lightboxImg {
+    max-width: 100%;
+    max-height: 85vh;
+    display: block;
+    border-radius: 8px;
+}
+
+/* Links de fotos de veículos nos cards */
+.veiculo-foto-link {
+    color: var(--cor-principal);
+    text-decoration: none;
+    font-size: 0.8em;
+    margin-left: 4px;
+}
+.veiculo-foto-link:hover {
+    text-decoration: underline;
+}
